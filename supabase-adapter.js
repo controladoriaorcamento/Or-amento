@@ -38,7 +38,10 @@
   window.claude={use:async n=>({db,user,downloads})[n]||null};
 
   /* tabela de acessos (aba "3. Gerentes"), gravada quando a Controladoria carrega a CONFIGURAÇÃO */
-  window.ORC_HOOKS={acessos:async lista=>{
+  window.ORC_HOOKS={
+    /* usuários que têm orçamento salvo (inclusive masters sem perfil de gerente) */
+    uidsComOrc:async()=>{const out=new Set();let from=0;for(;;){const {data,error}=await sb.from("docs").select("path").like("path","gerentes/%/orc/%").order("path").range(from,from+999);if(error)break;
+      data.forEach(r=>{const m=/^gerentes\/([^/]+)\/orc\/[^/]+$/.exec(r.path);if(m)out.add(m[1])});if(data.length<1000)break;from+=1000}return [...out]},acessos:async lista=>{
     const rows=[];lista.forEach(p=>Object.entries(p.acc||{}).forEach(([obra_id,deps])=>deps.forEach(d=>rows.push({email:p.email.toLowerCase(),obra_id,departamento:d,nome:p.nome||null,cargo:p.cargo||null}))));
     let r=await sb.from("acessos").delete().neq("email","");err(r.error,"limpar acessos");
     for(let i=0;i<rows.length;i+=500){r=await sb.from("acessos").insert(rows.slice(i,i+500));err(r.error,"gravar acessos")}
