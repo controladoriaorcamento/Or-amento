@@ -31,9 +31,9 @@
   --focus:#6AAEF0; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
-.wrap{padding-inline:16px;padding-block:0 48px;max-width:1680px;margin:0 auto}
+.wrap{padding-inline:6px;padding-block:0 48px;max-width:none;margin:0 auto}
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
-.top-in{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding-block:12px;padding-inline:16px;max-width:1680px;margin:0 auto}
+.top-in{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding-block:10px;padding-inline:8px;max-width:none;margin:0 auto}
 .brand{display:flex;align-items:baseline;gap:10px;min-width:0}
 .brand h1{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0;letter-spacing:-.01em}
 .brand span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
@@ -56,6 +56,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .pill.enviado{background:var(--good-soft);color:var(--good)}
 .pill.reaberto{background:var(--bad-soft);color:var(--bad)}
 .pill.vazio{background:var(--group);color:var(--muted)}
+.pill.validado{background:#DCE8F5;color:#1D4E89}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 select,input[type=text],input[type=search],textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;padding:6px 8px;min-width:0}
 textarea{width:100%;min-height:64px}
@@ -89,7 +90,7 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 .grid thead th{position:sticky;top:0;z-index:5;background:var(--surface);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;text-align:right;border-bottom:1px solid var(--line-strong)}
 .grid thead tr.band th{font-size:10px;padding:4px 8px;top:0;text-align:center}
 .grid thead tr.cols th{top:24px}
-.grid .c-desc{position:sticky;left:0;z-index:3;background:inherit;text-align:left;min-width:330px;max-width:330px;width:330px;border-right:1px solid var(--line-strong)}
+.grid .c-desc{position:sticky;left:0;z-index:3;background:inherit;text-align:left;min-width:280px;max-width:280px;width:280px;border-right:1px solid var(--line-strong)}
 .grid thead .c-desc{z-index:7;background:var(--surface)}
 .grid td.c-desc{padding:0 8px;overflow:hidden;text-overflow:ellipsis}
 .grid tr{background:var(--surface)}
@@ -101,7 +102,7 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 .grid thead th.ref{background:var(--ref);color:var(--ref-ink)}
 .grid td.tot{font-weight:600;border-left:1px solid var(--line-strong)}
 .grid td.cell{padding:0;border-left:1px solid var(--line)}
-.grid td.cell input{width:92px;height:29px;border:0;background:transparent;text-align:right;font-family:var(--f-mono);font-size:12.5px;padding:0 6px;color:var(--ink);font-variant-numeric:tabular-nums}
+.grid td.cell input{width:84px;height:29px;border:0;background:transparent;text-align:right;font-family:var(--f-mono);font-size:12.5px;padding:0 6px;color:var(--ink);font-variant-numeric:tabular-nums}
 .grid td.cell input:focus{background:var(--accent-soft);outline:2px solid var(--focus);outline-offset:-2px}
 .grid td.cell input:disabled{color:var(--muted)}
 .grid td.cell input.has{font-weight:500}
@@ -126,18 +127,21 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
   .grid .fz{position:sticky;z-index:3;box-sizing:border-box}
   .grid thead .fz{z-index:7}
   .grid tfoot .fz{z-index:6}
-  .grid .fz1,.grid .fz2,.grid .fz4,.grid .fz5{min-width:92px;max-width:92px;width:92px}
-  .grid .fz3,.grid .fz6{min-width:54px;max-width:54px;width:54px}
-  .grid .fz1,.grid .fzb1{left:330px}.grid .fz2{left:422px}.grid .fz3{left:514px}
-  .grid .fz4,.grid .fzb2{left:568px}.grid .fz5{left:660px}.grid .fz6{left:752px}
+  .grid .fz1,.grid .fz4{min-width:76px;max-width:76px;width:76px}
+  .grid .fz2,.grid .fz5{min-width:64px;max-width:64px;width:64px}
+  .grid .fz3,.grid .fz6{min-width:36px;max-width:36px;width:36px}
+  .grid .fz{font-size:11.5px;padding-inline:4px}
+  .grid .fz1,.grid .fzb1{left:280px}.grid .fz2{left:356px}.grid .fz3{left:420px}
+  .grid .fz4,.grid .fzb2{left:456px}.grid .fz5{left:532px}.grid .fz6{left:596px}
   .grid .fz3{border-right:1px solid var(--line)}
   .grid .fz6,.grid .fzb2{border-right:2px solid var(--line-strong)}
-  .grid .fzb1{min-width:238px;max-width:238px}.grid .fzb2{min-width:238px;max-width:238px}
+  .grid .fzb1{min-width:176px;max-width:176px}.grid .fzb2{min-width:176px;max-width:176px}
 }
-.grid .c-flag{padding:0 6px;white-space:nowrap;min-width:190px;border-left:1px solid var(--line)}
+.grid .c-flag{padding:0 4px;white-space:nowrap;min-width:126px;border-left:1px solid var(--line)}
 .grid thead th.c-flag{text-align:left;color:var(--accent)}
-.grid select.flag{font-size:11px;padding:2px 4px;margin-right:4px;border-radius:4px;max-width:180px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--ink)}
-.grid input.fpct{width:44px;font-size:11px;padding:1px 4px;margin-right:2px;border:1px solid var(--line-strong);border-radius:4px;background:var(--surface);color:var(--ink);text-align:right}
+.grid select.flag{font-size:11px;padding:2px 2px;margin-right:3px;border-radius:4px;max-width:122px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--ink)}
+.grid select.fmes{font-size:11px;padding:1px 2px;border-radius:4px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);margin-right:2px}
+.grid input.fpct{width:38px;font-size:11px;padding:1px 4px;margin-right:2px;border:1px solid var(--line-strong);border-radius:4px;background:var(--surface);color:var(--ink);text-align:right}
 .grid tr.sub{background:var(--bg)}
 .grid .area{font-size:10px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:3px;padding:0 4px;margin-left:6px}
 .grid .lock{font-size:10px;margin-left:6px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:3px;padding:0 4px}
@@ -193,6 +197,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
   <nav class="tabs" id="tabs" hidden>
     <button class="tab" id="tab-fill" aria-selected="true">Preencher</button>
     <button class="tab" id="tab-adm" aria-selected="false">Controladoria</button>
+    <button class="tab" id="tab-sg" aria-selected="false">Sem gerente</button>
   </nav>
 </div></header>
 
@@ -236,14 +241,16 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
       <div class="obra-bar">
         <div class="field">
           <label class="lbl" for="sel-obra">Obra / centro de custo</label>
-          <select id="sel-obra"></select>
+          <div class="row" style="gap:6px;flex-wrap:nowrap"><input id="busca-obra" type="search" placeholder="Digite para buscar (nº ou nome)" aria-label="Buscar obra" style="width:210px;padding:7px 9px;border:1px solid var(--line);border-radius:6px"><select id="sel-obra"></select></div>
+          <span class="muted" id="busca-obra-n" style="font-size:11px"></span>
         </div>
         <div class="obra-meta"><span class="muted" id="obra-tipo"></span><span id="obra-status"></span></div>
         <div class="row" style="margin-left:auto">
           <span id="viewing-as" class="muted"></span>
           <button class="btn sm" id="btn-req" hidden>Solicitar mais acesso</button>
           <button class="btn" id="btn-ver">Versões</button>
-          <button class="btn" id="btn-reopen" hidden>Reabrir para o gerente</button>
+          <button class="btn primary" id="btn-validar" hidden>Validar e travar</button>
+          <button class="btn" id="btn-reopen" hidden>Devolver ao gerente</button>
           <span id="send-box"><button class="btn primary" id="btn-send">Enviar para a Controladoria</button></span>
         </div>
       </div>
@@ -289,6 +296,21 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
   </section>
 
   <!-- CONTROLADORIA -->
+  <section id="v-sg" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div><h2>Empresas e obras sem gerente</h2>
+        <p class="desc" style="margin:4px 0 0">Compara o catálogo de obras com a aba <b>3. Gerentes</b> da CONFIGURAÇÃO (a última carregada). Para incluir alguém, preencha o e-mail na planilha e use <b>Carregar CONFIGURAÇÃO</b> na aba Controladoria.</p></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <select id="sg-modo" class="btn"><option value="nenhum">Sem nenhum gerente</option><option value="falta">Falta algum departamento</option><option value="todas">Todas as obras</option></select>
+          <input id="sg-q" type="search" placeholder="Buscar empresa ou obra" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px">
+          <button class="btn" id="sg-xlsx">Baixar Excel</button>
+        </div>
+      </div>
+      <p class="muted" id="sg-resumo" style="margin:12px 0 8px"></p>
+      <div class="tbl-box"><table class="list" id="tbl-sg"></table></div>
+    </div>
+  </section>
   <section id="v-adm" hidden>
     <div class="panel">
       <div class="card">
@@ -298,7 +320,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
           <tr><td><b>MODELO - ORÇAMENTO.xlsx</b></td><td>Aba Bases - Gerais: quem planeja e obrigatoriedade de detalhar</td><td class="muted" id="bs-modelo">—</td><td><label class="btn sm" for="rg-file" style="display:inline-block">Carregar</label></td></tr>
           <tr><td><b>DE_PARA_PLANEJAMENTO_POR_CARGO.xlsx</b></td><td>Cargo de cada insumo por obra, Gerentes Administrativos e por obra</td><td class="muted" id="bs-depara">—</td><td><label class="btn sm" for="pl-file" style="display:inline-block">Carregar</label></td></tr>
           <tr><td><b>REVISAO_CARGOS_FORA_DO_MODELO.xlsx</b></td><td>Cargo correto dos itens que não estão no MODELO (vale acima das estimativas do De-para)</td><td class="muted" id="bs-rev">—</td><td><label class="btn sm" for="rv-file" style="display:inline-block">Carregar</label><input type="file" id="rv-file" accept=".xlsx" hidden></td></tr>
-          <tr><td><b>DE_PARA_SUBITENS_OBRIGATORIOS.xlsx</b></td><td>Subitens (níveis) de cada insumo obrigatório</td><td class="muted" id="bs-sub">—</td><td><label class="btn sm" for="sb-file" style="display:inline-block">Carregar</label><input type="file" id="sb-file" accept=".xlsx" hidden></td></tr>
+          <tr><td><b>CONFIGURACAO_ORCAMENTO_2027_2029.xlsx</b> (aba 5. Subitens)</td><td>Subitens de cada agrupador, com código, ordem e orientação ao gerente</td><td class="muted" id="bs-sub">—</td><td><label class="btn sm" for="sb-file" style="display:inline-block">Carregar</label><input type="file" id="sb-file" accept=".xlsx" hidden></td></tr>
           <tr><td><b>Base de Análise.xlsx</b></td><td>Histórico 2025 e 2026 (arquivo grande, ~120 MB)</td><td class="muted">atualizado pela Controladoria com o Claude</td><td class="muted" style="font-size:12px">peça a atualização no chat</td></tr>
         </tbody></table></div>
         <p class="muted" id="bs-msg" style="margin:8px 0 0"></p>
@@ -332,9 +354,9 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <div class="row" style="justify-content:space-between">
           <div><h2>Acompanhamento</h2><p class="desc">Status de cada obra atribuída. Abra para conferir; obras enviadas ficam bloqueadas para o gerente até você reabrir.</p></div>
           <div class="row">
-            <select id="acomp-ver" aria-label="Ver obras"><option value="ativas">Em acompanhamento</option><option value="removidas">Removidas</option></select>
+            <select id="acomp-ver" aria-label="Ver obras"><option value="ativas">Em acompanhamento</option><option value="removidas">Removidas</option><option value="aguardando">Aguardando validação</option><option value="validadas">Validadas</option></select>
             <button class="btn" id="btn-refresh">Atualizar</button>
-            <select id="exp-scope" aria-label="Obras exportadas"><option value="enviado">Só enviadas</option><option value="todas">Todas</option></select>
+            <select id="exp-scope" aria-label="Obras exportadas"><option value="enviado">Enviadas e validadas</option><option value="todas">Todas</option></select>
             <button class="btn" id="btn-exp-res">Excel resumo</button>
             <button class="btn primary" id="btn-exp-mod">Excel no layout do modelo</button>
           </div>
@@ -559,6 +581,19 @@ function applyRules(cur){
     l.lockMsg=!l.area?"Sem regra definida na Bases - Gerais":(l.canEdit?"":"Preenchido pela área "+l.area);
     if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>({id:"p"+i,n}))}
   });
+  absorverHistSub(cur);
+}
+/* subitens com código (aba 5): o histórico do insumo do subitem (ex.: INSS I17037) aparece na linha do subitem
+   e soma no agrupador, em vez de ficar numa linha separada (mesmo serviço; qualquer produto da obra) */
+function absorverHistSub(cur){
+  if(cur.lines._abs||!S.subR||!S.subR.c)return;cur.lines._abs=true;const t=cur.info.tipo||"";
+  const leaves=cur.lines.filter(l=>l.kind==="leaf");
+  leaves.forEach(l=>{const k=`${t}|${l.P}|${l.S}|${l.I}`;const cods=S.subR.c[k],nms=(S.subR.r||{})[k];if(!cods||!nms)return;
+    l.subH={};const own=l.h.slice();
+    cods.forEach((c,j)=>{if(!c)return;const nm=nms[j];if(c===l.I){l.subH[nm]=own;return}
+      leaves.forEach(o=>{if(o===l||o.I!==c||o.S!==l.S||o.absorvido||o.subH)return;if(!sum(o.h.map(Math.abs)))return;
+        const a=l.subH[nm]||(l.subH[nm]=new Array(o.h.length).fill(0));o.h.forEach((v,i)=>{a[i]+=v;l.h[i]+=v});o.h=o.h.map(()=>0);o.absorvido=l.key})});
+  });
 }
 function lineYearVals(doc,l,y){return (doc.v[l.key]&&doc.v[l.key][y])||null}
 function lineTotal(doc,l,y){const a=lineYearVals(doc,l,y);if(!a)return 0;const t=sum(a);return isQty(l)?t*((doc.pr[l.key]&&doc.pr[l.key][y])||0):t}
@@ -596,12 +631,21 @@ async function loadMine(){
   const q=await S.db.collection("gerentes/"+S.me+"/orc").get();
   S.myOrc={};q.docs.forEach(d=>S.myOrc[d.id]=d.data());
   const sel=$("#sel-obra");
-  sel.innerHTML=obras.sort((a,b)=>String(a[1].obra||a[0]).localeCompare(String(b[1].obra||b[0]))||String(a[1].emp||"").localeCompare(String(b[1].emp||""),undefined,{numeric:true})).map(([o,i])=>{const st=(S.myOrc[o]&&S.myOrc[o].status)||"não iniciado";return `<option value="${esc(o)}">${esc(obraLbl(o,i))} (${esc(st)})</option>`}).join("");
+  S.selAll=obras.sort((a,b)=>String(a[1].obra||a[0]).localeCompare(String(b[1].obra||b[0]))||String(a[1].emp||"").localeCompare(String(b[1].emp||""),undefined,{numeric:true})).map(([o,i])=>{const st=(S.myOrc[o]&&S.myOrc[o].status)||"não iniciado";return `<option value="${esc(o)}">${esc(obraLbl(o,i))} (${esc(st)})</option>`}).join("");
+  sel.innerHTML=S.selAll;S.selIds=obras.map(x=>x[0]);$("#busca-obra").value="";$("#busca-obra-n").textContent=obras.length>1?obras.length+" obras":"";$("#busca-obra").hidden=obras.length<2;
   let last=null;try{last=localStorage.getItem("orc.last")}catch(e){}
   if(last&&S.perfil.obras[last])sel.value=last;
   await openObra(S.me,sel.value,false);
 }
-$("#sel-obra").addEventListener("change",async e=>{if(S.cur&&S.cur.uid!==S.me)return;await flush();try{localStorage.setItem("orc.last",e.target.value)}catch(_){}await openObra(S.me,e.target.value,false)});
+/* busca de obra: filtra a lista ao digitar; Enter abre a primeira encontrada */
+const semAc=t=>String(t).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+$("#busca-obra").addEventListener("input",()=>{if(!S.selAll||(S.cur&&S.cur.uid!==S.me))return;const q=semAc($("#busca-obra").value.trim());const sel=$("#sel-obra");const atual=sel.value;
+  const tmp=document.createElement("select");tmp.innerHTML=S.selAll;const ok=[...tmp.options].filter(o=>!q||q.split(/\s+/).every(w=>semAc(o.textContent+" "+o.value).includes(w)));
+  sel.innerHTML=ok.length?ok.map(o=>o.outerHTML).join(""):`<option value="">Nenhuma obra encontrada</option>`;
+  if(ok.some(o=>o.value===atual))sel.value=atual;else if(ok.length){sel.insertAdjacentHTML("afterbegin",`<option value="" selected>— ${ok.length} encontrada(s): escolha —</option>`)}
+  $("#busca-obra-n").textContent=q?`${ok.length} de ${S.selIds.length} obras`:`${S.selIds.length} obras`});
+$("#busca-obra").addEventListener("keydown",async e=>{if(e.key!=="Enter")return;e.preventDefault();const sel=$("#sel-obra");const o=[...sel.options].find(x=>x.value);if(!o)return;sel.value=o.value;sel.dispatchEvent(new Event("change"))});
+$("#sel-obra").addEventListener("change",async e=>{if(!e.target.value)return;if(S.cur&&S.cur.uid!==S.me)return;await flush();try{localStorage.setItem("orc.last",e.target.value)}catch(_){}await openObra(S.me,e.target.value,false)});
 
 async function temItensMeus(o,info){
   const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();
@@ -620,10 +664,10 @@ async function openObra(uid,o,fromAdm){
   const [hs,ds]=await Promise.all([S.db.doc(histPath).get(),S.db.doc(`gerentes/${uid}/orc/${o}`).get()]);
   const hist=hs.exists?hs.data():null;
   const raw=ds.exists?ds.data():{};
-  const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,exists:ds.exists};
+  const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,exists:ds.exists};
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
   const lines=buildLines(info.tipo,hist,doc.ext);
-  const editable= uid===S.me && doc.status!=="enviado";
+  const editable= uid===S.me && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,prods:produtosDaObra(hist,lines)};applyRules(S.cur);
   S.collapsed=new Set();S.year="2027";
   document.querySelectorAll("#years button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.y===S.year));
@@ -640,11 +684,14 @@ async function openObra(uid,o,fromAdm){
 function renderStatus(){
   $("#only-mine").parentElement.hidden=restrito();
   const d=S.cur.doc, st=d.status;
-  const lab={rascunho:"Rascunho",enviado:"Enviado",reaberto:"Reaberto pela Controladoria"}[st]||st;
-  $("#obra-status").innerHTML=`<span class="pill ${st}">${lab}</span> <span class="muted" style="font-size:12px">${d.enviadoEm&&st==="enviado"?"enviado em "+fmtDate(d.enviadoEm):d.atualizadoEm?"salvo em "+fmtDate(d.atualizadoEm):""}</span>`;
+  const lab={rascunho:"Rascunho",enviado:"Enviado · aguardando validação",validado:"Validado pela Controladoria",reaberto:"Devolvido pela Controladoria"}[st]||st;
+  const quando=st==="validado"&&d.validadoEm?"validado em "+fmtDate(d.validadoEm)+(d.validadoPor?" por "+d.validadoPor:""):d.enviadoEm&&st==="enviado"?"enviado em "+fmtDate(d.enviadoEm):d.atualizadoEm?"salvo em "+fmtDate(d.atualizadoEm):"";
+  const mot=st==="reaberto"&&d.devolucao&&d.devolucao.motivo?` <span style="font-size:12px;color:var(--bad)"><b>Motivo da devolução:</b> ${esc(d.devolucao.motivo)}</span>`:"";
+  $("#obra-status").innerHTML=`<span class="pill ${st}">${lab}</span> <span class="muted" style="font-size:12px">${esc(quando)}</span>${mot}`;
   const mine=S.cur.uid===S.me;
-  $("#send-box").hidden=!mine||st==="enviado";
-  $("#btn-reopen").hidden=!(S.owner&&st==="enviado");
+  $("#send-box").hidden=!mine||travado(st);
+  $("#btn-reopen").hidden=!(S.owner&&travado(st));
+  $("#btn-validar").hidden=!(S.owner&&st==="enviado");
   $("#btn-add").hidden=!S.cur.editable;$("#btn-savever").hidden=!S.cur.editable;
 }
 
@@ -657,7 +704,7 @@ const oculto=l=>{const oc=S.regras&&S.regras.ocSet;return !!(oc&&oc.has(`${(S.cu
 const prodOk=l=>!(S.cur&&S.cur.prods&&l.P&&l.key!=="P:extra"&&!String(l.key).startsWith("GX:")&&!l.extra&&!S.cur.prods.has(l.P));
 function visible(l){
   if(!prodOk(l))return false;
-  if(l.kind==="leaf"&&oculto(l)&&!temValor(S.cur.doc,l))return false;
+  if(l.kind==="leaf"&&(oculto(l)||(l.absorvido&&!sum(l.h)))&&!temValor(S.cur.doc,l))return false;
   if(l.kind==="leaf"){
     if(S.onlyUsed&&!sum(l.h)&&!YEARS.some(y=>lineYearVals(S.cur.doc,l,y)&&sum(lineYearVals(S.cur.doc,l,y))))return false;
     if(S.q){const q=S.q;if(!(l.desc+" "+l.S+" "+l.I+" "+l.item).toLowerCase().includes(q))return false}
@@ -681,17 +728,27 @@ function presetsFor(l,tipo){
 const flagOf=(k,y)=>(S.cur.doc.flag&&S.cur.doc.flag[k]&&S.cur.doc.flag[k][y])||null;
 function setFlag(k,y,f){const d=S.cur.doc;if(!d.flag)d.flag={};if(!d.flag[k])d.flag[k]={};if(f)d.flag[k][y]=f;else delete d.flag[k][y];if(!Object.keys(d.flag[k]).length)delete d.flag[k]}
 function flagSel(k,y,idx,sid,allowPct){const f=flagOf(k,y);const m=f?f.m:"";
-  return `<select class="flag" data-fk="${idx}" ${sid!==undefined?`data-fsid="${esc(sid)}"`:""} aria-label="Forma de preencher" title="Como preencher os 12 meses de ${y}"><option value="" ${!m?"selected":""}>Manual</option><option value="rep" ${m==="rep"?"selected":""}>Repetir em todos os meses</option><option value="pct" ${m==="pct"?"selected":""} ${allowPct?"":"disabled"}>${y==="2027"?"2026 mesmo mês":"Ano ant. mesmo mês"} + %</option></select>${m==="pct"?`<input class="fpct" data-fpk="${idx}" ${sid!==undefined?`data-fsid="${esc(sid)}"`:""} value="${nf2.format(f.p)}" inputmode="decimal" aria-label="Percentual de incidência" title="% sobre o mesmo mês do ano anterior">%`:""}`}
+  return `<select class="flag" data-fk="${idx}" ${sid!==undefined?`data-fsid="${esc(sid)}"`:""} aria-label="Forma de preencher" title="Como preencher os 12 meses de ${y}"><option value="" ${!m?"selected":""}>Manual</option><option value="rep" ${m==="rep"?"selected":""}>Repetir em todos os meses</option><option value="pct" ${m==="pct"?"selected":""} ${allowPct?"":"disabled"}>${y==="2027"?"2026 mesmo mês":"Ano ant. mesmo mês"} + %</option><option value="dis" ${m==="dis"?"selected":""} ${allowPct?"":"disabled"} title="Salários e benefícios: repete o último valor pago e aplica o reajuste a partir do mês escolhido">${y==="2027"?"Set/26 + reajuste":"Dez/"+String(+y-1).slice(2)+" + reajuste"}</option></select>${m==="pct"?`<input class="fpct" data-fpk="${idx}" ${sid!==undefined?`data-fsid="${esc(sid)}"`:""} value="${nf2.format(f.p)}" inputmode="decimal" aria-label="Percentual de incidência" title="% sobre o mesmo mês do ano anterior">%`:""}${m==="dis"?`<input class="fpct" data-fpk="${idx}" ${sid!==undefined?`data-fsid="${esc(sid)}"`:""} value="${nf2.format(f.p)}" inputmode="decimal" aria-label="Percentual de reajuste" title="% de reajuste (dissídio / benefício)">% em <select class="fmes" data-fmk="${idx}" ${sid!==undefined?`data-fsid="${esc(sid)}"`:""} aria-label="Mês do reajuste" title="Mês em que o valor reajustado começa a ser pago">${MES.map((n,i)=>`<option value="${i}" ${i===(f.mes==null?8:+f.mes)?"selected":""}>${n}</option>`).join("")}</select>`:""}`}
+const flagAuto=f=>!!(f&&(f.m==="pct"||f.m==="dis"));
+/* base do reajuste: 2027 = último valor pago (set/26; se zero, o último mês de 2026 com valor); 2028+ = dezembro do ano anterior */
+function disBase(l,k,y,isSub){
+  if(y!=="2027"){const a=S.cur.doc.v[k]&&S.cur.doc.v[k][String(+y-1)];if(!a)return 0;for(let m=11;m>=0;m--)if(+a[m])return +a[m];return 0}
+  let hb=l.h;if(isSub){const sid=k.slice(l.key.length+1);const sb=subsOf(l).find(x=>x.id===sid);hb=sb&&l.subH&&l.subH[sb.n];if(!hb)return null}else if(isQty(l))return null;
+  for(let i=20;i>=12;i--)if(Math.abs(hb[i]||0)>0.004)return hb[i];return 0}
 function pctBase(l,k,y,isSub){
   if(y!=="2027"){const py=String(+y-1);const a=S.cur.doc.v[k]&&S.cur.doc.v[k][py];return a?a.map(v=>+v||0):new Array(12).fill(0)}
-  if(isSub||isQty(l))return null;
-  return MES.map((_,m)=>m<9?(l.h[12+m]||0):(l.h[m]||0));
+  let hb=l.h;if(isSub){const sid=k.slice(l.key.length+1);const sb=subsOf(l).find(x=>x.id===sid);hb=sb&&l.subH&&l.subH[sb.n];if(!hb)return null}
+  else if(isQty(l))return null;
+  return MES.map((_,m)=>m<9?(hb[12+m]||0):(hb[m]||0));
 }
 function recalcFlags(){
   const d=S.cur.doc;if(!d.flag||!Object.keys(d.flag).length)return;
   S.cur.lines.forEach(l=>{if(l.kind!=="leaf")return;
     const subs=subsOf(l);const keys=subs.length?subs.map(sb=>[subKey(l,sb),true]):[[l.key,false]];
-    YEARS.forEach(y=>{keys.forEach(([k,isSub])=>{const f=flagOf(k,y);if(!f||f.m!=="pct")return;const b=pctBase(l,k,y,isSub);if(!b)return;
+    YEARS.forEach(y=>{keys.forEach(([k,isSub])=>{const f=flagOf(k,y);
+      if(f&&f.m==="dis"){const b0=disBase(l,k,y,isSub);if(b0==null)return;const mes=f.mes==null?8:+f.mes;const fx=1+(+f.p||0)/100;
+        const r=MES.map((_,m)=>Math.round((m<mes?b0:b0*fx)*100)/100);if(!d.v[k])d.v[k]={};if(sum(r.map(Math.abs)))d.v[k][y]=r;else delete d.v[k][y];if(!Object.keys(d.v[k]).length)delete d.v[k];return}
+      if(!f||f.m!=="pct")return;const b=pctBase(l,k,y,isSub);if(!b)return;
       const r=b.map(v=>Math.round(v*(1+(+f.p||0)/100)*100)/100);if(!d.v[k])d.v[k]={};if(sum(r.map(Math.abs)))d.v[k][y]=r;else delete d.v[k][y];if(!Object.keys(d.v[k]).length)delete d.v[k];
       if(isQty(l)&&!isSub&&y!=="2027"){const py=String(+y-1);const pp=d.pr[l.key]&&d.pr[l.key][py];/* quantidade igual ao ano anterior, preço + % */
         if(!d.v[k])d.v[k]={};d.v[k][y]=b.slice();if(pp){if(!d.pr[l.key])d.pr[l.key]={};d.pr[l.key][y]=Math.round(pp*(1+(+f.p||0)/100)*100)/100}}
@@ -702,15 +759,17 @@ const regraKey=l=>`${(S.cur&&S.cur.info&&S.cur.info.tipo)||""}|${l.P}|${l.S}|${l
 function orientacao(l){const q=S.subR&&S.subR.q;return q?(q[regraKey(l)]||""):""}
 function temValor(doc,l){return YEARS.some(y=>{const a=lineYearVals(doc,l,y);if(a&&a.some(v=>+v))return true;return subsOf(l).some(sb=>((doc.v[subKey(l,sb)]||{})[y]||[]).some(v=>+v))})}
 function precisaObs(l){return l.kind==="leaf"&&l.canEdit&&temValor(S.cur.doc,l)}
-function faltandoObs(){const d=S.cur.doc;return S.cur.lines.filter(l=>l.kind==="leaf"&&prodOk(l)&&(!restrito()||l.mine)&&precisaObs(l)&&!((d.lobs||{})[l.key]||"").trim())}
-function marcaObs(idx){const el=$("#lo-"+idx);if(!el)return;const l=S.cur.lines[idx];el.classList.toggle("need",precisaObs(l)&&!((S.cur.doc.lobs||{})[l.key]||"").trim())}
+const OBS_MIN=10;
+const obsCurta=(d,l)=>((d.lobs||{})[l.key]||"").trim().length<OBS_MIN;
+function faltandoObs(){const d=S.cur.doc;return S.cur.lines.filter(l=>l.kind==="leaf"&&prodOk(l)&&(!restrito()||l.mine)&&precisaObs(l)&&obsCurta(d,l))}
+function marcaObs(idx){const el=$("#lo-"+idx);if(!el)return;const l=S.cur.lines[idx];const tem=temValor(S.cur.doc,l)||!!((S.cur.doc.lobs||{})[l.key]||"");el.hidden=!tem;el.classList.toggle("need",precisaObs(l)&&obsCurta(S.cur.doc,l))}
 function renderGrid(){
   const {lines,doc,editable}=S.cur, y=S.year;
   $("#btn-copy-prev").hidden=!(editable&&y!=="2027");
   $("#btn-copy-prev").textContent="Copiar valores de "+(+y-1)+" para "+y;
   const REF=`<td class="num ref fz fz1" data-r="h25"></td><td class="num ref fz fz2" data-r="m25"></td><td class="num ref fz fz3" data-r="n25"></td><td class="num ref fz fz4" data-r="h26"></td><td class="num ref fz fz5" data-r="m26"></td><td class="num ref fz fz6" data-r="n26"></td>`;
   let h=`<thead><tr class="band"><th class="c-desc"></th><th class="ref fz fzb1" colspan="3">2025 · jan–dez</th><th class="ref fz fzb2" colspan="3">2026 · jan–set</th><th></th><th></th><th colspan="12">${y} · valores mensais (R$)</th><th colspan="2"></th><th class="c-act"></th></tr>
-  <tr class="cols"><th class="c-desc">Item da base modelo</th><th class="ref fz fz1">Total</th><th class="ref fz fz2" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz3" title="Meses com gasto (de 12)">Meses</th><th class="ref fz fz4">Total</th><th class="ref fz fz5" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz6" title="Meses com gasto (de 9)">Meses</th><th class="c-flag" title="Como preencher os 12 meses deste ano">Como preencher</th><th title="Preço unitário do ano para itens medidos em UN, M ou M2">Preço un.</th>${MES.map(m=>`<th>${m}</th>`).join("")}<th>Total ${y}</th><th>vs 2026</th><th style="text-align:left" title="A observação é obrigatória quando o item tiver valor em qualquer ano">Observação * e ações</th></tr></thead><tbody>`;
+  <tr class="cols"><th class="c-desc">Item da base modelo</th><th class="ref fz fz1">Total</th><th class="ref fz fz2" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz3" title="Meses com gasto (de 12)">Mes.</th><th class="ref fz fz4">Total</th><th class="ref fz fz5" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz6" title="Meses com gasto (de 9)">Mes.</th><th class="c-flag" title="Como preencher os 12 meses deste ano">Como preencher</th><th title="Preço unitário do ano para itens medidos em UN, M ou M2">Preço un.</th>${MES.map(m=>`<th>${m}</th>`).join("")}<th>Total ${y}</th><th>vs 2026</th><th style="text-align:left" title="Aparece quando o insumo tem valor. Obrigatório, com no mínimo 10 caracteres, para enviar">O que está considerando neste insumo *</th></tr></thead><tbody>`;
   lines.forEach((l,idx)=>{
     if(!visible(l))return;
     const pad=l.kind==="prod"?8:8+Math.max(0,(l.depth||1)-1)*14;
@@ -723,7 +782,7 @@ function renderGrid(){
     const a=lineYearVals(doc,l,y)||[], q=isQty(l), pr=(doc.pr[l.key]&&doc.pr[l.key][y])||"";
     const subs=subsOf(l), hs=subs.length>0;
     const ce=l.canEdit;const lf=flagOf(l.key,y);
-    const dis=ce&&!hs&&!(lf&&lf.m==="pct")?"":"disabled";
+    const dis=ce&&!hs&&!flagAuto(lf)?"":"disabled";
     let acts="";
     if(ce){
       if(hs) acts=`<button data-act="sadd" data-i="${idx}" title="Inclui mais uma linha de detalhe">+ Subitem</button>${l.obrig?"":`<button data-act="sdel" data-i="${idx}" title="Remove os subitens e mantém o total no item">Desfazer detalhe</button>`}`;
@@ -734,11 +793,12 @@ function renderGrid(){
     <td class="c-flag">${ce&&!hs?flagSel(l.key,y,idx,undefined,y!=="2027"||!q):hs?`<span class="muted" style="font-size:11px">nos subitens ↓</span>`:""}</td>
     <td class="cell">${q?`<input id="pr-${idx}" data-pr="${idx}" value="${f2(+pr)}" ${l.canEdit?"":"disabled"} aria-label="Preço unitário ${esc(l.desc)}" inputmode="decimal">`:`<span class="empty-cell" style="padding:0 8px">—</span>`}</td>
     ${MES.map((_,m)=>`<td class="cell ${q?"qtd":""}"><input id="c-${idx}-${m}" data-k="${idx}" data-m="${m}" value="${f2(+a[m]||0)}" class="${a[m]?"has":""}" ${dis} inputmode="decimal" aria-label="${esc(l.desc)} ${MES[m]} ${y}"></td>`).join("")}
-    <td class="num tot" data-r="t"></td><td class="num" data-r="d"></td><td class="acts"><input class="lobs${precisaObs(l)&&!((doc.lobs||{})[l.key]||"").trim()?" need":""}" id="lo-${idx}" data-lobs="${idx}" value="${esc((doc.lobs||{})[l.key]||"")}" ${ce?"":"disabled"} placeholder="${ce?"Obrigatória se tiver valor":""}" aria-label="Observação ${esc(l.desc)}" title="${esc((doc.lobs||{})[l.key]||"")}">${acts}</td></tr>`;
+    <td class="num tot" data-r="t"></td><td class="num" data-r="d"></td><td class="acts"><input class="lobs${precisaObs(l)&&obsCurta(doc,l)?" need":""}" id="lo-${idx}" data-lobs="${idx}" value="${esc((doc.lobs||{})[l.key]||"")}" ${ce?"":"disabled"} ${temValor(doc,l)||(doc.lobs||{})[l.key]?"":"hidden"} aria-label="O que está considerando neste insumo: ${esc(l.desc)}" title="${esc((doc.lobs||{})[l.key]||"O que está considerando neste insumo? (mínimo "+OBS_MIN+" caracteres)")}">${acts}</td></tr>`;
     subs.forEach(sb=>{
-      const sa=(doc.v[subKey(l,sb)]&&doc.v[subKey(l,sb)][y])||[];const sf=flagOf(subKey(l,sb),y);const sd=l.canEdit&&!(sf&&sf.m==="pct")?"":"disabled";
+      const sa=(doc.v[subKey(l,sb)]&&doc.v[subKey(l,sb)][y])||[];const sf=flagOf(subKey(l,sb),y);const sd=l.canEdit&&!flagAuto(sf)?"":"disabled";
       h+=`<tr class="sub" data-i="${idx}" data-s="${esc(sb.id)}"><td class="c-desc" style="padding-left:${pad+18}px"><span class="sub-mark">↳</span><input class="sname" id="sn-${idx}-${esc(sb.id)}" data-sn="${idx}" data-sid="${esc(sb.id)}" value="${esc(sb.n)}" ${sd} aria-label="Nome do subitem"></td>
-      ${[1,2,3,4,5,6].map(i=>`<td class="ref fz fz${i}"></td>`).join("")}<td class="c-flag">${l.canEdit?flagSel(subKey(l,sb),y,idx,sb.id,y!=="2027"):""}</td><td></td>
+      ${(()=>{const hh=l.subH&&l.subH[sb.n];if(!hh)return [1,2,3,4,5,6].map(i=>`<td class="ref fz fz${i}"></td>`).join("");const r=histStats(hh);
+        return `<td class="num ref fz fz1">${f0(r.h25)}</td><td class="num ref fz fz2">${f0(r.m25)}</td><td class="num ref fz fz3">${r.n25||"–"}</td><td class="num ref fz fz4">${f0(r.h26)}</td><td class="num ref fz fz5">${f0(r.m26)}</td><td class="num ref fz fz6">${r.n26||"–"}</td>`})()}<td class="c-flag">${l.canEdit?flagSel(subKey(l,sb),y,idx,sb.id,y!=="2027"||!!(l.subH&&l.subH[sb.n])):""}</td><td></td>
       ${MES.map((_,m)=>`<td class="cell"><input id="s-${idx}-${esc(sb.id)}-${m}" data-sk="${idx}" data-sid="${esc(sb.id)}" data-m="${m}" value="${f2(+sa[m]||0)}" class="${sa[m]?"has":""}" ${sd} inputmode="decimal" aria-label="${esc(sb.n)} ${MES[m]} ${y}"></td>`).join("")}
       <td class="num tot" data-st="t"></td><td></td><td class="acts">${l.canEdit?`<button data-sact="rep" data-i="${idx}" data-sid="${esc(sb.id)}">Repetir</button><button data-sact="rm" data-i="${idx}" data-sid="${esc(sb.id)}" title="Remove este subitem">Remover</button>`:""}</td></tr>`;
     });
@@ -789,15 +849,19 @@ function syncLeaf(l){const d=S.cur.doc;const subs=subsOf(l);if(!subs.length)retu
   if(d.v[l.key]&&!Object.keys(d.v[l.key]).length)delete d.v[l.key];}
 function refreshRowInputs(idx){const l=S.cur.lines[idx],a=lineYearVals(S.cur.doc,l,S.year)||[];for(let m=0;m<12;m++){const el=document.getElementById(`c-${idx}-${m}`);if(el){el.value=f2(+a[m]||0);el.classList.toggle("has",!!a[m])}}}
 function refreshSubInputs(idx,sid){const l=S.cur.lines[idx];const k=l.key+"#"+sid;const a=(S.cur.doc.v[k]&&S.cur.doc.v[k][S.year])||[];for(let m=0;m<12;m++){const el=document.getElementById(`s-${idx}-${sid}-${m}`);if(el){el.value=f2(+a[m]||0);el.classList.toggle("has",!!a[m])}}}
+$("#grid").addEventListener("input",e=>{const el=e.target;if(el.dataset&&el.dataset.lobs!==undefined){const l=S.cur.lines[+el.dataset.lobs];el.classList.toggle("need",precisaObs(l)&&el.value.trim().length<OBS_MIN)}});
 $("#grid").addEventListener("change",e=>{
   const el=e.target;if(!S.cur.editable)return;
   if(el.dataset.fk!==undefined){const idx=+el.dataset.fk,l=S.cur.lines[idx],sid=el.dataset.fsid,k=sid!==undefined?l.key+"#"+sid:l.key;const m=el.value;
     if(!m)setFlag(k,S.year,null);
     else if(m==="rep"){setFlag(k,S.year,{m:"rep"});const a=(S.cur.doc.v[k]&&S.cur.doc.v[k][S.year])||[];const v=a.find(x=>x);if(v)for(let i=0;i<12;i++)setValKey(k,i,v);if(sid!==undefined)syncLeaf(l)}
+    else if(m==="dis"){const o=flagOf(k,S.year)||{};setFlag(k,S.year,{m:"dis",p:o.p!=null?o.p:5,mes:o.mes!=null?o.mes:8})}
     else setFlag(k,S.year,{m:"pct",p:(flagOf(k,S.year)||{}).p||5});
     changed();renderGrid();return}
+  if(el.dataset.fmk!==undefined){const idx=+el.dataset.fmk,l=S.cur.lines[idx],sid=el.dataset.fsid,k=sid!==undefined?l.key+"#"+sid:l.key;const o=flagOf(k,S.year)||{m:"dis",p:5};
+    setFlag(k,S.year,{...o,mes:+el.value});changed();renderGrid();return}
   if(el.dataset.fpk!==undefined){const idx=+el.dataset.fpk,l=S.cur.lines[idx],sid=el.dataset.fsid,k=sid!==undefined?l.key+"#"+sid:l.key;const n=parseNum(el.value.replace("%",""));if(isNaN(n)){toast("Percentual inválido");return}
-    setFlag(k,S.year,{m:"pct",p:n});changed();renderGrid();return}
+    setFlag(k,S.year,{...(flagOf(k,S.year)||{m:"pct"}),p:n});changed();renderGrid();return}
   if(el.dataset.k!==undefined){const n=parseNum(el.value);if(isNaN(n)){toast("Valor inválido. Use números, ex.: 12.500,00");el.value="";return}
     const l=S.cur.lines[+el.dataset.k];const f=flagOf(l.key,S.year);
     if(f&&f.m==="rep"){for(let i=0;i<12;i++)setVal(l,i,n);refreshRowInputs(+el.dataset.k)}else setVal(l,+el.dataset.m,n);
@@ -847,8 +911,8 @@ $("#grid").addEventListener("click",e=>{
     if(b.dataset.act==="clr"){for(let m=0;m<12;m++)setVal(l,m,0)}
     refreshRowInputs(idx);changed();}
 });
-function refreshAllInputs(){document.querySelectorAll("#grid tbody tr").forEach(tr=>{const idx=+tr.dataset.i;const l=S.cur.lines[idx];if(l.kind!=="leaf")return;if(tr.dataset.s!==undefined)refreshSubInputs(idx,tr.dataset.s);else refreshRowInputs(idx)})}
-function changed(){if(S.cur.doc.flag&&Object.values(S.cur.doc.flag).some(o=>Object.values(o).some(f=>f.m==="pct"))){recalcFlags();refreshAllInputs()}updateTotals();if(!S.cur.editable)return;S.cur.dirty=true;$("#save-state").className="save-state";$("#save-state").textContent="Alterações não salvas…";clearTimeout(changed.t);changed.t=setTimeout(save,1200)}
+function refreshAllInputs(){document.querySelectorAll("#grid tbody tr").forEach(tr=>{const idx=+tr.dataset.i;const l=S.cur.lines[idx];if(l.kind!=="leaf")return;if(tr.dataset.s!==undefined)refreshSubInputs(idx,tr.dataset.s);else{refreshRowInputs(idx);marcaObs(idx)}})}
+function changed(){if(S.cur.doc.flag&&Object.values(S.cur.doc.flag).some(o=>Object.values(o).some(f=>flagAuto(f)))){recalcFlags();refreshAllInputs()}updateTotals();if(!S.cur.editable)return;S.cur.dirty=true;$("#save-state").className="save-state";$("#save-state").textContent="Alterações não salvas…";clearTimeout(changed.t);changed.t=setTimeout(save,1200)}
 $("#obs").addEventListener("input",()=>{S.cur.doc.obs=$("#obs").value;changed()});
 
 /* salvar */
@@ -857,7 +921,7 @@ function payload(){
   const {doc,lines}=S.cur;const ext={};
   lines.forEach(l=>{if(l.kind==="leaf"&&l.extra&&(doc.v[l.key]||doc.pr[l.key]||doc.ext[l.key]))ext[l.key]={d:l.desc,un:l.un,item:l.item||""}});
   doc.ext=ext;
-  return {o:doc.o,tipo:doc.tipo,status:doc.status,v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},obs:doc.obs,lobs:doc.lobs||{},totais:docTotals(doc,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null};
+  return {o:doc.o,tipo:doc.tipo,status:doc.status,v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},obs:doc.obs,lobs:doc.lobs||{},totais:docTotals(doc,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null};
 }
 async function save(){
   if(!S.cur||!S.cur.editable||!S.cur.dirty)return;
@@ -883,7 +947,7 @@ async function exportarMeuExcel(){
   await flush().catch(()=>{});toast("Montando o Excel…");
   const M=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
   const aoa=[["Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição","Subitem","Ano",...M,"Total","Observação"]];
-  const ids=[...document.querySelectorAll("#sel-obra option")].map(o=>o.value).filter(Boolean);
+  const ids=(S.selIds||[...document.querySelectorAll("#sel-obra option")].map(o=>o.value)).filter(Boolean);
   for(const o of ids){const info=S.perfil.obras[o];if(!info)continue;
     const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();const hd=hs.exists?hs.data():null;
     const ds=await S.db.doc(`gerentes/${S.me}/orc/${o}`).get();const raw=ds.exists?ds.data():{};
@@ -947,18 +1011,36 @@ function sendFlow(){
   const box=$("#send-box");
   const falta=faltandoObs();
   if(falta.length){renderGrid();const l=falta[0];const idx=S.cur.lines.indexOf(l);const el=$("#lo-"+idx);if(el){el.scrollIntoView({block:"center",inline:"nearest"});el.focus()}
-    toast(`Preencha a observação de ${falta.length} item(ns) com valor antes de enviar (campos em vermelho na coluna Observação).`);return}const t=docTotals(S.cur.doc,S.cur.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));
+    toast(`Explique o que está considerando em ${falta.length} insumo(s) com valor (mínimo ${OBS_MIN} caracteres; campos em vermelho na coluna “O que está considerando”).`);return}const t=docTotals(S.cur.doc,S.cur.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));
   box.innerHTML=`<span class="confirm"><span class="muted">Enviar ${YEARS.map(y=>y+": R$ "+f0(t[y])).join(" · ")}? Depois de enviado, só a Controladoria reabre.</span><button class="btn primary" id="send-ok">Confirmar envio</button><button class="btn" id="send-no">Cancelar</button></span>`;
   $("#send-no").onclick=restoreSend;
-  $("#send-ok").onclick=async()=>{$("#send-ok").disabled=true;await flush();const prev=S.cur.doc.status;S.cur.doc.status="enviado";S.cur.doc.enviadoEm=nowISO();
+  $("#send-ok").onclick=async()=>{$("#send-ok").disabled=true;await flush();const prev=S.cur.doc.status;S.cur.doc.status="enviado";S.cur.doc.enviadoEm=nowISO();S.cur.doc.validadoEm=null;S.cur.doc.validadoPor=null;
     try{const pl=payload();await S.db.doc(`gerentes/${S.cur.uid}/orc/${S.cur.o}`).set(pl);await saveVersion(S.cur.uid,S.cur.o,pl,"Envio").catch(()=>{});S.cur.dirty=false;restoreSend();toast("Orçamento enviado à Controladoria");if(S.offline)offlineAfterSend();else await loadMine();}
     catch(err){S.cur.doc.status=prev;S.cur.doc.enviadoEm=null;restoreSend();toast("Não foi possível enviar. Verifique sua conexão e tente de novo.")}};
 }
 function restoreSend(){$("#send-box").innerHTML=`<button class="btn primary" id="btn-send">Enviar para a Controladoria</button>`;renderStatus()}
 
-$("#btn-reopen").addEventListener("click",async()=>{
-  const c=S.cur;try{await saveVersion(c.uid,c.o,payloadFrom(c),"Antes de reabrir").catch(()=>{});const p={...payloadFrom(c),status:"reaberto"};await S.db.doc(`gerentes/${c.uid}/orc/${c.o}`).set(p);c.doc.status="reaberto";renderStatus();toast("Obra reaberta para o gerente")}
-  catch(e){toast("Não foi possível reabrir.")}
+function travado(st){return st==="enviado"||st==="validado"}
+async function quemSou(){try{const m=await S.user.me();return (m&&m.name)||"Controladoria"}catch(e){return "Controladoria"}}
+$("#btn-validar").addEventListener("click",async()=>{const b=$("#btn-validar");
+  if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar validação (trava a obra)";setTimeout(()=>{delete b.dataset.arm;b.textContent="Validar e travar"},6000);return}
+  delete b.dataset.arm;b.textContent="Validar e travar";
+  const c=S.cur;try{const por=await quemSou();const p={...payloadFrom(c),status:"validado",validadoEm:nowISO(),validadoPor:por};
+    await S.db.doc(`gerentes/${c.uid}/orc/${c.o}`).set(p);await saveVersion(c.uid,c.o,p,"Validado").catch(()=>{});
+    Object.assign(c.doc,{status:"validado",validadoEm:p.validadoEm,validadoPor:por});renderStatus();toast("Orçamento validado e travado")}
+  catch(e){toast("Não foi possível validar.")}
+});
+$("#btn-reopen").addEventListener("click",()=>{
+  const box=$("#btn-reopen").parentElement;if($("#dev-box"))return;
+  const w=document.createElement("span");w.id="dev-box";w.className="confirm";
+  w.innerHTML=`<input id="dev-mot" placeholder="Motivo da devolução (o gerente vê)" style="min-width:260px;padding:6px 8px;border:1px solid var(--line);border-radius:6px"><button class="btn sm primary" id="dev-ok">Devolver</button><button class="btn sm" id="dev-no">Cancelar</button>`;
+  box.append(w);$("#dev-mot").focus();
+  $("#dev-no").onclick=()=>w.remove();
+  $("#dev-ok").onclick=async()=>{const mot=$("#dev-mot").value.trim();if(!mot){toast("Escreva o motivo da devolução.");return}
+    const c=S.cur;try{await saveVersion(c.uid,c.o,payloadFrom(c),"Antes de devolver").catch(()=>{});const por=await quemSou();
+      const dv={motivo:mot,em:nowISO(),por};const p={...payloadFrom(c),status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv};
+      await S.db.doc(`gerentes/${c.uid}/orc/${c.o}`).set(p);Object.assign(c.doc,{status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv});w.remove();renderStatus();toast("Obra devolvida ao gerente")}
+    catch(e){toast("Não foi possível devolver.")}};
 });
 /* histórico de versões */
 async function saveVersion(uid,o,pl,motivo){const id=new Date().toISOString().replace(/[:.]/g,"-");
@@ -986,14 +1068,52 @@ $("#ver-box").addEventListener("click",async e=>{const b=e.target.closest("butto
     Object.assign(c.doc,{v:JSON.parse(JSON.stringify(v.v||{})),pr:JSON.parse(JSON.stringify(v.pr||{})),sub:JSON.parse(JSON.stringify(v.sub||{})),flag:JSON.parse(JSON.stringify(v.flag||{})),ext:JSON.parse(JSON.stringify(v.ext||{})),obs:v.obs||"",lobs:JSON.parse(JSON.stringify(v.lobs||{}))});
     c.lines=buildLines(c.info.tipo,c.hist,c.doc.ext);applyRules(c);$("#obs").value=c.doc.obs;renderGrid();c.dirty=true;changed();toast("Versão restaurada. A versão anterior também foi guardada.");renderVersoes()}
 });
-function payloadFrom(c){const d=c.doc;return {o:d.o,tipo:d.tipo,status:d.status,v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},obs:d.obs,lobs:d.lobs||{},totais:docTotals(d,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm}}
+function payloadFrom(c){const d=c.doc;return {o:d.o,tipo:d.tipo,status:d.status,v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},obs:d.obs,lobs:d.lobs||{},totais:docTotals(d,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm,validadoEm:d.validadoEm||null,validadoPor:d.validadoPor||null,devolucao:d.devolucao||null}}
 
 /* ---------- Controladoria ---------- */
 function showTab(t){
-  $("#tab-fill").setAttribute("aria-selected",t==="fill");$("#tab-adm").setAttribute("aria-selected",t==="adm");
-  $("#v-fill").hidden=t!=="fill";$("#v-adm").hidden=t!=="adm";
+  $("#tab-fill").setAttribute("aria-selected",t==="fill");$("#tab-adm").setAttribute("aria-selected",t==="adm");$("#tab-sg").setAttribute("aria-selected",t==="sg");
+  $("#v-fill").hidden=t!=="fill";$("#v-adm").hidden=t!=="adm";$("#v-sg").hidden=t!=="sg";
   if(t==="adm")loadAdm();
+  if(t==="sg")loadSemGerente().catch(e=>{$("#sg-resumo").textContent="Não foi possível carregar: "+(e.message||e)});
 }
+$("#tab-sg").addEventListener("click",async()=>{await flush();showTab("sg")});
+/* ---------- obras sem gerente: catálogo × aba "3. Gerentes" (restrito/depara) × departamentos com itens (restrito/areasobra) ---------- */
+async function loadSemGerente(){
+  $("#sg-resumo").textContent="Carregando…";await loadCat();
+  const [dp,ao]=await Promise.all([S.db.doc("restrito/depara").get(),S.db.doc("restrito/areasobra").get()]);
+  const linhas=(dp.exists&&dp.data().linhas)||[];const AO=(ao.exists&&ao.data().m)||{};
+  const resp=new Map();linhas.forEach(l=>{const id=l[1],d=l[3];if(!id||!d)return;const m=resp.get(id)||new Map();const em=m.get(d)||new Set();em.add(String(l[0]||"").toLowerCase());m.set(d,em);resp.set(id,m)});
+  S.sg=S.cat.obras.map(c=>{const id=c[0];const deps=(AO[id]||[]).slice().sort();const r=resp.get(id)||new Map();
+    const com=[...r.keys()].sort();const falta=deps.filter(d=>!r.has(d));
+    return {id,emp:c[6],empNome:c[7]||"",obra:c[1],nome:c[2]||"",tipo:c[3]||"",h25:+c[4]||0,h26:+c[5]||0,deps,com,falta,emails:[...new Set([...r.values()].flatMap(x=>[...x]))]}});
+  S.sgEm=dp.exists?dp.data().atualizadoEm:null;renderSemGerente();
+}
+function sgFiltrados(){const modo=$("#sg-modo").value,q=($("#sg-q").value||"").trim().toLowerCase();
+  return (S.sg||[]).filter(r=>(modo==="todas"||(modo==="nenhum"?!r.com.length:r.falta.length>0))&&(!q||`${r.emp} ${r.empNome} ${r.obra} ${r.nome}`.toLowerCase().includes(q)))
+    .sort((a,b)=>String(a.emp).localeCompare(String(b.emp),undefined,{numeric:true})||String(a.obra).localeCompare(String(b.obra),undefined,{numeric:true}))}
+function renderSemGerente(){
+  const all=S.sg||[];const nenhum=all.filter(r=>!r.com.length),falta=all.filter(r=>r.falta.length);const rows=sgFiltrados();
+  const empN=new Set(nenhum.map(r=>r.emp)).size;
+  $("#sg-resumo").innerHTML=`<b>${nenhum.length}</b> de ${all.length} obras sem nenhum gerente (${empN} empresas) · <b>${falta.length}</b> obras com algum departamento sem responsável · aba 3 carregada em ${S.sgEm?fmtDate(S.sgEm):"—"}. Mostrando ${rows.length}.`;
+  const mx=500;
+  $("#tbl-sg").innerHTML=`<thead><tr><th>Empresa</th><th>Obra</th><th>Base modelo</th><th class="num">Histórico 2025</th><th class="num">Histórico 2026</th><th>Com responsável</th><th>Departamentos sem responsável</th></tr></thead><tbody>
+  ${rows.slice(0,mx).map(r=>`<tr><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(r.emp)}</span> ${esc(r.empNome)}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(r.obra)}</span> ${esc(r.nome)}</td><td class="muted">${esc(r.tipo||"—")}</td><td class="num">${f0(r.h25)}</td><td class="num">${f0(r.h26)}</td>
+  <td style="font-size:12px">${r.com.length?esc(r.com.join(", ")):'<span class="pill reaberto">Nenhum</span>'}</td><td style="font-size:12px">${r.falta.length?esc(r.falta.join(", ")):(r.deps.length?'<span class="muted">—</span>':'<span class="muted">sem itens no MODELO</span>')}</td></tr>`).join("")}
+  ${rows.length>mx?`<tr><td colspan="7" class="muted">Mostrando ${mx} de ${rows.length}. Use a busca ou baixe o Excel para ver todas.</td></tr>`:""}
+  ${!rows.length?`<tr><td colspan="7" class="muted">Nenhuma obra neste filtro.</td></tr>`:""}</tbody>`;
+}
+$("#sg-modo").addEventListener("change",renderSemGerente);$("#sg-q").addEventListener("input",renderSemGerente);
+$("#sg-xlsx").addEventListener("click",async()=>{if(!S.sg){toast("Abra a aba primeiro.");return}
+  const cab=["Empresa","Nome da empresa","Obra","Descrição da obra","Base modelo","Histórico 2025","Histórico jan–set 2026","Situação","Departamentos com responsável","Departamentos sem responsável","Departamentos com itens na obra"];
+  const sit=r=>!r.com.length?"Sem nenhum gerente":r.falta.length?"Falta departamento":"Completo";
+  const mk=rs=>{const ws=XLSX.utils.aoa_to_sheet([cab,...rs.map(r=>[numOr(r.emp),r.empNome,numOr(r.obra),r.nome,r.tipo,r.h25,r.h26,sit(r),r.com.join(", "),r.falta.join(", "),r.deps.join(", ")])]);
+    ws["!cols"]=[{wch:9},{wch:40},{wch:9},{wch:46},{wch:11},{wch:14},{wch:14},{wch:20},{wch:34},{wch:60},{wch:60}];ws["!autofilter"]={ref:"A1:K"+(rs.length+1)};return ws};
+  const ord=[...S.sg].sort((a,b)=>String(a.emp).localeCompare(String(b.emp),undefined,{numeric:true})||String(a.obra).localeCompare(String(b.obra),undefined,{numeric:true}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,mk(ord.filter(r=>!r.com.length)),"Sem nenhum gerente");
+  XLSX.utils.book_append_sheet(wb,mk(ord.filter(r=>r.falta.length)),"Falta departamento");XLSX.utils.book_append_sheet(wb,mk(ord),"Todas as obras");
+  try{await S.dl.save({filename:`OBRAS_SEM_GERENTE_${new Date().toISOString().slice(0,10)}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast("Excel gerado")}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
+});
 $("#tab-fill").addEventListener("click",async()=>{showTab("fill");if(S.cur&&S.cur.uid!==S.me){S.cur=null;await loadMine()}});
 $("#tab-adm").addEventListener("click",async()=>{await flush();showTab("adm")});
 
@@ -1030,15 +1150,15 @@ const acKey=r=>r.uid+"|"+r.o;
 function renderAcomp(){
   const ocl=(S.acOcultos&&S.acOcultos.k)||{};const verRem=$("#acomp-ver").value==="removidas";
   $("#acomp-ver").options[1].textContent=`Removidas (${S.acomp.filter(r=>ocl[acKey(r)]).length})`;
-  const rows=S.acomp.filter(r=>verRem?!!ocl[acKey(r)]:!ocl[acKey(r)]);S.acRows=rows;
+  const ver=$("#acomp-ver").value;const rows=S.acomp.filter(r=>verRem?!!ocl[acKey(r)]:!ocl[acKey(r)]&&(ver!=="aguardando"||(r.orc&&r.orc.status==="enviado"))&&(ver!=="validadas"||(r.orc&&r.orc.status==="validado")));S.acRows=rows;
   if(verRem&&!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra removida do acompanhamento.</td></tr>`;return}
   if(!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra atribuída ainda. Use “Atribuir obras a um gerente” abaixo.</td></tr>`;return}
-  const cnt={enviado:0,rascunho:0,reaberto:0,vazio:0};rows.forEach(r=>cnt[r.orc?r.orc.status:"vazio"]++);
+  const cnt={enviado:0,validado:0,rascunho:0,reaberto:0,vazio:0};rows.forEach(r=>cnt[r.orc?r.orc.status:"vazio"]=(cnt[r.orc?r.orc.status:"vazio"]||0)+1);
   const tot=YEARS.map(y=>sum(rows.map(r=>(r.orc&&r.orc.totais&&r.orc.totais[y])||0)));
-  $("#tbl-acomp").innerHTML=`<caption style="text-align:left;padding:4px 0 10px" class="muted">${rows.length} obras · ${cnt.enviado} enviadas · ${cnt.rascunho+cnt.reaberto} em preenchimento · ${cnt.vazio} não iniciadas</caption>
+  $("#tbl-acomp").innerHTML=`<caption style="text-align:left;padding:4px 0 10px" class="muted">${rows.length} obras · <b>${cnt.enviado} aguardando validação</b> · ${cnt.validado} validadas · ${cnt.rascunho+cnt.reaberto} em preenchimento (${cnt.reaberto} devolvidas) · ${cnt.vazio} não iniciadas</caption>
   <thead><tr><th>Gerente</th><th>Obra</th><th>Base modelo</th><th>Status</th><th>Atualizado</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th></th></tr></thead><tbody>
   ${rows.map((r,i)=>{const st=r.orc?r.orc.status:"vazio";return`<tr><td>${esc(r.nomeG)}${r.email?`<div class="muted" style="font-size:11px">${esc(r.email)}</div>`:""}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(r.info.obra||r.o)}</span> ${esc(r.info.nome)}<div class="muted" style="font-size:11px">Empresa ${esc(r.info.emp||"—")}${r.info.empNome?" · "+esc(r.info.empNome):""}</div></td><td class="muted">${esc(r.info.tipo||"—")}</td>
-  <td><span class="pill ${st}">${{vazio:"Não iniciado",rascunho:"Rascunho",enviado:"Enviado",reaberto:"Reaberto"}[st]}</span></td><td class="muted">${fmtDate(r.orc&&r.orc.atualizadoEm)}</td>
+  <td><span class="pill ${st}">${{vazio:"Não iniciado",rascunho:"Rascunho",enviado:"Aguardando validação",validado:"Validado",reaberto:"Devolvido"}[st]}</span></td><td class="muted">${fmtDate(r.orc&&r.orc.atualizadoEm)}</td>
   ${YEARS.map(y=>`<td class="num">${f0(r.orc&&r.orc.totais&&r.orc.totais[y])}</td>`).join("")}
   <td style="white-space:nowrap"><button class="btn sm" data-open="${i}">Abrir</button> <span data-rmbox="${i}">${verRem?`<button class="btn sm" data-rest="${i}">Restaurar</button> <button class="btn sm danger" data-del="${i}">Excluir de vez</button>`:`<button class="btn sm danger" data-rm="${i}">Remover</button>`}</span></td></tr>`}).join("")}
   </tbody><tfoot><tr><td colspan="5"><b>Total</b></td>${tot.map(t=>`<td class="num"><b>${f0(t)}</b></td>`).join("")}<td></td></tr></tfoot>`;
@@ -1237,7 +1357,7 @@ $("#btn-dp-lib").addEventListener("click",()=>liberarProntos(false));
 /* exportação (Excel .xlsx) */
 const numOr=v=>(typeof v==="string"&&/^\d+$/.test(v))?+v:v;
 const r2=v=>Math.round((+v||0)*100)/100;
-function scopeRows(){const sc=$("#exp-scope").value;const ocl=(S.acOcultos&&S.acOcultos.k)||{};return S.acomp.filter(r=>r.orc&&!ocl[acKey(r)]&&(sc==="todas"||r.orc.status==="enviado"))}
+function scopeRows(){const sc=$("#exp-scope").value;const ocl=(S.acOcultos&&S.acOcultos.k)||{};return S.acomp.filter(r=>r.orc&&!ocl[acKey(r)]&&(sc==="todas"||travado(r.orc.status)))}
 function mergeObras(rows){
   const by=new Map();rows.forEach(r=>{if(!by.has(r.o))by.set(r.o,[]);by.get(r.o).push(r)});
   const out=[];
@@ -1250,7 +1370,7 @@ function mergeObras(rows){
       if(dono){if(dono.orc.v&&dono.orc.v[l.key])v[l.key]=dono.orc.v[l.key];if(dono.orc.pr&&dono.orc.pr[l.key])pr[l.key]=dono.orc.pr[l.key];
         const sb=(dono.orc.sub||{})[l.key];if(sb&&sb.length){sub[l.key]=sb;sb.forEach(x=>{const k=l.key+"#"+x.id;if(dono.orc.v&&dono.orc.v[k])v[k]=dono.orc.v[k]})}
         if(dono.orc.lobs&&dono.orc.lobs[l.key])lobs[l.key]=dono.orc.lobs[l.key]}});
-    out.push({o,info,nomeG:[...new Set(rs.map(r=>r.nomeG))].join(" / "),orc:{v,pr,ext,sub,lobs,status:rs.every(r=>r.orc.status==="enviado")?"enviado":"rascunho"}});
+    out.push({o,info,nomeG:[...new Set(rs.map(r=>r.nomeG))].join(" / "),orc:{v,pr,ext,sub,lobs,status:rs.every(r=>travado(r.orc.status))?(rs.every(r=>r.orc.status==="validado")?"validado":"enviado"):"rascunho"}});
   });
   return out;
 }
@@ -1556,12 +1676,17 @@ $("#rv-file").addEventListener("change",async e=>{const f=e.target.files[0];e.ta
   }catch(err){$("#bs-msg").textContent=err&&err.message==="aba"?"Não encontrei a aba Revisão.":"Não consegui ler a planilha de revisão."}});
 $("#sb-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
-  try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const ws=wb.Sheets["Subitens"];if(!ws)throw new Error("aba");
-    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});const h=rows[0].map(c=>String(c));const ix=n=>h.indexOf(n);
-    const iT=ix("Base modelo"),iP=ix("Produto"),iS=ix("Serviço"),iI=ix("Insumo"),iO=ix("Ordem"),iN=ix("Subitem");if([iT,iP,iS,iI,iN].some(x=>x<0))throw new Error("cols");
-    const tmp={};rows.slice(1).forEach(r=>{const n=String(r[iN]||"").trim();if(!n||/^\(preencher\)$/i.test(n))return;const k=`${String(r[iT]).trim()}|${String(r[iP]).trim()}|${String(r[iS]).trim()}|${String(r[iI]).trim()}`;(tmp[k]=tmp[k]||[]).push([+r[iO]||999,n])});
-    const R={};Object.entries(tmp).forEach(([k,a])=>{R[k]=a.sort((x,y)=>x[0]-y[0]).map(x=>x[1])});
-    const doc={r:R,arquivo:f.name,atualizadoEm:nowISO()};await S.db.doc("regras/subitens").set(doc);S.subR=doc;renderBases();
+  try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+    /* aceita a aba "5. Subitens" da CONFIGURAÇÃO (código, descrição e orientação) e o formato antigo (aba "Subitens") */
+    const nm=wb.SheetNames.find(n=>/^\s*5\.?\s*subitens/i.test(n))||wb.SheetNames.find(n=>/^subitens$/i.test(n.trim()));const ws=nm&&wb.Sheets[nm];if(!ws)throw new Error("aba");
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});const h=rows[0].map(c=>String(c).trim());const ix=(...ns)=>{for(const n of ns){const i=h.indexOf(n);if(i>=0)return i}return -1};
+    const iT=ix("Base modelo"),iP=ix("Produto"),iS=ix("Serviço"),iI=ix("Insumo agrupador","Insumo"),iO=ix("Ordem"),iN=ix("Subitem (descrição)","Subitem"),iC=ix("Subitem (código)"),iQ=ix("Orientação ao gerente");
+    if([iT,iP,iS,iI,iN].some(x=>x<0))throw new Error("cols");
+    const tmp={},Q={};rows.slice(1).forEach(r=>{const k=`${String(r[iT]).trim()}|${String(r[iP]).trim()}|${String(r[iS]).trim()}|${String(r[iI]).trim()}`;if(k==="|||")return;
+      const q=iQ>=0?String(r[iQ]||"").trim():"";if(q)Q[k]=q;
+      const n=String(r[iN]||"").trim();if(!n||/^\(preencher\)$/i.test(n))return;(tmp[k]=tmp[k]||[]).push([+r[iO]||999,n,iC>=0?String(r[iC]||"").trim():""])});
+    const R={},C={};Object.entries(tmp).forEach(([k,a])=>{a.sort((x,y)=>x[0]-y[0]);R[k]=a.map(x=>x[1]);if(a.some(x=>x[2]))C[k]=a.map(x=>x[2])});
+    const doc={r:R,c:C,q:Q,arquivo:f.name,aba:nm,atualizadoEm:nowISO()};await S.db.doc("regras/subitens").set(doc);S.subR=doc;renderBases();
     $("#bs-msg").textContent=`Subitens carregados: ${Object.keys(R).length} insumos, ${Object.values(R).reduce((a,v)=>a+v.length,0)} subitens. Valem para obras ainda sem subitens; quem já começou mantém os dele.`;
   }catch(err){$("#bs-msg").textContent=err&&err.message==="aba"?"Não encontrei a aba Subitens.":"Não consegui ler a planilha de subitens."}});
 /* controle de acesso: aba "3. Gerentes" da CONFIGURACAO_ORCAMENTO (departamento × empresa × obra × e-mail) */
@@ -1652,7 +1777,8 @@ async function importarRetorno(f){
   const uid="off_"+String(R.fid).replace(/[^A-Za-z0-9]/g,"");
   const perf={...(R.perfil||{}),offline:true,nome:R.nome||"",email:R.email||"",importadoEm:nowISO()};
   await S.db.doc("gerentes/"+uid).set(perf);
-  let n=0;for(const [id,doc] of Object.entries(R.orc||{})){await S.db.doc(`gerentes/${uid}/orc/${id}`).set(doc);await saveVersion(uid,id,doc,"Importação offline").catch(()=>{});
+  let n=0;for(const [id,doc] of Object.entries(R.orc||{})){const atual=await S.db.doc(`gerentes/${uid}/orc/${id}`).get();if(atual.exists&&atual.data().status==="validado")continue;
+    await S.db.doc(`gerentes/${uid}/orc/${id}`).set(doc);await saveVersion(uid,id,doc,"Importação offline").catch(()=>{});
     const h=await S.db.doc("restrito/hist/eo/"+id).get();if(h.exists)await S.db.doc(`gerentes/${uid}/hist/${id}`).set(h.data());n++}
   return [R.nome||"gerente",n];
 }
