@@ -68,7 +68,8 @@ label.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var
 .filtros{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end;background:var(--accent-soft);border:2px solid var(--accent);border-radius:10px;padding:8px 12px;flex:1 1 640px;min-width:0}
 .filtros .fcol{display:flex;flex-direction:column;gap:3px;min-width:0}
 .filtros .lbl{font-weight:600;color:var(--accent)}
-.filtros select,.filtros input{font-size:14px;padding:7px 9px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink);max-width:260px}
+.filtros select,.filtros input{font-size:14px;padding:7px 9px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink);max-width:280px}
+.filtros #f-emp,.filtros #f-ger{width:270px}.filtros #f-cargo{width:210px}.filtros input.ok{border-color:var(--accent);font-weight:600}.filtros input.bad{border-color:var(--bad)}
 .filtros .fobra{flex:1 1 300px}.filtros .fobra select{max-width:none;width:100%;font-weight:600}
 .filtros.ativo{box-shadow:0 0 0 3px var(--warn-soft)}
 .drill{padding:4px 0 8px}.drill .d-emp{margin:6px 0}.drill .d-obra{margin:3px 0 3px 18px}
@@ -256,9 +257,9 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
       <div class="summary" id="summary"></div>
       <div class="obra-bar">
         <div class="filtros" id="filtros">
-          <div class="fcol"><label class="lbl" for="f-emp">Empresa</label><select id="f-emp"><option value="">Todas</option></select></div>
-          <div class="fcol" id="fc-ger" hidden><label class="lbl" for="f-ger">Gerente</label><select id="f-ger"><option value="">Todos</option></select></div>
-          <div class="fcol" id="fc-cargo" hidden><label class="lbl" for="f-cargo">Cargo / quem planeja</label><select id="f-cargo"><option value="">Todos</option></select></div>
+          <div class="fcol"><label class="lbl" for="f-emp">Empresa</label><input id="f-emp" type="search" list="dl-emp" placeholder="Todas · digite para buscar" autocomplete="off"><datalist id="dl-emp"></datalist></div>
+          <div class="fcol" id="fc-ger" hidden><label class="lbl" for="f-ger">Gerente</label><input id="f-ger" type="search" list="dl-ger" placeholder="Todos · digite para buscar" autocomplete="off"><datalist id="dl-ger"></datalist></div>
+          <div class="fcol" id="fc-cargo" hidden><label class="lbl" for="f-cargo">Quem planeja</label><input id="f-cargo" type="search" list="dl-cargo" placeholder="Todos · digite para buscar" autocomplete="off"><datalist id="dl-cargo"></datalist></div>
           <div class="fcol"><label class="lbl" for="busca-obra">Buscar obra</label><input id="busca-obra" type="search" placeholder="nº ou nome" aria-label="Buscar obra"></div>
           <div class="fcol fobra"><label class="lbl" for="sel-obra">Obra / centro de custo <span class="muted" id="busca-obra-n" style="font-size:11px;text-transform:none;letter-spacing:0"></span></label><select id="sel-obra"></select></div>
         </div>
@@ -663,7 +664,7 @@ async function loadMine(){
   S.myOrc={};q.docs.forEach(d=>S.myOrc[d.id]=d.data());
   const sel=$("#sel-obra");
   S.selAll=obras.sort((a,b)=>String(a[1].obra||a[0]).localeCompare(String(b[1].obra||b[0]))||String(a[1].emp||"").localeCompare(String(b[1].emp||""),undefined,{numeric:true})).map(([o,i])=>{const st=(S.myOrc[o]&&S.myOrc[o].status)||"não iniciado";return `<option value="${esc(o)}">${esc(obraLbl(o,i))} (${esc(st)})</option>`}).join("");
-  sel.innerHTML=S.selAll;S.selIds=obras.map(x=>x[0]);$("#busca-obra").value="";$("#busca-obra-n").textContent=obras.length>1?"· "+obras.length+" obras":"";$("#busca-obra").parentElement.hidden=obras.length<2;
+  sel.innerHTML=S.selAll;S.selIds=obras.map(x=>x[0]);$("#busca-obra").value="";$("#busca-obra-n").textContent=obras.length>1?"- "+obras.length+" obras":"";$("#busca-obra").parentElement.hidden=obras.length<2;
   await montarFiltros();
   let last=null;try{last=localStorage.getItem("orc.last")}catch(e){}
   if(last&&S.perfil.obras[last])sel.value=last;
@@ -671,36 +672,48 @@ async function loadMine(){
 }
 /* filtros da obra: empresa, gerente e cargo (masters) e busca por texto; Enter abre a primeira encontrada */
 const semAc=t=>String(t).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+/* filtros pesquisáveis (digite e escolha na lista) e em cascata: cada lista mostra só o que existe com os outros filtros */
+const SEP=" - ";
 async function montarFiltros(){
-  const info=S.perfil.obras||{};const emps=new Map();(S.selIds||[]).forEach(o=>{const i=info[o]||{};if(i.emp!=null&&!emps.has(String(i.emp)))emps.set(String(i.emp),i.empNome||"")});
-  const ord=[...emps.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true}));
-  $("#f-emp").innerHTML=`<option value="">Todas (${ord.length})</option>`+ord.map(([e,n])=>`<option value="${esc(e)}">${esc(e)} · ${esc(n)}</option>`).join("");
-  $("#f-emp").parentElement.hidden=ord.length<2;
-  if(!S.owner)return;
-  try{const [dp,pe,ao]=await Promise.all(["restrito/depara","restrito/pessoas","restrito/areasobra"].map(k=>S.db.doc(k).get()));
-    const L=(dp.exists&&dp.data().linhas)||[];const nomes=new Map(((pe.exists&&pe.data().lista)||[]).map(p=>[String(p.email).toLowerCase(),p.nome]));
+  S.fInfo=S.perfil.obras||{};
+  if(S.owner){try{const [dp,pe,ao]=await Promise.all(["restrito/depara","restrito/pessoas","restrito/areasobra"].map(k=>S.db.doc(k).get()));
+    const L=(dp.exists&&dp.data().linhas)||[];S.fNomes=new Map(((pe.exists&&pe.data().lista)||[]).map(p=>[String(p.email).toLowerCase(),p.nome]));
     S.fAO=(ao.exists&&ao.data().m)||{};S.fGerObras=new Map();L.forEach(l=>{const em=String(l[0]||"").toLowerCase();if(!em)return;const m=S.fGerObras.get(em)||new Map();const d=m.get(l[1])||new Set();if(l[3])d.add(l[3]);m.set(l[1],d);S.fGerObras.set(em,m)});
-    const gs=[...S.fGerObras.keys()].map(e=>[e,nomes.get(e)||e]).sort((a,b)=>a[1].localeCompare(b[1]));
-    $("#f-ger").innerHTML=`<option value="">Todos (${gs.length})</option>`+gs.map(([e,n])=>`<option value="${esc(e)}">${esc(n)} (${S.fGerObras.get(e).size})</option>`).join("");
-    const cargos=[...new Set(Object.values(S.fAO).flat())].sort();$("#f-cargo").innerHTML=`<option value="">Todos</option>`+cargos.map(c=>`<option>${esc(c)}</option>`).join("");
-    $("#fc-ger").hidden=false;$("#fc-cargo").hidden=false}catch(e){}
+    $("#fc-ger").hidden=false;$("#fc-cargo").hidden=false}catch(e){}}
+  $("#f-emp").parentElement.hidden=new Set((S.selIds||[]).map(o=>String((S.fInfo[o]||{}).emp))).size<2;
+  atualizarListas();
 }
-function filtrarObras(){if(!S.selAll||(S.cur&&S.cur.uid!==S.me))return;const q=semAc($("#busca-obra").value.trim());const emp=$("#f-emp").value,ger=$("#f-ger").value,cg=$("#f-cargo").value;
-  const sel=$("#sel-obra");const atual=sel.value;const info=S.perfil.obras||{};const go=ger&&S.fGerObras?S.fGerObras.get(ger):null;
+/* valor escolhido em cada filtro (só vale quando bate com uma opção da lista) */
+function fVal(id){const el=$("#"+id);const v=(el&&el.value||"").trim();if(!v){el&&el.classList.remove("ok","bad");return ""}const m=(S.fMap&&S.fMap[id]||new Map()).get(v);el.classList.toggle("ok",!!m);el.classList.toggle("bad",!m);return m||null}
+function obrasFiltradas(skip){const info=S.fInfo||{};const emp=skip==="f-emp"?"":fVal("f-emp"),ger=skip==="f-ger"?"":fVal("f-ger"),cg=skip==="f-cargo"?"":fVal("f-cargo");
+  if(emp===null||ger===null||cg===null)return [];const go=ger&&S.fGerObras?S.fGerObras.get(ger):null;
+  return (S.selIds||[]).filter(o=>{const i=info[o]||{};if(emp&&String(i.emp)!==emp)return false;if(go&&!go.has(o))return false;
+    if(cg){if(go){if(!go.get(o).has(cg))return false}else if(S.fAO&&!(S.fAO[o]||[]).includes(cg))return false}return true})}
+function atualizarListas(){S.fMap=S.fMap||{"f-emp":new Map(),"f-ger":new Map(),"f-cargo":new Map()};const info=S.fInfo||{};
+  const oE=obrasFiltradas("f-emp");const emps=new Map();oE.forEach(o=>{const i=info[o]||{};if(i.emp!=null)emps.set(String(i.emp),i.empNome||"")});
+  $("#dl-emp").innerHTML=[...emps.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([e,n])=>{const lb=e+SEP+n;S.fMap["f-emp"].set(lb,e);return `<option value="${esc(lb)}"></option>`}).join("");
+  if(S.fGerObras){const oG=new Set(obrasFiltradas("f-ger"));const cg=fVal("f-cargo");const gs=[];S.fGerObras.forEach((m,em)=>{let n=0;m.forEach((d,o)=>{if(oG.has(o)&&(!cg||d.has(cg)))n++});if(n)gs.push([em,(S.fNomes&&S.fNomes.get(em))||em,n])});
+    $("#dl-ger").innerHTML=gs.sort((a,b)=>a[1].localeCompare(b[1])).map(([em,nm,n])=>{const lb=nm;S.fMap["f-ger"].set(lb,em);S.fMap["f-ger"].set(em,em);return `<option value="${esc(lb)}">${esc(em)}${SEP}${n} obra(s)</option>`}).join("")}
+  {const oC=obrasFiltradas("f-cargo");const ger=fVal("f-ger");const go=ger&&S.fGerObras?S.fGerObras.get(ger):null;const cs=new Set();
+    oC.forEach(o=>{(go?[...(go.get(o)||[])]:((S.fAO||{})[o]||[])).forEach(c=>cs.add(c))});
+    $("#dl-cargo").innerHTML=[...cs].sort().map(c=>{S.fMap["f-cargo"].set(c,c);return `<option value="${esc(c)}"></option>`}).join("")}
+}
+function filtrarObras(){if(!S.selAll||(S.cur&&S.cur.uid!==S.me))return;atualizarListas();const q=semAc($("#busca-obra").value.trim());
+  const sel=$("#sel-obra");const atual=sel.value;const okIds=new Set(obrasFiltradas());
   const tmp=document.createElement("select");tmp.innerHTML=S.selAll;
-  const ok=[...tmp.options].filter(o=>{const i=info[o.value]||{};if(emp&&String(i.emp)!==emp)return false;if(go&&!go.has(o.value))return false;if(cg&&S.fAO&&!(S.fAO[o.value]||[]).includes(cg))return false;
-    return !q||q.split(/\s+/).every(w=>semAc(o.textContent+" "+o.value).includes(w))});
-  sel.innerHTML=ok.length?ok.map(o=>o.outerHTML).join(""):`<option value="">Nenhuma obra encontrada</option>`;
+  const ok=[...tmp.options].filter(o=>okIds.has(o.value)&&(!q||q.split(/\s+/).every(w=>semAc(o.textContent+" "+o.value).includes(w))));
+  sel.innerHTML=ok.length?ok.map(o=>o.outerHTML).join(""):`<option value="">Nenhuma obra com esses filtros</option>`;
   if(ok.some(o=>o.value===atual))sel.value=atual;else if(ok.length){sel.insertAdjacentHTML("afterbegin",`<option value="" selected>— ${ok.length} obra(s): escolha —</option>`)}
-  const filtrando=!!(q||emp||ger||cg);$("#filtros").classList.toggle("ativo",filtrando);
-  $("#busca-obra-n").textContent=filtrando?`· ${ok.length} de ${S.selIds.length}`:`· ${S.selIds.length} obras`;
+  const filtrando=!!(q||$("#f-emp").value||$("#f-ger").value||$("#f-cargo").value);$("#filtros").classList.toggle("ativo",filtrando);
+  $("#busca-obra-n").textContent=filtrando?`- ${ok.length} de ${S.selIds.length}`:`- ${S.selIds.length} obras`;
+  if(ok.length===1&&ok[0].value!==atual){sel.value=ok[0].value;sel.dispatchEvent(new Event("change"))}
   aplicarFiltroLinhas()}
-/* gerente/cargo também filtram as linhas da obra aberta (conferência de quem planeja o quê) */
-function aplicarFiltroLinhas(semRender){if(!S.cur)return;const ger=$("#f-ger").value,cg=$("#f-cargo").value;
-  let deps=null;if(ger&&S.fGerObras){const m=S.fGerObras.get(ger);deps=m&&m.get(S.cur.o)||new Set()}
+/* gerente/quem planeja também filtram as linhas da obra aberta */
+function aplicarFiltroLinhas(semRender){if(!S.cur)return;const ger=fVal("f-ger")||"",cg=fVal("f-cargo")||"";
+  let deps=null;if(ger&&S.fGerObras){const m=S.fGerObras.get(ger);deps=new Set(m&&m.get(S.cur.o)||[])}
   if(cg)deps=deps?new Set([...deps].filter(d=>d===cg)):new Set([cg]);
   const novo=deps?S.cur.o+"#"+[...deps].sort().join("|"):null;if(novo===S.fDepsKey&&!semRender)return;S.fDepsKey=novo;S.fDeps=deps;if(!semRender&&S.cur.lines)renderGrid()}
-["#busca-obra"].forEach(q=>$(q).addEventListener("input",filtrarObras));["#f-emp","#f-ger","#f-cargo"].forEach(q=>$(q).addEventListener("change",filtrarObras));
+["#busca-obra"].forEach(q=>$(q).addEventListener("input",filtrarObras));["#f-emp","#f-ger","#f-cargo"].forEach(q=>{$(q).addEventListener("change",filtrarObras);$(q).addEventListener("input",()=>{const v=$(q).value;if(!v||(S.fMap&&S.fMap[q.slice(1)]&&S.fMap[q.slice(1)].has(v.trim())))filtrarObras()})});
 $("#busca-obra").addEventListener("keydown",async e=>{if(e.key!=="Enter")return;e.preventDefault();const sel=$("#sel-obra");const o=[...sel.options].find(x=>x.value);if(!o)return;sel.value=o.value;sel.dispatchEvent(new Event("change"))});
 $("#sel-obra").addEventListener("change",async e=>{if(!e.target.value)return;if(S.cur&&S.cur.uid!==S.me)return;await flush();try{localStorage.setItem("orc.last",e.target.value)}catch(_){}await openObra(S.me,e.target.value,false)});
 
@@ -1191,7 +1204,7 @@ $("#tab-adm").addEventListener("click",async()=>{await flush();showTab("adm")});
 async function loadCat(){if(!S.cat){const c=await S.db.doc("restrito/catalogo").get();S.cat=c.exists?c.data():{obras:[]};S.catMap=new Map(S.cat.obras.map(c=>[c[0],c]))}}
 /* catálogo v2: [id "empresa-obra", obra, nome obra, base modelo, total25, total26, empresa, nome empresa] */
 const catInfo=c=>({nome:c[2],tipo:c[3],emp:c[6],empNome:c[7],obra:c[1]});
-const obraLbl=(o,i)=>`${i&&i.emp?"Emp. "+i.emp+" · ":""}${(i&&i.obra)||o} · ${(i&&i.nome)||""}`;
+const obraLbl=(o,i)=>`${i&&i.emp?"Emp. "+i.emp+" - ":""}${(i&&i.obra)||o} - ${(i&&i.nome)||""}`;
 function parseObrasTexto(txt){const out=new Map();const T_=String(txt||"").toUpperCase();
   const re=/(\d{1,6})\s*[-–\/|;:]\s*([A-Z0-9]{5})/g;let m;while((m=re.exec(T_))){const id=m[1]+"-"+m[2];const c=S.catMap&&S.catMap.get(id);if(c)out.set(id,catInfo(c))}
   (S.cat.obras||[]).forEach(c=>{if(out.has(c[0]))return;if(new RegExp("(^|[^0-9A-Z-])"+c[1]+"([^0-9A-Z-]|$)").test(T_)){const same=S.cat.obras.filter(x=>x[1]===c[1]);if(same.length===1)out.set(c[0],catInfo(c))}});
@@ -1810,7 +1823,7 @@ function drillPessoa(p){const porEmp=new Map();(p.ids||[]).forEach(id=>{const c=
 function renderPessoas(){const L=S.pessoas||[];const pk=L.map(p=>p.email).join("|");if(!S.pesSel||S.pesKey!==pk){S.pesSel=new Set(L.filter(p=>p.semClaude).map(p=>p.email));S.pesKey=pk}
   S.pesOpen=S.pesOpen||new Set();S.pesObra=S.pesObra||new Set();
   if($("#pes-dep")&&!$("#pes-dep").dataset.ok&&L.length){const deps=[...new Set(L.flatMap(p=>Object.values(p.acc||{}).flat()))].sort();$("#pes-dep").innerHTML=`<option value="">Todos</option>`+deps.map(d=>`<option>${esc(d)}</option>`).join("");
-    const emps=[...new Set(L.flatMap(p=>(p.ids||[]).map(id=>String(id).split("-")[0])))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));$("#pes-emp").innerHTML=`<option value="">Todas</option>`+emps.map(e=>{const c=S.cat&&S.cat.obras.find(x=>String(x[6])===e);return `<option value="${esc(e)}">${esc(e)}${c?" · "+esc(c[7]):""}</option>`}).join("");$("#pes-dep").dataset.ok=1}
+    const emps=[...new Set(L.flatMap(p=>(p.ids||[]).map(id=>String(id).split("-")[0])))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));$("#pes-emp").innerHTML=`<option value="">Todas</option>`+emps.map(e=>{const c=S.cat&&S.cat.obras.find(x=>String(x[6])===e);return `<option value="${esc(e)}">${esc(e)}${c?" - "+esc(c[7]):""}</option>`}).join("");$("#pes-dep").dataset.ok=1}
   const F=pesFiltrados();if($("#pes-n"))$("#pes-n").textContent=`${F.length} de ${L.length} pessoa(s) · ${F.reduce((a,p)=>a+p.ids.length,0)} orçamento(s)`;
   $("#tbl-pes").innerHTML=L.length?`<thead><tr><th style="width:34px"><input type="checkbox" id="pes-all" aria-label="Marcar todos" ${L.filter(p=>p.semClaude).every(p=>S.pesSel.has(p.email))?"checked":""}></th><th style="width:34px"></th><th>Gerente</th><th>E-mail</th><th>Departamento(s)</th><th class="num">Orçamentos liberados</th><th>Acesso</th></tr></thead><tbody>${F.map(p=>{const ab=S.pesOpen.has(p.email);return `<tr><td>${p.semClaude?`<input type="checkbox" data-pes="${esc(p.email)}" aria-label="Enviar para ${esc(p.nome)}" ${S.pesSel.has(p.email)?"checked":""}>`:""}</td><td><button class="btn sm" data-pdrill="${esc(p.email)}" title="Ver empresas, obras, serviços e insumos liberados">${ab?"▾":"▸"}</button></td><td>${esc(p.nome)}</td><td>${esc(p.email)}</td><td>${esc(p.area||"")}</td><td class="num">${p.ids.length}</td><td>${p.semClaude?'<span class="pill rascunho">Sem Claude · formulário offline</span>':'<span class="pill enviado">Link · libera ao registrar o e-mail</span>'}</td></tr>${ab?`<tr class="drill-row"><td></td><td colspan="6">${drillPessoa(p)}</td></tr>`:""}`}).join("")||'<tr><td colspan="7" class="muted">Ninguém neste filtro.</td></tr>'}</tbody>`:`<tr><td class="muted">Nenhuma planilha carregada.</td></tr>`;
   const nSel=L.filter(p=>p.semClaude&&S.pesSel.has(p.email)).length;$("#pl-disp").disabled=!nSel;$("#pl-um").disabled=!nSel;$("#pl-um").textContent=nSel?`E-mail único para ${nSel} gerente${nSel>1?"s":""}`:"E-mail único (marque os gerentes)";
