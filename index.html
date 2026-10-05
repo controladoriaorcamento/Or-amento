@@ -121,8 +121,12 @@ tr.drill-row>td{background:var(--group)}
 table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
 .grid th,.grid td{border-bottom:1px solid var(--line);padding:0;white-space:nowrap;height:30px}
 .grid thead th{position:sticky;top:0;z-index:5;background:var(--surface);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;text-align:right;border-bottom:1px solid var(--line-strong)}
-.grid thead tr.band th{font-size:10px;padding:4px 8px;top:0;text-align:center}
-.grid thead tr.cols th{top:var(--bandH,24px)}
+.grid thead tr.band th{font-size:10px;padding:4px 8px;top:var(--ctxH,30px);text-align:center}
+.grid thead tr.cols th{top:calc(var(--ctxH,30px) + var(--bandH,24px))}
+.grid thead tr.ctx th{top:0;z-index:9;padding:0;text-align:left;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--ink);background:var(--accent-soft,var(--group));border-bottom:2px solid var(--accent)}
+.grid thead tr.ctx .ctx-in{position:sticky;left:0;display:inline-flex;flex-wrap:wrap;gap:4px 18px;padding:6px 10px;max-width:calc(100vw - 80px)}
+.grid thead tr.ctx .ctx-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.niv-tg .btn.sm{font-size:12px;padding:3px 9px}
 .grid .c-desc{position:sticky;left:0;z-index:3;background:inherit;text-align:left;min-width:280px;max-width:280px;width:280px;border-right:1px solid var(--line-strong)}
 .grid thead .c-desc{z-index:7;background:var(--surface)}
 .grid td.c-desc{padding:3px 8px;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
@@ -241,6 +245,15 @@ table.list{border-collapse:collapse;width:100%;font-size:13px}
 table.list th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line-strong);white-space:nowrap}
 table.list td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
 table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dev-ov{position:fixed;inset:0;background:rgba(10,20,15,.45);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto}
+.dev-box{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;max-width:720px;width:100%;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.dev-hd{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.dev-hd h3{margin:2px 0 4px;font-size:19px}.dev-st{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+.dev-pass{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:14px}.dev-pass>li{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.dev-lst{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:38vh;overflow:auto}.dev-it{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:start}.dev-nm{grid-column:1/-1;font-weight:600;font-size:13px}
+.dev-it textarea,#dev-mot{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px}
+#dev-mot{margin-top:8px}.dev-vz{margin-top:6px;font-size:13px;color:var(--muted)}
+.dev-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.dev-chips .chip{border:1px solid var(--line-strong);background:var(--group);color:var(--ink);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer}.dev-chips .chip:disabled{opacity:.45;cursor:default}
+.dev-ft{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:16px}.dev-ft .muted{margin-right:auto}#dev-ok{white-space:nowrap}
 .confirm{display:inline-flex;gap:6px;align-items:center}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:6px;z-index:50;font-size:13px;max-width:calc(100% - 32px)}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin:8px 0 0}
@@ -331,7 +344,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <label class="row" style="gap:6px"><input type="checkbox" id="only-filled"> Só itens preenchidos</label>
         <label class="row" style="gap:6px" id="lb-only-rev" hidden><input type="checkbox" id="only-rev"> Só itens com apontamento <span class="pill reaberto" id="n-rev"></span></label>
         <button class="btn sm" id="btn-copy-prev" hidden>Copiar ano anterior</button>
-        <button class="btn sm" id="btn-collapse">Recolher grupos</button>
+        <span class="hm-tg niv-tg" id="niv-tg" role="group" aria-label="Recolher ou expandir a estrutura">Estrutura: <button class="btn sm" data-niv="0" title="Mostra só os produtos">Recolher tudo</button><button class="btn sm" data-niv="1" title="Mostra os produtos e o 1º nível abaixo deles">Até 1º nível</button><button class="btn sm" data-niv="2" title="Mostra até o 2º nível (serviços)">Até 2º nível</button><button class="btn sm" data-niv="all" title="Abre toda a estrutura até os insumos">Expandir tudo</button></span>
         <button class="btn sm" id="btn-add">Adicionar item</button>
         <button class="btn sm" id="btn-savever" title="Guarda uma cópia do orçamento como está agora">Salvar versão</button>
         <button class="btn sm" id="btn-exp-me" title="Baixa em Excel o que você orçou nas suas obras">Baixar meu Excel</button>
@@ -546,7 +559,7 @@ function buildLines(tipo,hist,ext){
     let lastP=null;
     tp.rows.forEach((r,i)=>{
       const [P,item,Sv,I,desc,un,leaf,preco,contrato,qt,saldo]=r;
-      if(P!==lastP){lines.push({kind:"prod",key:"P:"+P,P,desc:P+" · "+(tp.prods[P]||""),lvl:0,ch:[]});lastP=P}
+      if(P!==lastP){lines.push({kind:"prod",key:"P:"+P,P,desc:(tp.prods[P]||"Produto "+P),lvl:0,ch:[]});lastP=P}
       const lvl=item.split(".").length;
       const key=P+"|"+Sv+"|"+I;
       const o={kind:leaf?"leaf":"grp",key:leaf?key:"G:"+i,P,item,S:Sv,I,desc,un:un||"VB",lvl,preco,tmpl:r,h:new Array(nM).fill(0),ch:[]};
@@ -571,7 +584,7 @@ function buildLines(tipo,hist,ext){
     const byP=new Map();[...extras.values()].forEach(l=>{if(!byP.has(l.P))byP.set(l.P,[]);byP.get(l.P).push(l)});
     lines.push({kind:"prod",key:"P:extra",desc:"Itens do histórico",lvl:0,ch:[]});
     [...byP.entries()].forEach(([P,arr])=>{
-      lines.push({kind:"grp",key:"GX:"+P,P,item:"",desc:(P?P+" · ":"")+(pd[P]||"Produto "+P),lvl:1,dfix:1,ch:[]});
+      lines.push({kind:"grp",key:"GX:"+P,P,item:"",desc:(pd[P]||"Produto "+P),lvl:1,dfix:1,ch:[]});
       arr.sort((x,y)=>sum(y.h)-sum(x.h)).forEach(l=>{l.dfix=2;lines.push(l)});
     });
   } else if(extras.size){
@@ -782,17 +795,23 @@ function renderQuem(){const box=$("#orc-quem");if(!S.cur||!S.owner){box.hidden=t
   box.innerHTML=a.length?`<b>Preenchimentos desta obra:</b>${chipsPreench(S.cur.o)}<span class="muted" style="font-size:12px">A tabela abaixo é a <b>sua</b> visão (Controladoria). Clique em “Ver o que preencheu” para conferir o orçamento do gerente.</span>`:`<span class="muted">Nenhum gerente salvou orçamento nesta obra ainda. A tabela abaixo é a sua visão (Controladoria).</span>`;box.hidden=false}
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("button[data-verorc]");if(!b)return;const [uid,o]=b.dataset.verorc.split("|");
   await flush();S.voltarPara="fill";showTab("fill");$("#fill-empty").hidden=true;$("#fill-main").hidden=false;await openObra(uid,o,true);window.scrollTo({top:0,behavior:"smooth"})});
-$("#f-limpar-tudo").addEventListener("click",()=>{Object.keys(S.fSel).forEach(k=>S.fSel[k]=[]);document.querySelectorAll(".sl-q").forEach(x=>x.value="");filtrarObras()});
+/* Limpar filtros: tira TUDO — segmentações, pesquisas dentro delas, busca de item, caixas "Só itens…", meses abertos e níveis da estrutura */
+$("#f-limpar-tudo").addEventListener("click",()=>{Object.keys(S.fSel).forEach(k=>S.fSel[k]=[]);document.querySelectorAll(".sl-q").forEach(x=>x.value="");
+  const bo=$("#busca-obra");if(bo)bo.value="";S.q="";$("#q").value="";
+  S.onlyUsed=S.onlyMine=S.onlyEmpty=S.onlyFilled=S.onlyRev=false;["#only-used","#only-mine","#only-empty","#only-filled","#only-rev"].forEach(q=>{const c=$(q);if(c)c.checked=false});
+  S.fDeps=null;S.fDepsKey=null;S.hm={a25:false,a26:false};S.collapsed=new Set();S.niv=null;try{marcarNivel()}catch(e){}
+  document.querySelectorAll(".sl-pop").forEach(p=>p.hidden=true);
+  filtrarObras();if(S.cur&&S.cur.lines)renderGrid();toast("Filtros limpos")});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true)});
-function filtrarObras(){if(!S.selAll||(S.cur&&S.cur.uid!==S.me))return;atualizarListas();const q="";
-  const sel=$("#sel-obra");const atual=sel.value;const okIds=new Set(obrasFiltradas());
+function filtrarObras(){if(!S.selAll)return;atualizarListas();const q="";
+  const sel=$("#sel-obra");sel.disabled=false;const atual=sel.value;const okIds=new Set(obrasFiltradas());
   const tmp=document.createElement("select");tmp.innerHTML=S.selAll;
   const ok=[...tmp.options].filter(o=>okIds.has(o.value)&&(!q||q.split(/\s+/).every(w=>semAc(o.textContent+" "+o.value).includes(w))));
   sel.innerHTML=ok.length?ok.map(o=>o.outerHTML).join(""):`<option value="">Nenhuma obra com esses filtros</option>`;
   if(ok.some(o=>o.value===atual))sel.value=atual;else if(ok.length){sel.insertAdjacentHTML("afterbegin",`<option value="" selected>— ${ok.length} obra(s): escolha —</option>`)}
   const filtrando=!!(fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length);$("#filtros").classList.toggle("ativo",filtrando);
   $("#busca-obra-n").textContent=filtrando?`- ${ok.length} de ${S.selIds.length}`:`- ${S.selIds.length} obras`;
-  if(ok.length===1&&ok[0].value!==atual){sel.value=ok[0].value;sel.dispatchEvent(new Event("change"))}
+  if(ok.length===1&&ok[0].value!==atual&&!(S.cur&&S.cur.uid!==S.me)){sel.value=ok[0].value;sel.dispatchEvent(new Event("change"))}
   renderConsol(ok.map(o=>o.value));aplicarFiltroLinhas();renderResumoFiltros()}
 /* ---------- visão das obras filtradas: empresa → obra → serviço → insumo (como uma segmentação do Power BI) ---------- */
 function depsDaObra(o){const ger=fVals("f-ger"),cg=fVals("f-cargo");let d=null;
@@ -819,7 +838,7 @@ function renderConsol(ids){const box=$("#consol");const ativo=fVals("f-emp").len
         let det="";if(ab){const ls=(S.histCache&&o in S.histCache)?consolLinhas(o):null;
           if(!ls)det=`<tr class="c-ins"><td></td><td colspan="7" class="muted">Carregando…</td></tr>`;else if(!ls.length)det=`<tr class="c-ins"><td></td><td colspan="7" class="muted">Nenhum insumo para este filtro nesta obra.</td></tr>`;
           else{const byS=new Map();ls.forEach(l=>{const k=l.P+"|"+l.S;if(!byS.has(k))byS.set(k,{P:l.P,S:l.S,sd:l.sd,it:[]});byS.get(k).it.push(l)});
-            det=[...byS.values()].map(g=>`<tr class="c-srv"><td></td><td colspan="3" style="padding-left:24px">${esc(g.P)} · ${esc(g.S)} ${esc(g.sd||"")}</td><td class="num">${f0(g.it.reduce((a,l)=>a+l.h25,0))}</td><td class="num">${f0(g.it.reduce((a,l)=>a+l.h26,0))}</td><td></td><td></td></tr>`+g.it.map(l=>`<tr class="c-ins"><td></td><td style="padding-left:44px"><span style="font-family:var(--f-mono)">${esc(l.I)}</span> ${esc(l.d)}</td><td></td><td class="muted">${esc(l.a)}</td><td class="num">${f0(l.h25)}</td><td class="num">${f0(l.h26)}</td><td></td><td></td></tr>`).join("")).join("")}}
+            det=[...byS.values()].map(g=>`<tr class="c-srv"><td></td><td colspan="3" style="padding-left:24px"><b>${esc(nomeProd(g.P,i.tipo,(S.histCache||{})[o]))}</b> · ${esc(g.sd||g.S||"")}</td><td class="num">${f0(g.it.reduce((a,l)=>a+l.h25,0))}</td><td class="num">${f0(g.it.reduce((a,l)=>a+l.h26,0))}</td><td></td><td></td></tr>`+g.it.map(l=>`<tr class="c-ins"><td></td><td style="padding-left:44px"><span style="font-family:var(--f-mono)">${esc(l.I)}</span> ${esc(l.d)}</td><td></td><td class="muted">${esc(l.a)}</td><td class="num">${f0(l.h25)}</td><td class="num">${f0(l.h26)}</td><td></td><td></td></tr>`).join("")).join("")}}
         return `<tr><td><button class="btn sm" data-cso="${esc(o)}">${ab?"▾":"▸"}</button></td><td><span style="font-family:var(--f-mono)">${esc(i.obra||o)}</span> ${esc(i.nome||"")}</td><td class="muted">${esc(i.tipo||"—")}</td><td style="font-size:12px">${esc((deps||[]).join(", ")||"—")}</td><td class="num">${f0(c?c[4]:0)}</td><td class="num">${f0(c?c[5]:0)}</td><td style="font-size:12px">${chipsPreench(o)||'<span class="muted">ninguém salvou</span>'}</td><td><button class="btn sm" data-csab="${esc(o)}" title="Abrir a sua visão desta obra na tabela">Abrir</button></td></tr>${det}`}).join("")).join("")}
     ${n>mx?`<tr><td colspan="8" class="muted">Mostrando ${mx} obras. Refine o filtro ou baixe o Excel para ver todas.</td></tr>`:""}</tbody></table></div>`}
 $("#consol").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;
@@ -842,7 +861,7 @@ function aplicarFiltroLinhas(semRender){if(!S.cur)return;const ger=fVals("f-ger"
   const novo=deps?S.cur.o+"#"+[...deps].sort().join("|"):null;if(novo===S.fDepsKey&&!semRender)return;S.fDepsKey=novo;S.fDeps=deps;if(!semRender&&S.cur.lines)renderGrid()}
 ["#busca-obra"].forEach(q=>$(q).addEventListener("input",filtrarObras));
 $("#busca-obra").addEventListener("keydown",async e=>{if(e.key!=="Enter")return;e.preventDefault();const sel=$("#sel-obra");const o=[...sel.options].find(x=>x.value);if(!o)return;sel.value=o.value;sel.dispatchEvent(new Event("change"))});
-$("#sel-obra").addEventListener("change",async e=>{if(!e.target.value)return;if(S.cur&&S.cur.uid!==S.me)return;await flush();try{localStorage.setItem("orc.last",e.target.value)}catch(_){}await openObra(S.me,e.target.value,false)});
+$("#sel-obra").addEventListener("change",async e=>{if(!e.target.value)return;if(S.cur&&S.cur.uid!==S.me){S.voltarPara=null}else await flush();try{localStorage.setItem("orc.last",e.target.value)}catch(_){}await openObra(S.me,e.target.value,false)});
 
 async function temItensMeus(o,info){
   const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();
@@ -867,7 +886,7 @@ async function openObra(uid,o,fromAdm){
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
   const editable= uid===S.me && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,prods:produtosDaObra(hist,lines)};applyRules(S.cur);
-  S.collapsed=new Set();S.year="2027";
+  S.collapsed=new Set();S.niv=null;try{marcarNivel()}catch(e){}S.year="2027";
   document.querySelectorAll("#years button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.y===S.year));
   $("#detail").hidden=true;$("#add-box").hidden=true;$("#btn-add").textContent="Adicionar item";$("#ver-box").hidden=true;$("#ver-banner").hidden=true;
   $("#obs").value=doc.obs;$("#obs").disabled=!editable;
@@ -875,7 +894,7 @@ async function openObra(uid,o,fromAdm){
   $("#obra-tipo").textContent=(info.emp?`Empresa ${info.emp}${info.empNome?" – "+info.empNome:""} · `:"")+"Base modelo: "+(info.tipo?info.tipo+" · ":"")+TIPO_NOME[info.tipo||""];
   if(fromAdm){
     $("#sel-obra").innerHTML=`<option>${esc(obraLbl(o,info))}</option>`;$("#sel-obra").disabled=true;
-    const ps=await S.user.profiles([uid]);$("#viewing-as").textContent="Visualizando o orçamento de "+((ps[uid]&&ps[uid].name)||"gerente")+" · ";
+    const ps=await S.user.profiles([uid]);S.cur.quem=(ps[uid]&&ps[uid].name)||"gerente";$("#viewing-as").textContent="Visualizando o orçamento de "+((ps[uid]&&ps[uid].name)||"gerente")+" · ";
     const back=document.createElement("button");back.className="btn sm";back.textContent=S.voltarPara==="fill"?"Voltar à minha visão":"Voltar ao Acompanhamento";back.onclick=async()=>{if(S.voltarPara==="fill"){S.voltarPara=null;S.cur=null;await loadMine()}else showTab("adm")};$("#viewing-as").append(back);
   } else {$("#sel-obra").disabled=false;$("#viewing-as").textContent=""}
   if(!fromAdm)aplicarFiltroLinhas(true);else{
@@ -907,6 +926,7 @@ function renderStatus(){
 function linhaPreenchida(l){const d=S.cur.doc,y=S.year;if(lineTotal(d,l,y))return true;return subsOf(l).some(sb=>sum(((d.v[subKey(l,sb)]||{})[y]||[]).map(v=>+v||0)))}
 const restrito=()=>!!(S.cur&&!S.owner&&S.cur.uid===S.me);
 /* produtos da obra: só os que a obra usa (histórico); obra sem histórico mostra todos os do modelo */
+function nomeProd(P,tipo,hist){const tp=T&&T.tipos&&T.tipos[tipo];return (tp&&tp.prods&&tp.prods[P])||(hist&&hist.pd&&hist.pd[P])||(P?"Produto "+P:"Sem produto")}
 function produtosDaObra(hist,lines){const pd=Object.keys((hist&&hist.pd)||{});const s=new Set(pd);lines.forEach(l=>{if(l.kind==="leaf"&&l.P&&sum(l.h))s.add(l.P)});return s.size?s:null}
 const oculto=l=>{const oc=S.regras&&S.regras.ocSet;return !!(oc&&oc.has(`${(S.cur&&S.cur.info&&S.cur.info.tipo)||""}|${l.P}|${l.S}|${l.I}`))};
 const prodOk=l=>!(S.cur&&S.cur.prods&&l.P&&l.key!=="P:extra"&&!String(l.key).startsWith("GX:")&&!l.extra&&!S.cur.prods.has(l.P));
@@ -998,7 +1018,9 @@ function renderGrid(){
   const showM=i=>i<12?H25:H26;
   const MC=(a,b)=>Array.from({length:b-a},(_,k)=>a+k).filter(showM).map(i=>`<td class="num ref hm" data-r="hm${i}"></td>`).join("");
   const REF=`<td class="num ref fz fz1" data-r="h25"></td><td class="num ref fz fz2" data-r="m25"></td><td class="num ref fz fz3" data-r="n25"></td><td class="num ref fz fz4" data-r="h26"></td><td class="num ref fz fz5" data-r="m26"></td><td class="num ref fz fz6" data-r="n26"></td>${MC(0,12)}${MC(12,21)}`;
-  let h=`<thead><tr class="band"><th class="c-desc"><span class="hm-tg hm-main" role="group" aria-label="Detalhar meses do histórico">Detalhar meses: <button class="btn sm${H25?" on":""}" data-hm="a25" aria-pressed="${H25}">2025</button><button class="btn sm${H26?" on":""}" data-hm="a26" aria-pressed="${H26}">2026</button><button class="btn sm${H25&&H26?" on":""}" data-hm="ambos" aria-pressed="${H25&&H26}">Ambos</button></span></th><th class="ref fz fzb1" colspan="3">2025 · jan–dez</th><th class="ref fz fzb2" colspan="3">2026 · jan–set</th>${H25?`<th class="ref hmb" colspan="12">2025 · mês a mês</th>`:""}${H26?`<th class="ref hmb" colspan="9">2026 · mês a mês</th>`:""}<th></th><th></th><th colspan="12">${y} · valores mensais (R$)</th><th colspan="2"></th><th class="c-act"></th></tr>
+  const ci=S.cur.info||{};const nCols=24+(H25?12:0)+(H26?9:0);
+  const ctx=`<tr class="ctx"><th colspan="${nCols}"><div class="ctx-in"><span><span class="ctx-l">Empresa</span> <b>${esc(ci.emp!=null?ci.emp+(ci.empNome?" – "+ci.empNome:""):"—")}</b></span><span><span class="ctx-l">Obra</span> <b>${esc(obraLbl(S.cur.o,ci))}</b></span><span><span class="ctx-l">Base</span> ${esc(ci.tipo||"—")}</span>${S.cur.uid!==S.me?`<span><span class="ctx-l">Gerente</span> <b>${esc(S.cur.quem||"…")}</b></span>`:""}<span><span class="ctx-l">Ano</span> <b>${y}</b></span></div></th></tr>`;
+  let h=`<thead>${ctx}<tr class="band"><th class="c-desc"><span class="hm-tg hm-main" role="group" aria-label="Detalhar meses do histórico">Detalhar meses: <button class="btn sm${H25?" on":""}" data-hm="a25" aria-pressed="${H25}">2025</button><button class="btn sm${H26?" on":""}" data-hm="a26" aria-pressed="${H26}">2026</button><button class="btn sm${H25&&H26?" on":""}" data-hm="ambos" aria-pressed="${H25&&H26}">Ambos</button></span></th><th class="ref fz fzb1" colspan="3">2025 · jan–dez</th><th class="ref fz fzb2" colspan="3">2026 · jan–set</th>${H25?`<th class="ref hmb" colspan="12">2025 · mês a mês</th>`:""}${H26?`<th class="ref hmb" colspan="9">2026 · mês a mês</th>`:""}<th></th><th></th><th colspan="12">${y} · valores mensais (R$)</th><th colspan="2"></th><th class="c-act"></th></tr>
   <tr class="cols"><th class="c-desc">Item da base modelo</th><th class="ref fz fz1">Total</th><th class="ref fz fz2" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz3" title="Meses com gasto (de 12)">Mes.</th><th class="ref fz fz4">Total</th><th class="ref fz fz5" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz6" title="Meses com gasto (de 9)">Mes.</th>${H25?MES.map(m=>`<th class="ref hm">${m}/25</th>`).join(""):""}${H26?MES.slice(0,9).map(m=>`<th class="ref hm">${m}/26</th>`).join(""):""}<th class="c-flag" title="Como preencher os 12 meses deste ano">Como preencher</th><th title="Preço unitário do ano para itens medidos em UN, M ou M2">Preço un.</th>${MES.map(m=>`<th>${m}</th>`).join("")}<th>Total ${y}</th><th>vs 2026</th><th style="text-align:left" title="Campo livre, opcional">Observação e ações</th></tr></thead><tbody>`;
   lines.forEach((l,idx)=>{
     if(!visible(l))return;
@@ -1038,7 +1060,7 @@ function renderGrid(){
   h+=`</tbody><tfoot><tr><td class="c-desc" style="padding-left:8px">Total da obra</td>${REF.replace(/data-r=/g,"data-f=")}<td class="c-flag"></td><td></td>${MES.map((_,m)=>`<td class="num" data-f="m${m}"></td>`).join("")}<td class="num tot" data-f="t"></td><td class="num" data-f="d"></td><td></td></tr></tfoot>`;
   $("#grid").innerHTML=h;
   document.querySelectorAll("#grid textarea.sname").forEach(t=>{t.style.height="auto";t.style.height=t.scrollHeight+"px"});
-  {const bt=$("#grid thead tr.band");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
+  {const bt=$("#grid thead tr.band"),ct=$("#grid thead tr.ctx");if(ct)$("#grid").style.setProperty("--ctxH",ct.getBoundingClientRect().height+"px");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
   updateTotals();
 }
 function deltaHtml(t,p26){if(!t)return"";if(!p26)return`<span class="delta up">novo</span>`;const d=(t/p26-1)*100;const c=Math.abs(d)<2?"eq":d>0?"up":"dn";return`<span class="delta ${c}">${d>0?"+":""}${nf0.format(d)}%</span>`}
@@ -1149,7 +1171,7 @@ $("#grid").addEventListener("paste",e=>{
 });
 $("#grid").addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b)return;
-  if(b.dataset.tg!==undefined){const l=S.cur.lines[+b.dataset.tg];S.collapsed.has(l.key)?S.collapsed.delete(l.key):S.collapsed.add(l.key);renderGrid();return}
+  if(b.dataset.tg!==undefined){const l=S.cur.lines[+b.dataset.tg];S.collapsed.has(l.key)?S.collapsed.delete(l.key):S.collapsed.add(l.key);S.niv=null;marcarNivel();renderGrid();return}
   if(b.dataset.det!==undefined){showDetail(+b.dataset.det);return}
   const d=S.cur.doc;if(!d.sub)d.sub={};
   if(b.dataset.sact){const idx=+b.dataset.i,l=S.cur.lines[idx],sid=b.dataset.sid,k=l.key+"#"+sid;
@@ -1249,7 +1271,11 @@ $("#btn-exp-me").addEventListener("click",e=>{e.stopPropagation();menuMeuExcel()
 $("#only-empty").addEventListener("change",e=>{S.onlyEmpty=e.target.checked;if(S.onlyEmpty){S.onlyFilled=false;$("#only-filled").checked=false}renderGrid()});
 $("#only-filled").addEventListener("change",e=>{S.onlyFilled=e.target.checked;if(S.onlyFilled){S.onlyEmpty=false;$("#only-empty").checked=false}renderGrid()});
 $("#only-rev").addEventListener("change",e=>{S.onlyRev=e.target.checked;renderGrid()});
-$("#btn-collapse").addEventListener("click",()=>{const grps=S.cur.lines.filter(l=>l.kind==="grp"&&l.depth<=2);if(S.collapsed.size){S.collapsed.clear();$("#btn-collapse").textContent="Recolher grupos"}else{grps.forEach(l=>S.collapsed.add(l.key));$("#btn-collapse").textContent="Expandir grupos"}renderGrid()});
+function nivelEstrutura(n){if(!S.cur)return;S.niv=n;S.collapsed=new Set();
+  if(n!=="all"){const k=+n;S.cur.lines.forEach(l=>{if(l.kind==="leaf")return;const lv=l.kind==="prod"?0:(l.parents||[]).length;if(lv===k)S.collapsed.add(l.key)})}
+  marcarNivel();renderGrid()}
+function marcarNivel(){document.querySelectorAll("#niv-tg [data-niv]").forEach(b=>{const on=S.niv!=null&&String(S.niv)===b.dataset.niv;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on)})}
+$("#niv-tg").addEventListener("click",e=>{const b=e.target.closest("[data-niv]");if(b)nivelEstrutura(b.dataset.niv)});
 $("#btn-copy-prev").addEventListener("click",()=>{
   const b=$("#btn-copy-prev");if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar: substituir "+S.year+" pelos valores de "+(+S.year-1);setTimeout(()=>{delete b.dataset.arm;renderGrid()},5000);return}
   delete b.dataset.arm;const d=S.cur.doc,py=String(+S.year-1);
@@ -1313,18 +1339,40 @@ $("#btn-validar").addEventListener("click",async()=>{const b=$("#btn-validar");
     Object.assign(c.doc,{status:"validado",validadoEm:p.validadoEm,validadoPor:por});renderStatus();toast("Orçamento validado e travado")}
   catch(e){toast("Não foi possível validar.")}
 });
-$("#btn-reopen").addEventListener("click",()=>{
-  const box=$("#btn-reopen").parentElement;if($("#dev-box"))return;
-  const w=document.createElement("span");w.id="dev-box";w.className="confirm";
-  w.innerHTML=`<input id="dev-mot" placeholder="Resumo da devolução (os apontamentos por item vão junto)" style="min-width:260px;padding:6px 8px;border:1px solid var(--line);border-radius:6px"><button class="btn sm primary" id="dev-ok">Devolver</button><button class="btn sm" id="dev-no">Cancelar</button>`;
-  box.append(w);$("#dev-mot").focus();
-  $("#dev-no").onclick=()=>w.remove();
-  $("#dev-ok").onclick=async()=>{const mot=$("#dev-mot").value.trim();if(!mot){toast("Escreva o motivo da devolução.");return}
-    const c=S.cur;try{await saveVersion(c.uid,c.o,payloadFrom(c),"Antes de devolver").catch(()=>{});const por=await quemSou();const nRev=Object.values(c.doc.rev||{}).filter(r=>r&&r.t).length;
-      const dv={motivo:mot+(nRev?` (${nRev} apontamento(s) nos itens; marque "Só itens com apontamento")`:""),em:nowISO(),por,apontamentos:nRev};const p={...payloadFrom(c),status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv};
-      await S.db.doc(`gerentes/${c.uid}/orc/${c.o}`).set(p);Object.assign(c.doc,{status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv});w.remove();renderStatus();toast("Obra devolvida ao gerente")}
-    catch(e){toast("Não foi possível devolver.")}};
-});
+/* Devolver ao gerente: janela única com os apontamentos por item (editáveis), motivos rápidos e resumo */
+$("#btn-reopen").addEventListener("click",()=>abrirDevolucao());
+function abrirDevolucao(){const c=S.cur;if(!c||$("#dev-ov"))return;const L=new Map(c.lines.map(l=>[l.key,l]));
+  const ov=document.createElement("div");ov.id="dev-ov";ov.className="dev-ov";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-labelledby","dev-tt");
+  const MOT=["Valores muito acima do histórico","Faltou detalhar os subitens","Itens sem preenchimento","Observação não explica o valor","Valores lançados no mês errado"];
+  const desenhar=()=>{const revs=Object.entries(c.doc.rev||{}).filter(([k,r])=>r&&r.t);
+    ov.innerHTML=`<div class="dev-box"><div class="dev-hd"><div><div class="dev-st">Passo final da conferência</div><h3 id="dev-tt">Devolver ao gerente</h3>
+      <div class="muted">${esc(obraLbl(c.o,c.info||{}))}${c.quem?" · "+esc(c.quem):""}</div></div><button class="btn sm" id="dev-x" aria-label="Fechar">✕</button></div>
+      <ol class="dev-pass"><li><b>1. O que está errado nos itens</b> <span class="muted">(o gerente vê isso em cada linha)</span>
+        ${revs.length?`<div class="dev-lst">${revs.map(([k,r])=>{const l=L.get(k);return `<div class="dev-it"><div class="dev-nm">${esc(l?l.desc:k)}</div><textarea data-rk="${esc(k)}" rows="2">${esc(r.t)}</textarea><button class="btn sm" data-rdel="${esc(k)}" title="Tirar este apontamento">Remover</button></div>`}).join("")}</div>`
+        :`<div class="dev-vz">Nenhum item apontado. Se quiser marcar um item específico, feche esta janela e use o botão <b>⚠ Apontar</b> na linha do item. Também pode devolver só com o resumo abaixo.</div>`}</li>
+      <li><b>2. Motivo geral</b> <span class="muted">(clique para incluir no resumo)</span><div class="dev-chips">${MOT.map(m=>`<button type="button" class="chip" data-mot="${esc(m)}">+ ${esc(m)}</button>`).join("")}</div>
+        <textarea id="dev-mot" rows="3" placeholder="Explique ao gerente o que precisa ser ajustado (mínimo 10 caracteres)">${esc(ov._mot||"")}</textarea></li>
+      <li><b>3. Confirmar</b><div class="muted">O orçamento volta para o gerente como <b>Devolvido</b>, ele corrige e envia de novo. Uma cópia do estado atual é guardada no histórico de versões.</div></li></ol>
+      <div class="dev-ft"><span class="muted" id="dev-msg"></span><button class="btn" id="dev-no">Cancelar</button><button class="btn primary" id="dev-ok">Devolver ao gerente${revs.length?` (${revs.length} apontamento${revs.length>1?"s":""})`:""}</button></div></div>`;
+    ov.querySelector("#dev-mot").addEventListener("input",e=>ov._mot=e.target.value);
+  };
+  ov._mot="";desenhar();document.body.append(ov);setTimeout(()=>{const t=$("#dev-mot");if(t)t.focus()},30);
+  const fechar=()=>{ov.remove();document.removeEventListener("keydown",esc_)};const esc_=e=>{if(e.key==="Escape")fechar()};document.addEventListener("keydown",esc_);
+  const guardarTextos=()=>{ov.querySelectorAll("textarea[data-rk]").forEach(t=>{const r=c.doc.rev[t.dataset.rk];if(r&&t.value.trim()&&t.value.trim()!==r.t){r.t=t.value.trim();r.em=nowISO()}})};
+  ov.addEventListener("click",async e=>{const t=e.target;
+    if(t===ov||t.id==="dev-x"||t.id==="dev-no")return fechar();
+    if(t.dataset.mot){const ta=$("#dev-mot");ta.value=(ta.value.trim()?ta.value.trim()+"; ":"")+t.dataset.mot;ov._mot=ta.value;t.disabled=true;return}
+    if(t.dataset.rdel){guardarTextos();delete c.doc.rev[t.dataset.rdel];desenhar();return}
+    if(t.id==="dev-ok"){const mot=$("#dev-mot").value.trim();if(mot.length<10){$("#dev-msg").textContent="Escreva o motivo (mínimo 10 caracteres).";$("#dev-mot").focus();return}
+      t.disabled=true;$("#dev-msg").textContent="Devolvendo…";guardarTextos();
+      try{await saveVersion(c.uid,c.o,payloadFrom(c),"Antes de devolver").catch(()=>{});const por=await quemSou();const nRev=Object.values(c.doc.rev||{}).filter(r=>r&&r.t).length;
+        const dv={motivo:mot+(nRev?` (${nRev} apontamento(s) nos itens; marque "Só itens com apontamento")`:""),em:nowISO(),por,apontamentos:nRev};
+        const p={...payloadFrom(c),status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv};
+        await S.db.doc(`gerentes/${c.uid}/orc/${c.o}`).set(p);Object.assign(c.doc,{status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv});
+        fechar();atualizarContRev();renderStatus();renderGrid();toast("Obra devolvida ao gerente")}
+      catch(err){t.disabled=false;$("#dev-msg").textContent="Não foi possível devolver. Tente de novo."}}
+  });
+}
 /* histórico de versões */
 async function saveVersion(uid,o,pl,motivo){const id=new Date().toISOString().replace(/[:.]/g,"-");
   await S.db.doc(`gerentes/${uid}/orc/${o}/versoes/${id}`).set({...JSON.parse(JSON.stringify(pl)),motivo,em:nowISO(),por:S.owner&&uid!==S.me?"Controladoria":"Responsável"})}
