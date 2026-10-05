@@ -85,6 +85,9 @@ label.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var
 .orc-quem .oq{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px;background:var(--bg)}.em-edicao .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:4px}
 .filtros .fobra{flex:1 1 360px}.filtros .fobra .slicer{width:100%}.filtros .fobra .sl-btn{width:100%;font-weight:600}.filtros .fobra .sl-pop{width:520px}
 .consol{margin-block:10px}
+#tbl-acomp tr.ac-on td{background:var(--accent-soft)}
+.mx-pop{position:absolute;z-index:70;top:calc(100% + 4px);left:0;width:420px;background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:10px 12px;font-size:13px}
+.mx-pop fieldset{border:1px solid var(--line);border-radius:6px;margin:8px 0;padding:4px 8px}.mx-pop legend{font-size:11px;color:var(--muted);text-transform:uppercase}.mx-pop label{display:flex;gap:6px;align-items:flex-start;margin:3px 0}
 #v-adm .card{position:relative}.card-tg{float:right;margin-left:8px}
 .rec-hide{display:none!important}#v-adm .card.recolhido{padding-block:8px}.consol table{font-size:12.5px}.consol .num{text-align:right;font-family:var(--f-mono)}.consol tr.c-emp td{background:var(--prod);font-weight:600}.consol tr.c-ins td{background:var(--surface);font-size:12px}.consol tr.c-srv td{background:var(--group);font-size:12px;font-weight:600}
 .chips{display:flex;flex-wrap:wrap;gap:4px;max-width:280px}.chip{display:inline-flex;align-items:center;gap:2px;background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11.5px;padding:1px 4px 1px 9px;max-width:270px}
@@ -122,7 +125,9 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 .grid thead tr.cols th{top:var(--bandH,24px)}
 .grid .c-desc{position:sticky;left:0;z-index:3;background:inherit;text-align:left;min-width:280px;max-width:280px;width:280px;border-right:1px solid var(--line-strong)}
 .grid thead .c-desc{z-index:7;background:var(--surface)}
-.grid td.c-desc{padding:0 8px;overflow:hidden;text-overflow:ellipsis}
+.grid td.c-desc{padding:3px 8px;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+.grid td.c-desc .dlink{white-space:normal;text-align:left;overflow:visible}
+.grid thead th.c-desc{white-space:normal}
 .grid tr{background:var(--surface)}
 .grid tr.prod{background:var(--prod);font-weight:600}
 .grid tr.grp{background:var(--group);font-weight:600}
@@ -150,8 +155,8 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 .grid tr.has-rev>td.c-desc{box-shadow:inset 3px 0 0 var(--bad)}
 .grid td.acts button.rev-on{color:var(--bad);border-color:var(--bad)}
 .rev-box{display:inline-flex;gap:3px;align-items:center}.rev-box input{width:240px;height:24px;font-size:12px;border:1px solid var(--bad);border-radius:4px;padding:0 6px}
-.grid td.acts input.lobs.need,.grid input.sname.need{border-color:var(--bad);background:var(--bad-soft)}
-.grid input.sname.gen{border:1px dashed var(--line-strong);font-style:italic;color:var(--muted)}
+.grid td.acts input.lobs.need,.grid .sname.need{border-color:var(--bad);background:var(--bad-soft)}
+.grid .sname.gen{border:1px dashed var(--line-strong);font-style:italic;color:var(--muted)}
 .grid th.hmb{text-align:left!important;padding-left:10px!important;border-left:2px solid var(--line-strong)}.grid td.hm:first-of-type{}
 .grid .orient{color:var(--accent);max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;display:inline-block;white-space:nowrap}
 .grid tr>:last-child{position:sticky;right:0;z-index:4;background:inherit;min-width:150px;border-left:1px solid var(--line-strong);box-shadow:-6px 0 8px -6px rgba(0,0,0,.18)}
@@ -196,9 +201,9 @@ tr.ldrill>td{background:var(--surface);padding:0!important}
 .grid tr.sub{background:var(--bg)}
 .grid .area{font-size:10px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:3px;padding:0 4px;margin-left:6px}
 .grid .lock{font-size:10px;margin-left:6px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:3px;padding:0 4px}
-.grid tr.sub td.c-desc{display:flex;align-items:center;gap:6px;height:30px}
+.grid tr.sub td.c-desc{display:flex;align-items:center;gap:6px;min-height:30px;height:auto}
 .grid .sub-mark{color:var(--muted)}
-.grid input.sname{flex:1;min-width:0;border:1px solid transparent;background:transparent;padding:2px 4px;font:inherit;color:var(--ink)}
+.grid .sname{flex:1;min-width:0;border:1px solid transparent;background:transparent;padding:2px 4px;font:inherit;color:var(--ink);resize:none;overflow:hidden;line-height:1.25;height:22px;display:block}
 .grid input.sname:hover,.grid input.sname:focus{border-color:var(--line-strong);background:var(--surface)}
 .grid tr.has-sub td.cell input{color:var(--muted);font-style:italic}
 .grid tfoot td{position:sticky;bottom:0;background:var(--prod);font-weight:700;border-top:1px solid var(--line-strong);z-index:4}
@@ -413,9 +418,9 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <div class="row" style="justify-content:space-between">
           <div><h2>Acompanhamento</h2><p class="desc">Status de cada obra atribuída. Abra para conferir; obras enviadas ficam bloqueadas para o gerente até você reabrir.</p></div>
           <div class="row">
-            <input id="acomp-q" type="search" placeholder="Gerente, empresa ou obra" aria-label="Buscar no acompanhamento" style="padding:7px 9px;border:1px solid var(--line-strong);border-radius:6px;min-width:200px"><select id="acomp-ver" aria-label="Estágio"><option value="ativas">Todos os estágios</option><option value="rascunho">Em preenchimento</option><option value="aguardando">Aguardando validação</option><option value="validadas">Validadas</option><option value="devolvidas">Devolvidas</option><option value="vazio">Não iniciadas</option><option value="removidas">Removidas</option></select>
+            <input id="acomp-q" type="search" placeholder="Gerente, empresa ou obra" aria-label="Buscar no acompanhamento" style="padding:7px 9px;border:1px solid var(--line-strong);border-radius:6px;min-width:200px"><div class="slicer est-dd" id="est-dd"><button type="button" class="sl-btn" style="width:230px"><span class="sl-txt">Todos os estágios</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><div class="sl-acts"><button type="button" data-esta="todos">Todos</button><button type="button" data-esta="limpar">Limpar</button></div><div class="sl-list" id="est-list"></div></div></div><select id="acomp-ver" hidden><option value="ativas"></option></select>
             <button class="btn" id="btn-refresh">Atualizar</button>
-            <select id="exp-scope" aria-label="Obras exportadas"><option value="enviado">Enviadas e validadas</option><option value="todas">Todas</option></select>
+            <select id="exp-scope" aria-label="Obras exportadas" title="Usado quando nenhuma obra está marcada na lista"><option value="enviado">Exportar: enviadas e validadas</option><option value="todas">Exportar: todas</option></select>
             <button class="btn" id="btn-exp-res">Excel resumo</button>
             <button class="btn primary" id="btn-exp-mod">Excel no layout do modelo</button>
           </div>
@@ -750,13 +755,14 @@ function renderSlicer(nm){const box=$("#sl-"+nm);if(!box)return;const id="f-"+nm
   box.querySelector(".sl-list").innerHTML=vis.slice(0,1500).map(([k,lb,n])=>`<label class="sl-it${sel.has(k)?" on":""}"><input type="checkbox" data-k="${esc(k)}" data-lb="${esc(lb)}" ${sel.has(k)?"checked":""}><span>${esc(lb)}</span><span class="muted">${n||""}</span></label>`).join("")||`<div class="muted" style="padding:6px">Nada encontrado.</div>`;
   box.querySelector(".sl-n").textContent=`${vis.length} opção(ões)`;
   const ss=S.fSel[id]||[];box.querySelector(".sl-txt").textContent=!ss.length?(nm==="emp"||nm==="obra"?`Todas${nm==="obra"?" ("+opts.length+")":""}`:"Todos"):ss.length===1?ss[0][1]:`${ss.length} selecionados`;box.classList.toggle("ativo",ss.length>0);box.title=ss.map(x=>x[1]).join("\n")}
-document.querySelectorAll(".slicer").forEach(box=>{const id=box.dataset.f,nm=id.slice(2);
+document.querySelectorAll(".slicer[data-f]").forEach(box=>{const id=box.dataset.f,nm=id.slice(2);
   box.querySelector(".sl-btn").addEventListener("click",()=>{const pop=box.querySelector(".sl-pop");const abrir=pop.hidden;document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true);pop.hidden=!abrir;if(abrir){renderSlicer(nm);box.querySelector(".sl-q").focus()}});
   box.querySelector(".sl-q").addEventListener("input",()=>renderSlicer(nm));
   box.querySelector(".sl-list").addEventListener("change",e=>{const c=e.target;if(!c.dataset)return;const k=c.dataset.k;S.fSel[id]=S.fSel[id]||[];
     if(c.checked){if(!S.fSel[id].some(x=>x[0]===k))S.fSel[id].push([k,c.dataset.lb])}else S.fSel[id]=S.fSel[id].filter(x=>x[0]!==k);filtrarObras()});
   box.querySelector(".sl-acts").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
     if(b.dataset.sla==="limpar")S.fSel[id]=[];else{const q=semAc(box.querySelector(".sl-q").value||"").trim();(S.fOpts[id]||[]).filter(o=>!q||semAc(o[1]+" "+o[0]).includes(q)).forEach(([k,lb])=>{if(!S.fSel[id].some(x=>x[0]===k))S.fSel[id].push([k,lb])})}filtrarObras()})});
+document.addEventListener("click",e=>{const mp=$("#mx-pop");if(mp&&!e.target.closest("#mx-pop")&&e.target.id!=="btn-exp-me")mp.remove()});
 document.addEventListener("click",e=>{if(!e.target.closest(".slicer"))document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true)});
 function renderResumoFiltros(){const r=$("#f-resumo");if(!r)return;const t=(id,v)=>{const ss=S.fSel[id]||[];return !ss.length?v:ss.length===1?ss[0][1]:ss.length+" selecionados"};
   r.innerHTML=`<span class="fr-it">Empresa: <b>${esc(t("f-emp","Todas"))}</b></span>${S.owner?`<span class="fr-it">Gerente: <b>${esc(t("f-ger","Todos"))}</b></span><span class="fr-it">Quem planeja: <b>${esc(t("f-cargo","Todos"))}</b></span>`:""}<span class="fr-it">Obra: <b>${esc(t("f-obra","Todas"))}</b> <span class="muted">${esc($("#busca-obra-n").textContent||"")}</span></span><button type="button" class="btn sm" id="f-expandir">▾ Editar filtros</button>`}
@@ -1021,7 +1027,7 @@ function renderGrid(){
     <td class="num tot" data-r="t"></td><td class="num" data-r="d"></td><td class="acts"><input class="lobs${precisaObs(l)&&obsCurta(doc,l)?" need":""}" id="lo-${idx}" data-lobs="${idx}" value="${esc((doc.lobs||{})[l.key]||"")}" ${ce?"":"disabled"} ${temValor(doc,l)||(doc.lobs||{})[l.key]?"":"hidden"} aria-label="O que está considerando neste insumo: ${esc(l.desc)}" title="${esc((doc.lobs||{})[l.key]||"O que está considerando neste insumo? (mínimo "+OBS_MIN+" caracteres)")}">${acts}</td></tr>`;
     subs.forEach(sb=>{
       const sa=(doc.v[subKey(l,sb)]&&doc.v[subKey(l,sb)][y])||[];const sf=flagOf(subKey(l,sb),y);const sd=l.canEdit&&!flagAuto(sf)?"":"disabled";
-      h+=`<tr class="sub" data-i="${idx}" data-s="${esc(sb.id)}"><td class="c-desc" style="padding-left:${pad+18}px"><span class="sub-mark">↳</span><input class="sname${nomeGenerico(sb.n)?(YEARS.some(yy=>((doc.v[subKey(l,sb)]||{})[yy]||[]).some(v=>+v))?" need":" gen"):""}" id="sn-${idx}-${esc(sb.id)}" data-sn="${idx}" data-sid="${esc(sb.id)}" value="${esc(sb.n)}" ${l.canEdit?"":"disabled"} aria-label="Nome do subitem" title="${nomeGenerico(sb.n)?"Troque “Detalhe” pelo nome do gasto (ex.: Aluguel da sede)":esc(sb.n)}" placeholder="Nome do gasto"></td>
+      h+=`<tr class="sub" data-i="${idx}" data-s="${esc(sb.id)}"><td class="c-desc" style="padding-left:${pad+18}px"><span class="sub-mark">↳</span><textarea rows="1" class="sname${nomeGenerico(sb.n)?(YEARS.some(yy=>((doc.v[subKey(l,sb)]||{})[yy]||[]).some(v=>+v))?" need":" gen"):""}" id="sn-${idx}-${esc(sb.id)}" data-sn="${idx}" data-sid="${esc(sb.id)}" ${l.canEdit?"":"disabled"} aria-label="Nome do subitem" title="${nomeGenerico(sb.n)?"Troque “Detalhe” pelo nome do gasto (ex.: Aluguel da sede)":esc(sb.n)}" placeholder="Nome do gasto">${esc(sb.n)}</textarea></td>
       ${(()=>{const hh=l.subH&&l.subH[sb.n];const st0=hh?histStats(hh):null;const mc=(a,b)=>Array.from({length:b-a},(_,k)=>a+k).filter(showM).map(i=>`<td class="num ref hm${hh&&acimaMedia(hh,i,st0)?" acima":""}">${hh?f0(hh[i]):""}</td>`).join("");if(!hh)return [1,2,3,4,5,6].map(i=>`<td class="ref fz fz${i}"></td>`).join("")+mc(0,12)+mc(12,21);const r=histStats(hh);
         return `<td class="num ref fz fz1">${f0(r.h25)}</td><td class="num ref fz fz2">${f0(r.m25)}</td><td class="num ref fz fz3">${r.n25||"–"}</td><td class="num ref fz fz4">${f0(r.h26)}</td><td class="num ref fz fz5">${f0(r.m26)}</td><td class="num ref fz fz6">${r.n26||"–"}</td>${mc(0,12)}${mc(12,21)}`})()}<td class="c-flag">${l.canEdit?flagSel(subKey(l,sb),y,idx,sb.id,y!=="2027"||!!(l.subH&&l.subH[sb.n])):""}</td><td></td>
       ${MES.map((_,m)=>`<td class="cell"><input id="s-${idx}-${esc(sb.id)}-${m}" data-sk="${idx}" data-sid="${esc(sb.id)}" data-m="${m}" value="${f2(+sa[m]||0)}" class="${sa[m]?"has":""}" ${sd} inputmode="decimal" aria-label="${esc(sb.n)} ${MES[m]} ${y}"></td>`).join("")}
@@ -1031,6 +1037,7 @@ function renderGrid(){
   });
   h+=`</tbody><tfoot><tr><td class="c-desc" style="padding-left:8px">Total da obra</td>${REF.replace(/data-r=/g,"data-f=")}<td class="c-flag"></td><td></td>${MES.map((_,m)=>`<td class="num" data-f="m${m}"></td>`).join("")}<td class="num tot" data-f="t"></td><td class="num" data-f="d"></td><td></td></tr></tfoot>`;
   $("#grid").innerHTML=h;
+  document.querySelectorAll("#grid textarea.sname").forEach(t=>{t.style.height="auto";t.style.height=t.scrollHeight+"px"});
   {const bt=$("#grid thead tr.band");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
   updateTotals();
 }
@@ -1095,7 +1102,7 @@ $("#grid").addEventListener("click",e=>{const b=e.target.closest&&e.target.close
   if(b.dataset.hm){S.hm=S.hm||{a25:false,a26:false};if(b.dataset.hm==="ambos"){const on=!(S.hm.a25&&S.hm.a26);S.hm={a25:on,a26:on}}else S.hm[b.dataset.hm]=!S.hm[b.dataset.hm];renderGrid();return}
   if(b.dataset.ldr!==undefined){const l=S.cur.lines[+b.dataset.ldr];S.lineOpen=S.lineOpen||new Set();S.lineOpen.has(l.key)?S.lineOpen.delete(l.key):S.lineOpen.add(l.key);renderGrid();return}
   if(b.dataset.ldy){const [k,yy]=b.dataset.ldy.split("@");S.lineYrs=S.lineYrs||{};S.lineYrs[k]=yy;renderGrid();return}});
-$("#grid").addEventListener("input",e=>{const el=e.target;if(el.dataset&&el.dataset.lobs!==undefined){const l=S.cur.lines[+el.dataset.lobs];el.classList.toggle("need",precisaObs(l)&&el.value.trim().length<OBS_MIN)}});
+$("#grid").addEventListener("input",e=>{const el=e.target;if(el.classList&&el.classList.contains("sname")){el.style.height="auto";el.style.height=el.scrollHeight+"px"}if(el.dataset&&el.dataset.lobs!==undefined){const l=S.cur.lines[+el.dataset.lobs];el.classList.toggle("need",precisaObs(l)&&el.value.trim().length<OBS_MIN)}});
 $("#grid").addEventListener("change",e=>{
   const el=e.target;if(!S.cur.editable)return;
   if(el.dataset.fk!==undefined){const idx=+el.dataset.fk,l=S.cur.lines[idx],sid=el.dataset.fsid,k=sid!==undefined?l.key+"#"+sid:l.key;const m=el.value;
@@ -1127,6 +1134,7 @@ $("#grid").addEventListener("keydown",e=>{
   if(e.key==="Enter"||e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();const inputs=[...document.querySelectorAll(`#grid input[data-m="${el.dataset.m}"]:not(:disabled)`)];const i=inputs.indexOf(el)+(e.key==="ArrowUp"?-1:1);if(inputs[i]){el.dispatchEvent(new Event("change",{bubbles:true}));inputs[i].focus();inputs[i].select()}}
 });
 $("#grid").addEventListener("focusin",e=>{if(e.target.tagName==="INPUT")e.target.select()});
+$("#grid").addEventListener("keydown",e=>{if(e.target.classList&&e.target.classList.contains("sname")&&e.key==="Enter"){e.preventDefault();e.target.blur()}});
 $("#grid").addEventListener("paste",e=>{
   const el=e.target;if(el.dataset.m===undefined||!S.cur.editable)return;
   const txt=(e.clipboardData||window.clipboardData).getData("text");if(!/[\t\n]/.test(txt.trim()))return;
@@ -1194,33 +1202,50 @@ $("#years").addEventListener("click",e=>{const b=e.target.closest("button");if(!
 $("#q").addEventListener("input",e=>{S.q=e.target.value.trim().toLowerCase();clearTimeout(renderGrid.t);renderGrid.t=setTimeout(renderGrid,200)});
 $("#only-used").addEventListener("change",e=>{S.onlyUsed=e.target.checked;renderGrid()});
 $("#only-mine").addEventListener("change",e=>{S.onlyMine=e.target.checked;renderGrid()});
-async function exportarMeuExcel(){
-  if(typeof XLSX==="undefined"){toast("O gerador de Excel não carregou (precisa de internet). Tente de novo.");return}
+/* "Baixar meu Excel": escolhe anos, itens (só preenchidos ou todos os meus, com os meses em branco para preencher) e obras */
+function menuMeuExcel(){let m=$("#mx-pop");if(m){m.remove();return}const b=$("#btn-exp-me");m=document.createElement("div");m.id="mx-pop";m.className="mx-pop";
+  const nOb=(S.selIds||[]).length,nF=S.owner?obrasFiltradas().length:nOb;
+  m.innerHTML=`<b>Baixar meu Excel</b>
+   <fieldset><legend>Anos</legend><label><input type="radio" name="mx-a" value="2027" checked> Só 2027</label><label><input type="radio" name="mx-a" value="todos"> 2027, 2028 e 2029</label></fieldset>
+   <fieldset><legend>Itens</legend><label><input type="radio" name="mx-i" value="todos" checked> Todos os itens que eu preencho (meses em branco para preencher)</label><label><input type="radio" name="mx-i" value="preench"> Só os já preenchidos</label></fieldset>
+   <fieldset><legend>Obras</legend><label><input type="radio" name="mx-o" value="atual" checked> Só a obra da tabela${S.cur?": "+esc(obraLbl(S.cur.o,S.cur.info)):""}</label><label><input type="radio" name="mx-o" value="todas"> ${S.owner?`Obras do filtro (${nF})`:`Todas as minhas obras (${nOb})`}</label></fieldset>
+   <div class="row" style="gap:6px;justify-content:flex-end"><button class="btn sm" id="mx-no">Cancelar</button><button class="btn sm primary" id="mx-ok">Baixar</button></div>`;
+  b.parentElement.style.position="relative";b.after(m);
+  $("#mx-no").onclick=()=>m.remove();
+  $("#mx-ok").onclick=()=>{const v=n=>m.querySelector(`input[name="${n}"]:checked`).value;const op={anos:v("mx-a")==="2027"?["2027"]:YEARS.slice(),todos:v("mx-i")==="todos",obras:v("mx-o")};m.remove();
+    exportarMeuExcel(op).catch(()=>toast("Não foi possível gerar o Excel."))}}
+async function exportarMeuExcel(op){op=op||{anos:YEARS.slice(),todos:false,obras:"todas"};
+  if(typeof XLSX==="undefined"){toast("O gerador de Excel não carregou. Recarregue a página.");return}
   if(!S.dl){toast("Download indisponível nesta visualização");return}
   await flush().catch(()=>{});toast("Montando o Excel…");
   const M=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-  const aoa=[["Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição","Subitem","Ano",...M,"Total","Observação"]];
-  const ids=(S.selIds||[...document.querySelectorAll("#sel-obra option")].map(o=>o.value)).filter(Boolean);
-  for(const o of ids){const info=S.perfil.obras[o];if(!info)continue;
+  const aoa=[["Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição do insumo","Subitem (nome do gasto)","Ano",...M,"Total","Histórico 2025","Histórico jan–set/2026","Observação"]];
+  let ids=op.obras==="atual"&&S.cur?[S.cur.o]:(S.owner?obrasFiltradas():(S.selIds||[])).filter(Boolean);
+  if(ids.length>300){toast(`São ${ids.length} obras; vou exportar as primeiras 300. Use os filtros para escolher.`);ids=ids.slice(0,300)}
+  const r2=x=>Math.round((+x||0)*100)/100;
+  for(const o of ids){const info=S.perfil.obras[o]||(S.catMap&&S.catMap.get(o)?{...catInfo(S.catMap.get(o)),todas:true}:null);if(!info)continue;
     const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();const hd=hs.exists?hs.data():null;
     const ds=await S.db.doc(`gerentes/${S.me}/orc/${o}`).get();const raw=ds.exists?ds.data():{};
     const doc={v:raw.v||{},pr:raw.pr||{},sub:raw.sub||{},lobs:raw.lobs||{}};const lines=buildLines(info.tipo,hd,extOrf(raw.ext,raw.v));const prods=produtosDaObra(hd,lines);
-    const cur={uid:S.me,o,info,doc:{sub:JSON.parse(JSON.stringify(doc.sub))},lines,editable:false};applyRules(cur);
+    const cur={uid:S.me,o,info,doc:{sub:JSON.parse(JSON.stringify(doc.sub))},lines,editable:true};applyRules(cur);
     lines.filter(l=>l.kind==="leaf"&&(S.owner||l.mine)&&(!prods||!l.P||l.extra||prods.has(l.P))).forEach(l=>{
-      YEARS.forEach(y=>{const v=M.map((_,m)=>lineMonth(doc,l,y,m));const t=sum(v);
-        const subs=(doc.sub[l.key]||[]);const sv=subs.map(sb=>({n:sb.n,v:((doc.v[subKey(l,sb)]||{})[y]||[]).map(x=>+x||0)}));
-        if(!t&&!sv.some(x=>sum(x.v)))return;
-        aoa.push([info.emp||"",info.obra||o,info.nome||"",l.P||"",l.S||"",l.I||"",l.desc,"",+y,...v.map(x=>Math.round(x*100)/100),Math.round(t*100)/100,doc.lobs[l.key]||""]);
-        sv.forEach(x=>{if(sum(x.v))aoa.push([info.emp||"",info.obra||o,info.nome||"",l.P||"",l.S||"",l.I||"",l.desc,x.n,+y,...M.map((_,m)=>x.v[m]||0),Math.round(sum(x.v)*100)/100])});
+      const oc=S.regras&&S.regras.ocSet&&S.regras.ocSet.has(`${info.tipo||""}|${l.P}|${l.S}|${l.I}`);if(oc&&!sum(l.h)&&!temValor({v:doc.v,sub:doc.sub},l))return;
+      const st=histStats(l.h);
+      const subs=(doc.sub[l.key]&&doc.sub[l.key].length?doc.sub[l.key]:(cur.doc.sub[l.key]||[]));
+      op.anos.forEach(y=>{const v=M.map((_,m)=>lineMonth(doc,l,y,m));const t=sum(v);
+        const sv=subs.map(sb=>({n:sb.n,v:((doc.v[subKey(l,sb)]||{})[y]||[]).map(x=>+x||0),h:l.subH&&l.subH[sb.n]}));
+        if(!op.todos&&!t&&!sv.some(x=>sum(x.v)))return;
+        aoa.push([numOr(info.emp||""),numOr(info.obra||o),info.nome||"",l.P||"",l.S||"",l.I||"",l.desc,subs.length?"(total do insumo)":"",+y,...(subs.length?v.map(r2):v.map(x=>x?r2(x):null)),r2(t),r2(st.h25),r2(st.h26),doc.lobs[l.key]||""]);
+        sv.forEach(x=>{const hs2=x.h?histStats(x.h):null;aoa.push([numOr(info.emp||""),numOr(info.obra||o),info.nome||"",l.P||"",l.S||"",l.I||"",l.desc,x.n,+y,...M.map((_,m)=>x.v[m]?r2(x.v[m]):null),r2(sum(x.v)),hs2?r2(hs2.h25):null,hs2?r2(hs2.h26):null,""])});
       })});
   }
-  if(aoa.length===1){toast("Ainda não há valores preenchidos para exportar.");return}
-  const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:8},{wch:9},{wch:9},{wch:40},{wch:22},{wch:6},...Array(12).fill({wch:11}),{wch:13}];ws["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(aoa[0].length-1)+aoa.length};
+  if(aoa.length===1){toast(op.todos?"Nenhum item para exportar.":"Ainda não há valores preenchidos para exportar.");return}
+  const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:8},{wch:9},{wch:9},{wch:40},{wch:28},{wch:6},...Array(12).fill({wch:11}),{wch:13},{wch:13},{wch:13},{wch:30}];ws["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(aoa[0].length-1)+aoa.length};ws["!freeze"]={xSplit:9,ySplit:1};
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Meu orçamento");
   const nm=slug((S.perfil&&S.perfil.nome)||(window.OFFLINE&&window.OFFLINE.nome)||"gerente");
-  try{await S.dl.save({filename:`MEU_ORCAMENTO_2027_2029_${nm}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast("Excel gerado")}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
+  try{await S.dl.save({filename:`MEU_ORCAMENTO_${op.anos.length===1?op.anos[0]:"2027_2029"}_${nm}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast(`Excel gerado: ${aoa.length-1} linha(s)`)}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
 }
-$("#btn-exp-me").addEventListener("click",()=>exportarMeuExcel().catch(()=>toast("Não foi possível gerar o Excel.")));
+$("#btn-exp-me").addEventListener("click",e=>{e.stopPropagation();menuMeuExcel()});
 $("#only-empty").addEventListener("change",e=>{S.onlyEmpty=e.target.checked;if(S.onlyEmpty){S.onlyFilled=false;$("#only-filled").checked=false}renderGrid()});
 $("#only-filled").addEventListener("change",e=>{S.onlyFilled=e.target.checked;if(S.onlyFilled){S.onlyEmpty=false;$("#only-empty").checked=false}renderGrid()});
 $("#only-rev").addEventListener("change",e=>{S.onlyRev=e.target.checked;renderGrid()});
@@ -1417,25 +1442,27 @@ async function loadAdm(){
   S.acomp=rows;renderAcomp();
 }
 const acKey=r=>r.uid+"|"+r.o;
+const EST=[["rascunho","Em preenchimento"],["enviado","Aguardando validação"],["validado","Validadas"],["reaberto","Devolvidas"],["vazio","Não iniciadas"],["removidas","Removidas"]];
 function renderAcomp(){
-  const ocl=(S.acOcultos&&S.acOcultos.k)||{};const verRem=$("#acomp-ver").value==="removidas";
-  const opR=[...$("#acomp-ver").options].find(o=>o.value==="removidas");if(opR)opR.textContent=`Removidas (${S.acomp.filter(r=>ocl[acKey(r)]).length})`;
-  const stOf=r=>r.orc?r.orc.status:"vazio";const cntAll={};S.acomp.filter(r=>!ocl[acKey(r)]).forEach(r=>cntAll[stOf(r)]=(cntAll[stOf(r)]||0)+1);
-  [["rascunho",(cntAll.rascunho||0)],["aguardando",cntAll.enviado||0],["validadas",cntAll.validado||0],["devolvidas",cntAll.reaberto||0],["vazio",cntAll.vazio||0]].forEach(([v,n])=>{const o=[...$("#acomp-ver").options].find(x=>x.value===v);if(o)o.textContent=o.textContent.replace(/\s*\(\d+\)$/,"")+` (${n})`});
-  const qq=semAc(($("#acomp-q")&&$("#acomp-q").value)||"").trim();
-  const ver=$("#acomp-ver").value;const MAP={rascunho:"rascunho",aguardando:"enviado",validadas:"validado",devolvidas:"reaberto",vazio:"vazio"};
-  const rows=S.acomp.filter(r=>(verRem?!!ocl[acKey(r)]:!ocl[acKey(r)]&&(!MAP[ver]||stOf(r)===MAP[ver]))&&(!qq||semAc(`${r.nomeG} ${r.email} ${r.info.emp||""} ${r.info.empNome||""} ${r.info.obra||r.o} ${r.info.nome||""}`).includes(qq)));S.acRows=rows;
+  const ocl=(S.acOcultos&&S.acOcultos.k)||{};S.acEst=S.acEst||new Set();S.acSel=S.acSel||new Set();
+  const stOf=r=>r.orc?r.orc.status:"vazio";const cnt0={removidas:0};S.acomp.forEach(r=>{if(ocl[acKey(r)])cnt0.removidas++;else cnt0[stOf(r)]=(cnt0[stOf(r)]||0)+1});
+  $("#est-list").innerHTML=EST.map(([v,lb])=>`<label class="sl-it${S.acEst.has(v)?" on":""}"><input type="checkbox" data-est="${v}" ${S.acEst.has(v)?"checked":""}><span>${lb}</span><span class="muted">${cnt0[v]||0}</span></label>`).join("");
+  $("#est-dd .sl-txt").textContent=!S.acEst.size?"Todos os estágios":S.acEst.size===1?EST.find(x=>S.acEst.has(x[0]))[1]:`${S.acEst.size} estágios`;$("#est-dd").classList.toggle("ativo",S.acEst.size>0);
+  const qq=semAc(($("#acomp-q")&&$("#acomp-q").value)||"").trim();const verRem=S.acEst.size===1&&S.acEst.has("removidas");
+  const rows=S.acomp.filter(r=>{const rem=!!ocl[acKey(r)];if(S.acEst.size){if(rem){if(!S.acEst.has("removidas"))return false}else if(!S.acEst.has(stOf(r)))return false}else if(rem)return false;
+    return !qq||semAc(`${r.nomeG} ${r.email} ${r.info.emp||""} ${r.info.empNome||""} ${r.info.obra||r.o} ${r.info.nome||""}`).includes(qq)});S.acRows=rows;
   if(verRem&&!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra removida do acompanhamento.</td></tr>`;return}
-  if(!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra atribuída ainda. Use “Atribuir obras a um gerente” abaixo.</td></tr>`;return}
+  if(!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra neste filtro.</td></tr>`;return}
+  const nSel=[...S.acSel].length;
   const cnt={enviado:0,validado:0,rascunho:0,reaberto:0,vazio:0};rows.forEach(r=>cnt[r.orc?r.orc.status:"vazio"]=(cnt[r.orc?r.orc.status:"vazio"]||0)+1);
   const tot=YEARS.map(y=>sum(rows.map(r=>(r.orc&&r.orc.totais&&r.orc.totais[y])||0)));
-  $("#tbl-acomp").innerHTML=`<caption style="text-align:left;padding:4px 0 10px" class="muted">${rows.length} obras · <b>${cnt.enviado} aguardando validação</b> · ${cnt.validado} validadas · ${cnt.rascunho+cnt.reaberto} em preenchimento (${cnt.reaberto} devolvidas) · ${cnt.vazio} não iniciadas</caption>
-  <thead><tr><th>Gerente</th><th>Obra</th><th>Base modelo</th><th>Status</th><th>Atualizado</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th></th></tr></thead><tbody>
-  ${rows.map((r,i)=>{const st=r.orc?r.orc.status:"vazio";return`<tr><td>${esc(r.nomeG)}${r.email?`<div class="muted" style="font-size:11px">${esc(r.email)}</div>`:""}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(r.info.obra||r.o)}</span> ${esc(r.info.nome)}<div class="muted" style="font-size:11px">Empresa ${esc(r.info.emp||"—")}${r.info.empNome?" · "+esc(r.info.empNome):""}</div></td><td class="muted">${esc(r.info.tipo||"—")}</td>
+  $("#tbl-acomp").innerHTML=`<caption style="text-align:left;padding:4px 0 10px" class="muted">${nSel?`<b style="color:var(--accent)">${nSel} marcada(s) para exportar</b> <button class="btn sm" id="ac-sel-clr">Desmarcar</button> · `:""}${rows.length} obras · <b>${cnt.enviado} aguardando validação</b> · ${cnt.validado} validadas · ${cnt.rascunho+cnt.reaberto} em preenchimento (${cnt.reaberto} devolvidas) · ${cnt.vazio} não iniciadas</caption>
+  <thead><tr><th style="width:30px"><input type="checkbox" id="ac-all" title="Marcar todas as obras visíveis para exportar" ${rows.length&&rows.every(r=>S.acSel.has(acKey(r)))?"checked":""}></th><th>Gerente</th><th>Obra</th><th>Base modelo</th><th>Status</th><th>Atualizado</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th></th></tr></thead><tbody>
+  ${rows.map((r,i)=>{const st=r.orc?r.orc.status:"vazio";return`<tr class="${S.acSel.has(acKey(r))?"ac-on":""}"><td><input type="checkbox" data-acs="${i}" aria-label="Marcar para exportar" ${S.acSel.has(acKey(r))?"checked":""}></td><td>${esc(r.nomeG)}${r.email?`<div class="muted" style="font-size:11px">${esc(r.email)}</div>`:""}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(r.info.obra||r.o)}</span> ${esc(r.info.nome)}<div class="muted" style="font-size:11px">Empresa ${esc(r.info.emp||"—")}${r.info.empNome?" · "+esc(r.info.empNome):""}</div></td><td class="muted">${esc(r.info.tipo||"—")}</td>
   <td><span class="pill ${st}">${{vazio:"Não iniciado",rascunho:"Rascunho",enviado:"Aguardando validação",validado:"Validado",reaberto:"Devolvido"}[st]}</span></td><td class="muted">${fmtDate(r.orc&&r.orc.atualizadoEm)}</td>
   ${YEARS.map(y=>`<td class="num">${f0(r.orc&&r.orc.totais&&r.orc.totais[y])}</td>`).join("")}
   <td style="white-space:nowrap"><button class="btn sm" data-open="${i}">Abrir</button> <span data-rmbox="${i}">${verRem?`<button class="btn sm" data-rest="${i}">Restaurar</button> <button class="btn sm danger" data-del="${i}">Excluir de vez</button>`:`<button class="btn sm danger" data-rm="${i}">Remover</button>`}</span></td></tr>`}).join("")}
-  </tbody><tfoot><tr><td colspan="5"><b>Total</b></td>${tot.map(t=>`<td class="num"><b>${f0(t)}</b></td>`).join("")}<td></td></tr></tfoot>`;
+  </tbody><tfoot><tr><td colspan="6"><b>Total</b></td>${tot.map(t=>`<td class="num"><b>${f0(t)}</b></td>`).join("")}<td></td></tr></tfoot>`;
 }
 $("#tbl-acomp").addEventListener("click",async e=>{
   const b=e.target.closest("button");if(!b)return;
@@ -1451,7 +1478,12 @@ $("#tbl-acomp").addEventListener("click",async e=>{
     catch(err){toast("Não foi possível remover.")}}
 });
 $("#btn-refresh").addEventListener("click",loadAdm);
-$("#acomp-ver").addEventListener("change",renderAcomp);$("#acomp-q").addEventListener("input",renderAcomp);
+$("#est-dd .sl-btn").addEventListener("click",e=>{e.stopPropagation();const p=$("#est-dd .sl-pop");p.hidden=!p.hidden});
+$("#est-dd").addEventListener("change",e=>{const c=e.target;if(!c.dataset.est)return;c.checked?S.acEst.add(c.dataset.est):S.acEst.delete(c.dataset.est);renderAcomp()});
+$("#est-dd").addEventListener("click",e=>{const b=e.target.closest("button[data-esta]");if(!b)return;S.acEst=b.dataset.esta==="todos"?new Set(EST.map(x=>x[0]).filter(x=>x!=="removidas")):new Set();renderAcomp()});
+$("#tbl-acomp").addEventListener("click",e=>{if(e.target.id==="ac-sel-clr"){S.acSel=new Set();renderAcomp()}});
+$("#tbl-acomp").addEventListener("change",e=>{const c=e.target;if(c.id==="ac-all"){(S.acRows||[]).forEach(r=>c.checked?S.acSel.add(acKey(r)):S.acSel.delete(acKey(r)));renderAcomp();return}
+  if(c.dataset.acs!==undefined){const r=S.acRows[+c.dataset.acs];c.checked?S.acSel.add(acKey(r)):S.acSel.delete(acKey(r));renderAcomp()}});$("#acomp-q").addEventListener("input",renderAcomp);
 $("#btn-sol-ref").addEventListener("click",()=>loadSolic());
 
 /* atribuição */
@@ -1631,7 +1663,9 @@ $("#btn-dp-lib").addEventListener("click",()=>liberarProntos(false));
 /* exportação (Excel .xlsx) */
 const numOr=v=>(typeof v==="string"&&/^\d+$/.test(v))?+v:v;
 const r2=v=>Math.round((+v||0)*100)/100;
-function scopeRows(){const sc=$("#exp-scope").value;const ocl=(S.acOcultos&&S.acOcultos.k)||{};return S.acomp.filter(r=>r.orc&&!ocl[acKey(r)]&&(sc==="todas"||travado(r.orc.status)))}
+function scopeRows(){const sc=$("#exp-scope").value;const ocl=(S.acOcultos&&S.acOcultos.k)||{};
+  if(S.acSel&&S.acSel.size)return S.acomp.filter(r=>r.orc&&S.acSel.has(acKey(r)));
+  return S.acomp.filter(r=>r.orc&&!ocl[acKey(r)]&&(sc==="todas"||travado(r.orc.status)))}
 function mergeObras(rows){
   const by=new Map();rows.forEach(r=>{if(!by.has(r.o))by.set(r.o,[]);by.get(r.o).push(r)});
   const out=[];
