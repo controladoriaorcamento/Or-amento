@@ -463,6 +463,9 @@ const nowISO=()=>new Date().toISOString();
 const fmtDate=s=>s?new Date(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"–";
 
 /* ---------- montagem das linhas (modelo + histórico) ---------- */
+/* valores digitados em itens que saíram da estrutura (modelo/regras mudaram) não somem: viram linhas "fora da estrutura atual" */
+function extOrf(ext,v){if(!S.insDesc){S.insDesc={};Object.values((T&&T.tipos)||{}).forEach(tp=>(tp.rows||[]).forEach(r=>{if(r[3]&&!S.insDesc[r[3]])S.insDesc[r[3]]=r[4]}))}const out={...(ext||{})};Object.keys(v||{}).forEach(k=>{if(k.includes("#")||out[k])return;const a=v[k];if(!a||!Object.values(a).some(arr=>(arr||[]).some(x=>+x)))return;
+  const [P,Sv,I]=k.split("|");out[k]={d:"⚠ Fora da estrutura atual: "+((S.insDesc&&S.insDesc[I])||I||Sv||k),orf:true}});return out}
 function buildLines(tipo,hist,ext){
   const H=(hist&&hist.h)||{}, nM=(T.meses||[]).length;
   const lines=[]; const leaves=[];
@@ -489,7 +492,7 @@ function buildLines(tipo,hist,ext){
     arr.forEach((v,j)=>l.h[j]+=v);
   });
   // itens adicionados manualmente / salvos fora do modelo
-  Object.entries(ext||{}).forEach(([k,e])=>{ if(!byKey.has(k)&&!extras.has(k)){const [P,Sv,I]=k.split("|");extras.set(k,{kind:"leaf",key:k,P,item:e.item||"",S:Sv,I,desc:e.d,un:e.un||"VB",lvl:3,preco:0,extra:true,h:new Array(nM).fill(0),ch:[]})}});
+  Object.entries(ext||{}).forEach(([k,e])=>{ if(!byKey.has(k)&&!extras.has(k)){const [P,Sv,I]=k.split("|");extras.set(k,{kind:"leaf",key:k,P,item:e.item||"",S:Sv,I,desc:e.d,un:e.un||"VB",lvl:3,preco:0,extra:true,orf:!!e.orf,h:new Array(nM).fill(0),ch:[]})}});
   const depthOf=l=>l.dfix!=null?l.dfix:(l.kind==="grp"?(l.S?l.lvl+0.5:l.lvl):l.lvl+1);
   const pd=(hist&&hist.pd)||{};
   if(extras.size&&!tp){
@@ -579,7 +582,8 @@ function applyRules(cur){
     l.area=r&&r[1]||"";l.obrig=!!(r&&r[0]==="Sim");
     l.mine=owner||(!!l.area&&(!areas.length||areas.includes(l.area)));l.canEdit=cur.editable&&l.mine;
     l.lockMsg=!l.area?"Sem regra definida na Bases - Gerais":(l.canEdit?"":"Preenchido pela área "+l.area);
-    if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>({id:"p"+i,n}))}
+    if(l.orf){l.mine=true;l.canEdit=cur.editable;l.lockMsg=""}
+    if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){{const cs=(S.subR&&S.subR.c&&S.subR.c[`${cur.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>cs[i]?{id:"p"+i,n,c:cs[i]}:{id:"p"+i,n})}}
   });
   absorverHistSub(cur);
 }
@@ -666,7 +670,7 @@ async function openObra(uid,o,fromAdm){
   const raw=ds.exists?ds.data():{};
   const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,exists:ds.exists};
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
-  const lines=buildLines(info.tipo,hist,doc.ext);
+  const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
   const editable= uid===S.me && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,prods:produtosDaObra(hist,lines)};applyRules(S.cur);
   S.collapsed=new Set();S.year="2027";
@@ -951,7 +955,7 @@ async function exportarMeuExcel(){
   for(const o of ids){const info=S.perfil.obras[o];if(!info)continue;
     const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();const hd=hs.exists?hs.data():null;
     const ds=await S.db.doc(`gerentes/${S.me}/orc/${o}`).get();const raw=ds.exists?ds.data():{};
-    const doc={v:raw.v||{},pr:raw.pr||{},sub:raw.sub||{},lobs:raw.lobs||{}};const lines=buildLines(info.tipo,hd,raw.ext||{});const prods=produtosDaObra(hd,lines);
+    const doc={v:raw.v||{},pr:raw.pr||{},sub:raw.sub||{},lobs:raw.lobs||{}};const lines=buildLines(info.tipo,hd,extOrf(raw.ext,raw.v));const prods=produtosDaObra(hd,lines);
     const cur={uid:S.me,o,info,doc:{sub:JSON.parse(JSON.stringify(doc.sub))},lines,editable:false};applyRules(cur);
     lines.filter(l=>l.kind==="leaf"&&(S.owner||l.mine)&&(!prods||!l.P||l.extra||prods.has(l.P))).forEach(l=>{
       YEARS.forEach(y=>{const v=M.map((_,m)=>lineMonth(doc,l,y,m));const t=sum(v);
@@ -1002,7 +1006,7 @@ function renderAdd(){const q=$("#add-q").value.trim().toLowerCase();const have=n
   const r=allLeaves().filter(x=>!have.has(x.k)&&(!q||(x.d+" "+x.S+" "+x.I+" "+x.pn).toLowerCase().includes(q))).slice(0,60);
   $("#add-list").innerHTML=r.length?r.map(x=>`<button data-k="${esc(x.k)}">${esc(x.d)} <span class="muted">· ${esc(x.S)} ${esc(x.I)} · ${esc(x.P)} ${esc(x.pn)}</span></button>`).join(""):`<div class="muted" style="padding:10px">Nenhum item encontrado.</div>`}
 $("#add-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const x=allLeaves().find(z=>z.k===b.dataset.k);
-  S.cur.doc.ext[x.k]={d:x.d,un:x.un,item:x.item};S.cur.lines=buildLines(S.cur.info.tipo,S.cur.hist,S.cur.doc.ext);applyRules(S.cur);
+  S.cur.doc.ext[x.k]={d:x.d,un:x.un,item:x.item};S.cur.lines=buildLines(S.cur.info.tipo,S.cur.hist,extOrf(S.cur.doc.ext,S.cur.doc.v));applyRules(S.cur);
   const l=S.cur.lines.find(z=>z.key===x.k);l.desc=x.d;renderGrid();S.cur.dirty=true;changed();$("#add-box").hidden=true;syncAddBtn();toast("Item adicionado em Outros itens");});
 
 /* envio */
@@ -1057,16 +1061,16 @@ $("#btn-ver").addEventListener("click",()=>{if(!$("#ver-box").hidden){$("#ver-bo
 $("#btn-savever").addEventListener("click",async()=>{await flush();try{await saveVersion(S.cur.uid,S.cur.o,payloadFrom(S.cur),"Salva manualmente");toast("Versão guardada");if(!$("#ver-box").hidden)renderVersoes()}catch(e){toast("Não foi possível guardar a versão.")}});
 $("#ver-box").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;
   if(b.dataset.vview!==undefined){const v=S.versoes[+b.dataset.vview].d;const c=S.cur;
-    c.saved=c.saved||{doc:c.doc,editable:c.editable};c.doc={...c.saved.doc,v:v.v||{},pr:v.pr||{},sub:v.sub||{},flag:v.flag||{},ext:v.ext||{},obs:v.obs||"",lobs:v.lobs||{}};c.editable=false;c.lines=buildLines(c.info.tipo,c.hist,c.doc.ext);applyRules(c);
+    c.saved=c.saved||{doc:c.doc,editable:c.editable};c.doc={...c.saved.doc,v:v.v||{},pr:v.pr||{},sub:v.sub||{},flag:v.flag||{},ext:v.ext||{},obs:v.obs||"",lobs:v.lobs||{}};c.editable=false;c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v));applyRules(c);
     $("#ver-banner").innerHTML=`<div class="row" style="justify-content:space-between"><span><b>Visualizando a versão de ${fmtDate(v.em)}</b> (${esc(v.motivo||"")}). Nada pode ser alterado nesta visualização.</span><button class="btn sm primary" id="ver-back">Voltar à versão atual</button></div>`;$("#ver-banner").hidden=false;
-    $("#ver-back").onclick=()=>{c.doc=c.saved.doc;c.editable=c.saved.editable;c.saved=null;c.lines=buildLines(c.info.tipo,c.hist,c.doc.ext);applyRules(c);$("#ver-banner").hidden=true;renderGrid();renderStatus()};
+    $("#ver-back").onclick=()=>{c.doc=c.saved.doc;c.editable=c.saved.editable;c.saved=null;c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v));applyRules(c);$("#ver-banner").hidden=true;renderGrid();renderStatus()};
     renderGrid();renderStatus();return}
   if(b.dataset.vrest!==undefined){const v=S.versoes[+b.dataset.vrest].d;
     if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar restauração";setTimeout(()=>{delete b.dataset.arm;b.textContent="Restaurar"},5000);return}
     const c=S.cur;if(c.saved){c.doc=c.saved.doc;c.editable=c.saved.editable;c.saved=null;$("#ver-banner").hidden=true}
     await saveVersion(c.uid,c.o,payloadFrom(c),"Antes de restaurar").catch(()=>{});
     Object.assign(c.doc,{v:JSON.parse(JSON.stringify(v.v||{})),pr:JSON.parse(JSON.stringify(v.pr||{})),sub:JSON.parse(JSON.stringify(v.sub||{})),flag:JSON.parse(JSON.stringify(v.flag||{})),ext:JSON.parse(JSON.stringify(v.ext||{})),obs:v.obs||"",lobs:JSON.parse(JSON.stringify(v.lobs||{}))});
-    c.lines=buildLines(c.info.tipo,c.hist,c.doc.ext);applyRules(c);$("#obs").value=c.doc.obs;renderGrid();c.dirty=true;changed();toast("Versão restaurada. A versão anterior também foi guardada.");renderVersoes()}
+    c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v));applyRules(c);$("#obs").value=c.doc.obs;renderGrid();c.dirty=true;changed();toast("Versão restaurada. A versão anterior também foi guardada.");renderVersoes()}
 });
 function payloadFrom(c){const d=c.doc;return {o:d.o,tipo:d.tipo,status:d.status,v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},obs:d.obs,lobs:d.lobs||{},totais:docTotals(d,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm,validadoEm:d.validadoEm||null,validadoPor:d.validadoPor||null,devolucao:d.devolucao||null}}
 
@@ -1362,7 +1366,7 @@ function mergeObras(rows){
   const by=new Map();rows.forEach(r=>{if(!by.has(r.o))by.set(r.o,[]);by.get(r.o).push(r)});
   const out=[];
   by.forEach((rs,o)=>{
-    const info=rs[0].info;const ext={};rs.forEach(r=>Object.assign(ext,r.orc.ext||{}));
+    const info=rs[0].info;const ext={};rs.forEach(r=>Object.assign(ext,extOrf(r.orc.ext,r.orc.v)));
     const lines=buildLines(info.tipo,null,ext);const v={},pr={},sub={},lobs={};
     lines.forEach(l=>{if(l.kind!=="leaf")return;const rule=ruleFor(info.tipo,l);const area=rule&&rule[1]||"";
       const has=r=>(r.orc.v||{})[l.key]||(r.orc.pr||{})[l.key];
@@ -1379,7 +1383,7 @@ function padraoAoa(rows){
   YEARS.forEach(y=>MES.forEach((_,m)=>{const mm=String(m+1).padStart(2,"0")+"/"+y;head.push(mm+"Qtde",mm+"Preco",mm+"Total")}));
   const out=[head];
   rows.forEach(r=>{
-    const doc={v:r.orc.v||{},pr:r.orc.pr||{}};const lines=buildLines(r.info.tipo,null,r.orc.ext||{});const tp=T.tipos[r.info.tipo];
+    const doc={v:r.orc.v||{},pr:r.orc.pr||{}};const lines=buildLines(r.info.tipo,null,extOrf(r.orc.ext,r.orc.v));const tp=T.tipos[r.info.tipo];
     lines.forEach(l=>{
       if(l.kind==="prod")return;
       const t=l.tmpl;if(l.kind==="grp"&&!t)return;
@@ -1398,7 +1402,7 @@ function padraoAoa(rows){
       out.push(row);
       /* subitens com código de insumo próprio: saem em linha própria e saem do total do agrupador */
       if(l.kind==="leaf"){const cods=(S.subR&&S.subR.c&&S.subR.c[`${r.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];const subs=(r.orc.sub||{})[l.key]||[];
-        subs.forEach(sb=>{const ix=/^p\d+$/.test(sb.id)?+sb.id.slice(1):-1;const cI=ix>=0?cods[ix]:"";if(!cI||cI===l.I)return;
+        subs.forEach(sb=>{const ix=/^p\d+$/.test(sb.id)?+sb.id.slice(1):-1;const cI=sb.c!==undefined?sb.c:(ix>=0?cods[ix]:"");if(!cI||cI===l.I)return;
           const sv=(r.orc.v||{})[l.key+"#"+sb.id]||{};if(!YEARS.some(y=>(sv[y]||[]).some(x=>+x)))return;
           const rn2=out.length+1;const row2=[row[0],row[1],row[2],row[3],row[4],row[5],cI,sb.n,"VB",0,"0"];
           const tot2=(q,p)=>{const c=row2.length;const cq=XLSX.utils.encode_col(c-2),cp=XLSX.utils.encode_col(c-1);return {t:"n",v:r2(q*p),f:`(${cq}${rn2}*${cp}${rn2})`}};
@@ -1420,7 +1424,7 @@ async function insumosAoa(rows,progress){
   for(const r of rows){i++;progress&&progress(`Lendo histórico ${i}/${rows.length}…`);
     const hs=await S.db.doc("restrito/hist/eo/"+r.o).get();const hist=hs.exists?hs.data():null;
     const doc={v:r.orc.v||{},pr:r.orc.pr||{}};
-    buildLines(r.info.tipo,hist,r.orc.ext||{}).forEach(l=>{
+    buildLines(r.info.tipo,hist,extOrf(r.orc.ext,r.orc.v)).forEach(l=>{
       if(l.kind!=="leaf")return;
       const orc=YEARS.map(y=>lineTotal(doc,l,y));const h=l.h;
       if(!sum(h)&&!sum(orc))return;

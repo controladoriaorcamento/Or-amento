@@ -62,6 +62,7 @@
             <input id="lg-s2" type="password" autocomplete="new-password" style="${est}"></div>
           <button id="lg-ok" type="submit" style="${btn}">Continuar</button>
           <p id="lg-msg" style="margin:12px 0 0;font-size:13px;color:#5A6862">${msg||"Use o e-mail cadastrado pela Controladoria."}</p>
+          <p style="margin:10px 0 0;font-size:11px;color:#7A8782">Para controle da Controladoria, o sistema registra a data, a hora e o tempo de uso de cada acesso.</p>
           <p style="margin:10px 0 0;font-size:12px"><a href="#" id="lg-trocar" hidden>Usar outro e-mail</a></p>
         </form></div>`;
       document.body.appendChild(box);const lv=document.getElementById("v-loading");if(lv)lv.hidden=true;
@@ -115,5 +116,43 @@
     const b=document.createElement("button");b.textContent="Sair ("+em+")";b.className="btn";b.style.cssText="position:fixed;right:12px;bottom:12px;z-index:50;font-size:12px";
     b.onclick=async()=>{await sb.auth.signOut();location.reload()};document.body.appendChild(b);
     if(admin)botaoCarga();
+    registrarSessao();
+    try{const d=await sb.rpc("sou_dono");if(d.data)abaAcessos()}catch(e){}
   };
+  /* registro de acesso: início da sessão + sinal a cada minuto enquanto a aba está visível */
+  async function registrarSessao(){
+    try{const r=await sb.rpc("log_inicio",{p_nav:navigator.userAgent});if(r.error||!r.data)return;const id=r.data;
+      const ping=()=>{if(document.visibilityState==="visible")sb.rpc("log_ping",{p_id:id}).then(()=>{},()=>{})};
+      setInterval(ping,60000);document.addEventListener("visibilitychange",ping)}catch(e){}
+  }
+  /* aba "Acessos" (só o dono) */
+  const fmtDur=s=>{s=+s||0;const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return h?`${h}h${String(m).padStart(2,"0")}`:`${m} min`};
+  const fmtDt=d=>d?new Date(d).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
+  const esc2=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  function abaAcessos(){
+    const tabs=document.getElementById("tabs");if(!tabs||document.getElementById("tab-log"))return;
+    const bt=document.createElement("button");bt.className="tab";bt.id="tab-log";bt.setAttribute("aria-selected","false");bt.textContent="Acessos";tabs.appendChild(bt);
+    const sec=document.createElement("section");sec.id="v-log";sec.hidden=true;
+    sec.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Acessos ao site</h2><p class="desc" style="margin:4px 0 0">Quem entrou, quando e quanto tempo ficou com o site aberto (tempo com a aba visível). Visível só para você.</p></div>
+      <div class="row" style="gap:8px"><select id="log-dias" class="btn"><option value="1">Hoje</option><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="365">12 meses</option></select><button class="btn" id="log-ref">Atualizar</button><button class="btn" id="log-xlsx">Baixar Excel</button></div></div>
+      <p class="muted" id="log-res" style="margin:12px 0 8px"></p><h3 style="font-size:14px;margin:8px 0">Por pessoa</h3><div class="tbl-box"><table class="list" id="log-pess"></table></div>
+      <h3 style="font-size:14px;margin:16px 0 8px">Sessões</h3><div class="tbl-box"><table class="list" id="log-sess"></table></div></div>`;
+    document.querySelector("main.wrap").appendChild(sec);
+    const views=["v-fill","v-adm","v-sg"];
+    bt.onclick=()=>{views.forEach(v=>{const e=document.getElementById(v);if(e)e.hidden=true});document.querySelectorAll("#tabs .tab").forEach(t=>t.setAttribute("aria-selected",t===bt));sec.hidden=false;carregar()};
+    document.querySelectorAll("#tabs .tab").forEach(t=>{if(t!==bt)t.addEventListener("click",()=>{sec.hidden=true;bt.setAttribute("aria-selected","false")})});
+    let dados=null;
+    async function carregar(){const m=document.getElementById("log-res");m.textContent="Carregando…";
+      const r=await sb.rpc("relatorio_acessos",{p_dias:+document.getElementById("log-dias").value});if(r.error){m.textContent="Erro: "+r.error.message;return}dados=r.data;
+      const S2=dados.sessoes||[];const P=new Map();S2.forEach(s=>{const p=P.get(s.email)||{email:s.email,nome:s.nome||"",n:0,seg:0,ult:null,pri:null};p.n++;p.seg+=s.segundos;if(!p.ult||s.ultimo>p.ult)p.ult=s.ultimo;if(!p.pri||s.inicio<p.pri)p.pri=s.inicio;P.set(s.email,p)});
+      const ps=[...P.values()].sort((a,b)=>b.ult.localeCompare(a.ult));
+      m.innerHTML=`<b>${ps.length}</b> pessoas entraram no período · ${S2.length} sessões · tempo total ${fmtDur(ps.reduce((a,p)=>a+p.seg,0))} · ${dados.cadastrados} com senha criada de ${dados.pessoas} liberados`;
+      document.getElementById("log-pess").innerHTML=`<thead><tr><th>Nome</th><th>E-mail</th><th class="num">Sessões</th><th class="num">Tempo total</th><th>Primeiro acesso</th><th>Último acesso</th></tr></thead><tbody>${ps.map(p=>`<tr><td>${esc2(p.nome)}</td><td class="muted">${esc2(p.email)}</td><td class="num">${p.n}</td><td class="num">${fmtDur(p.seg)}</td><td>${fmtDt(p.pri)}</td><td>${fmtDt(p.ult)}</td></tr>`).join("")||'<tr><td class="muted" colspan="6">Nenhum acesso no período.</td></tr>'}</tbody>`;
+      document.getElementById("log-sess").innerHTML=`<thead><tr><th>Nome</th><th>E-mail</th><th>Entrou</th><th>Última atividade</th><th class="num">Tempo</th></tr></thead><tbody>${S2.slice(0,300).map(s=>`<tr><td>${esc2(s.nome||"")}</td><td class="muted">${esc2(s.email)}</td><td>${fmtDt(s.inicio)}</td><td>${fmtDt(s.ultimo)}</td><td class="num">${fmtDur(s.segundos)}</td></tr>`).join("")}</tbody>`}
+    document.getElementById("log-ref").onclick=carregar;document.getElementById("log-dias").onchange=carregar;
+    document.getElementById("log-xlsx").onclick=()=>{if(!dados||typeof XLSX==="undefined")return;const wb=XLSX.utils.book_new();
+      const rows=(dados.sessoes||[]).map(s=>[s.nome||"",s.email,new Date(s.inicio).toLocaleString("pt-BR"),new Date(s.ultimo).toLocaleString("pt-BR"),Math.round(s.segundos/60)]);
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Nome","E-mail","Entrou","Última atividade","Minutos"],...rows]),"Sessões");
+      const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([XLSX.write(wb,{type:"array",bookType:"xlsx"})]));a.download=`ACESSOS_SITE_${new Date().toISOString().slice(0,10)}.xlsx`;document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),1000)};
+  }
 })();
