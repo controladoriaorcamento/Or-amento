@@ -76,6 +76,8 @@ label.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var
 .sl-acts{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:12px}.sl-acts button{border:0;background:none;color:var(--accent);text-decoration:underline;cursor:pointer;font-size:12px;padding:0}.sl-acts .sl-n{margin-left:auto;font-size:11px}
 .sl-list{max-height:300px;overflow:auto;border-top:1px solid var(--line)}.sl-it{display:flex;gap:8px;align-items:center;padding:4px 4px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--line)}
 .sl-it span:nth-child(2){flex:1}.sl-it .muted{font-size:11px}.sl-it.on{background:var(--accent-soft);font-weight:600}
+.em-edicao{font-size:14px;margin-bottom:2px}.em-edicao .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:4px}
+.filtros .fobra .sl-btn{width:420px;font-weight:600}.filtros .fobra .sl-pop{width:520px}
 .consol{margin-block:10px}.consol table{font-size:12.5px}.consol .num{text-align:right;font-family:var(--f-mono)}.consol tr.c-emp td{background:var(--prod);font-weight:600}.consol tr.c-ins td{background:var(--surface);font-size:12px}.consol tr.c-srv td{background:var(--group);font-size:12px;font-weight:600}
 .chips{display:flex;flex-wrap:wrap;gap:4px;max-width:280px}.chip{display:inline-flex;align-items:center;gap:2px;background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11.5px;padding:1px 4px 1px 9px;max-width:270px}
 .chip button{border:0;background:none;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0 4px}.chip-clr{border:0;background:none;color:var(--accent);font-size:11px;text-decoration:underline;cursor:pointer}
@@ -283,10 +285,10 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
           <div class="fcol"><label class="lbl">Empresa</label><div class="slicer" id="sl-emp" data-f="f-emp"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Empresa"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
           <div class="fcol" id="fc-ger" hidden><label class="lbl">Gerente</label><div class="slicer" id="sl-ger" data-f="f-ger"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todos</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Gerente"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
           <div class="fcol" id="fc-cargo" hidden><label class="lbl">Quem planeja</label><div class="slicer" id="sl-cargo" data-f="f-cargo"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todos</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Quem planeja"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
-          <div class="fcol"><label class="lbl" for="busca-obra">Buscar obra</label><input id="busca-obra" type="search" placeholder="nº ou nome" aria-label="Buscar obra"></div>
-          <div class="fcol fobra"><label class="lbl" for="sel-obra">Obra / centro de custo <span class="muted" id="busca-obra-n" style="font-size:11px;text-transform:none;letter-spacing:0"></span></label><select id="sel-obra"></select></div>
+          <div class="fcol fobra"><label class="lbl">Obra / centro de custo <span class="muted" id="busca-obra-n" style="font-size:11px;text-transform:none;letter-spacing:0"></span></label><div class="slicer" id="sl-obra" data-f="f-obra"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar nº ou nome da obra…" aria-label="Pesquisar obra"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div><input id="busca-obra" type="hidden"><select id="sel-obra" hidden aria-hidden="true"></select></div>
+          <div class="fcol" style="align-self:flex-end"><button type="button" class="btn sm" id="f-limpar-tudo" title="Tirar todos os filtros">Limpar filtros</button></div>
         </div>
-        <div class="obra-meta"><span class="muted" id="obra-tipo"></span><span id="obra-status"></span></div>
+        <div class="obra-meta"><div class="em-edicao" id="em-edicao"></div><span class="muted" id="obra-tipo"></span><span id="obra-status"></span></div>
         <div class="row" style="margin-left:auto">
           <span id="viewing-as" class="muted"></span>
           <button class="btn sm" id="btn-req" hidden>Solicitar mais acesso</button>
@@ -711,11 +713,12 @@ async function montarFiltros(){
   atualizarListas();
 }
 /* filtros tipo "segmentação de dados" (Power BI): lista com pesquisa e caixas de marcação; várias escolhas; em cascata */
-S.fSel=S.fSel||{"f-emp":[],"f-ger":[],"f-cargo":[]};
+S.fSel=S.fSel||{"f-emp":[],"f-ger":[],"f-cargo":[],"f-obra":[]};
 function fVals(id){return (S.fSel[id]||[]).map(x=>x[0])}
 function obrasFiltradas(skip){const info=S.fInfo||{};const emp=skip==="f-emp"?[]:fVals("f-emp"),ger=skip==="f-ger"?[]:fVals("f-ger"),cg=skip==="f-cargo"?[]:fVals("f-cargo");
   const go=ger.length&&S.fGerObras?gerUniao(ger):null;
-  return (S.selIds||[]).filter(o=>{const i=info[o]||{};if(emp.length&&!emp.includes(String(i.emp)))return false;if(go&&!go.has(o))return false;
+  const ob=skip==="f-obra"?[]:fVals("f-obra");
+  return (S.selIds||[]).filter(o=>{const i=info[o]||{};if(ob.length&&!ob.includes(o))return false;if(emp.length&&!emp.includes(String(i.emp)))return false;if(go&&!go.has(o))return false;
     if(cg.length){const deps=go?[...go.get(o)]:((S.fAO||{})[o]||[]);if(!cg.some(c=>deps.includes(c)))return false}return true})}
 function gerUniao(ems){const u=new Map();ems.forEach(em=>{const m=S.fGerObras.get(em);if(m)m.forEach((d,o)=>{const x=u.get(o)||new Set();d.forEach(v=>x.add(v));u.set(o,x)})});return u}
 function atualizarListas(){const info=S.fInfo||{};S.fOpts={};
@@ -725,14 +728,16 @@ function atualizarListas(){const info=S.fInfo||{};S.fOpts={};
     S.fOpts["f-ger"]=gs.sort((a,b)=>a[1].localeCompare(b[1]))}
   {const oC=obrasFiltradas("f-cargo");const ger=fVals("f-ger");const go=ger.length&&S.fGerObras?gerUniao(ger):null;const cs=new Map();
     oC.forEach(o=>{(go?[...(go.get(o)||[])]:((S.fAO||{})[o]||[])).forEach(c=>cs.set(c,(cs.get(c)||0)+1))});S.fOpts["f-cargo"]=[...cs.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([c,n])=>[c,c,n])}
+  {const lb=new Map();const tmp=document.createElement("select");tmp.innerHTML=S.selAll||"";[...tmp.options].forEach(o=>lb.set(o.value,o.textContent));
+    S.fOpts["f-obra"]=obrasFiltradas("f-obra").map(o=>[o,lb.get(o)||o,0])}
   /* escolhas que não existem mais na cascata continuam marcadas e aparecem no topo */
-  ["f-emp","f-ger","f-cargo"].forEach(id=>{const ks=new Set((S.fOpts[id]||[]).map(x=>x[0]));(S.fSel[id]||[]).forEach(([k,lb])=>{if(!ks.has(k))(S.fOpts[id]=S.fOpts[id]||[]).unshift([k,lb,0])})});
-  ["emp","ger","cargo"].forEach(renderSlicer)}
+  ["f-emp","f-ger","f-cargo","f-obra"].forEach(id=>{const ks=new Set((S.fOpts[id]||[]).map(x=>x[0]));(S.fSel[id]||[]).forEach(([k,lb])=>{if(!ks.has(k))(S.fOpts[id]=S.fOpts[id]||[]).unshift([k,lb,0])})});
+  ["emp","ger","cargo","obra"].forEach(renderSlicer)}
 function renderSlicer(nm){const box=$("#sl-"+nm);if(!box)return;const id="f-"+nm;const opts=S.fOpts&&S.fOpts[id]||[];const sel=new Set(fVals(id));
   const q=semAc(box.querySelector(".sl-q").value||"").trim();const vis=opts.filter(o=>!q||semAc(o[1]+" "+o[0]).includes(q));
-  box.querySelector(".sl-list").innerHTML=vis.slice(0,600).map(([k,lb,n])=>`<label class="sl-it${sel.has(k)?" on":""}"><input type="checkbox" data-k="${esc(k)}" data-lb="${esc(lb)}" ${sel.has(k)?"checked":""}><span>${esc(lb)}</span><span class="muted">${n||""}</span></label>`).join("")||`<div class="muted" style="padding:6px">Nada encontrado.</div>`;
+  box.querySelector(".sl-list").innerHTML=vis.slice(0,1500).map(([k,lb,n])=>`<label class="sl-it${sel.has(k)?" on":""}"><input type="checkbox" data-k="${esc(k)}" data-lb="${esc(lb)}" ${sel.has(k)?"checked":""}><span>${esc(lb)}</span><span class="muted">${n||""}</span></label>`).join("")||`<div class="muted" style="padding:6px">Nada encontrado.</div>`;
   box.querySelector(".sl-n").textContent=`${vis.length} opção(ões)`;
-  const ss=S.fSel[id]||[];box.querySelector(".sl-txt").textContent=!ss.length?(nm==="emp"?"Todas":"Todos"):ss.length===1?ss[0][1]:`${ss.length} selecionados`;box.classList.toggle("ativo",ss.length>0);box.title=ss.map(x=>x[1]).join("\n")}
+  const ss=S.fSel[id]||[];box.querySelector(".sl-txt").textContent=!ss.length?(nm==="emp"||nm==="obra"?`Todas${nm==="obra"?" ("+opts.length+")":""}`:"Todos"):ss.length===1?ss[0][1]:`${ss.length} selecionados`;box.classList.toggle("ativo",ss.length>0);box.title=ss.map(x=>x[1]).join("\n")}
 document.querySelectorAll(".slicer").forEach(box=>{const id=box.dataset.f,nm=id.slice(2);
   box.querySelector(".sl-btn").addEventListener("click",()=>{const pop=box.querySelector(".sl-pop");const abrir=pop.hidden;document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true);pop.hidden=!abrir;if(abrir){renderSlicer(nm);box.querySelector(".sl-q").focus()}});
   box.querySelector(".sl-q").addEventListener("input",()=>renderSlicer(nm));
@@ -741,14 +746,15 @@ document.querySelectorAll(".slicer").forEach(box=>{const id=box.dataset.f,nm=id.
   box.querySelector(".sl-acts").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
     if(b.dataset.sla==="limpar")S.fSel[id]=[];else{const q=semAc(box.querySelector(".sl-q").value||"").trim();(S.fOpts[id]||[]).filter(o=>!q||semAc(o[1]+" "+o[0]).includes(q)).forEach(([k,lb])=>{if(!S.fSel[id].some(x=>x[0]===k))S.fSel[id].push([k,lb])})}filtrarObras()})});
 document.addEventListener("click",e=>{if(!e.target.closest(".slicer"))document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true)});
+$("#f-limpar-tudo").addEventListener("click",()=>{Object.keys(S.fSel).forEach(k=>S.fSel[k]=[]);document.querySelectorAll(".sl-q").forEach(x=>x.value="");filtrarObras()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true)});
-function filtrarObras(){if(!S.selAll||(S.cur&&S.cur.uid!==S.me))return;atualizarListas();const q=semAc($("#busca-obra").value.trim());
+function filtrarObras(){if(!S.selAll||(S.cur&&S.cur.uid!==S.me))return;atualizarListas();const q="";
   const sel=$("#sel-obra");const atual=sel.value;const okIds=new Set(obrasFiltradas());
   const tmp=document.createElement("select");tmp.innerHTML=S.selAll;
   const ok=[...tmp.options].filter(o=>okIds.has(o.value)&&(!q||q.split(/\s+/).every(w=>semAc(o.textContent+" "+o.value).includes(w))));
   sel.innerHTML=ok.length?ok.map(o=>o.outerHTML).join(""):`<option value="">Nenhuma obra com esses filtros</option>`;
   if(ok.some(o=>o.value===atual))sel.value=atual;else if(ok.length){sel.insertAdjacentHTML("afterbegin",`<option value="" selected>— ${ok.length} obra(s): escolha —</option>`)}
-  const filtrando=!!(q||fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length);$("#filtros").classList.toggle("ativo",filtrando);
+  const filtrando=!!(fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length);$("#filtros").classList.toggle("ativo",filtrando);
   $("#busca-obra-n").textContent=filtrando?`- ${ok.length} de ${S.selIds.length}`:`- ${S.selIds.length} obras`;
   if(ok.length===1&&ok[0].value!==atual){sel.value=ok[0].value;sel.dispatchEvent(new Event("change"))}
   renderConsol(ok.map(o=>o.value));aplicarFiltroLinhas()}
@@ -763,7 +769,7 @@ function consolLinhas(o){const i=(S.fInfo||{})[o]||{};const deps=depsDaObra(o);c
   lines.forEach(l=>{if(l.kind==="grp"&&l.S)gS=l.desc;if(l.kind!=="leaf")return;if(prods&&l.P&&!l.extra&&!prods.has(l.P))return;const r=ruleFor(i.tipo,l,o);const a=r&&r[1]||"";
     if(deps&&!deps.includes(a))return;const oc=S.regras&&S.regras.ocSet&&S.regras.ocSet.has(`${i.tipo||""}|${l.P}|${l.S}|${l.I}`);if(oc&&!sum(l.h))return;
     const st=histStats(l.h);out.push({P:l.P,S:l.S,sd:SDESC[l.S]||gS,I:l.I,d:l.desc,a,h25:st.h25,h26:st.h26})});return out}
-function renderConsol(ids){const box=$("#consol");const ativo=fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length;
+function renderConsol(ids){const box=$("#consol");const ativo=fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length>1;
   if(!ativo||S.consolOff){box.hidden=!ativo||!S.consolOff?true:false;if(ativo&&S.consolOff){box.hidden=false;box.innerHTML=`<button class="btn sm" id="cs-show">Mostrar a lista das ${ids.length} obras filtradas</button>`}return}
   S.consolIds=ids;S.consolOpen=S.consolOpen||new Set();const info=S.fInfo||{};const cat=o=>S.catMap&&S.catMap.get(o);
   const porEmp=new Map();ids.forEach(o=>{const i=info[o]||{};const e=String(i.emp||"");if(!porEmp.has(e))porEmp.set(e,{n:i.empNome||"",obras:[]});porEmp.get(e).obras.push(o)});
@@ -828,6 +834,7 @@ async function openObra(uid,o,fromAdm){
   document.querySelectorAll("#years button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.y===S.year));
   $("#detail").hidden=true;$("#add-box").hidden=true;$("#btn-add").textContent="Adicionar item";$("#ver-box").hidden=true;$("#ver-banner").hidden=true;
   $("#obs").value=doc.obs;$("#obs").disabled=!editable;
+  $("#em-edicao").innerHTML=`<span class="lbl">Obra na tabela</span> <b>${esc(obraLbl(o,info))}</b>`;
   $("#obra-tipo").textContent=(info.emp?`Empresa ${info.emp}${info.empNome?" – "+info.empNome:""} · `:"")+"Base modelo: "+(info.tipo?info.tipo+" · ":"")+TIPO_NOME[info.tipo||""];
   if(fromAdm){
     $("#sel-obra").innerHTML=`<option>${esc(obraLbl(o,info))}</option>`;$("#sel-obra").disabled=true;
