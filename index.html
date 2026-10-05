@@ -111,7 +111,7 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 .grid th,.grid td{border-bottom:1px solid var(--line);padding:0;white-space:nowrap;height:30px}
 .grid thead th{position:sticky;top:0;z-index:5;background:var(--surface);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;text-align:right;border-bottom:1px solid var(--line-strong)}
 .grid thead tr.band th{font-size:10px;padding:4px 8px;top:0;text-align:center}
-.grid thead tr.cols th{top:24px}
+.grid thead tr.cols th{top:var(--bandH,24px)}
 .grid .c-desc{position:sticky;left:0;z-index:3;background:inherit;text-align:left;min-width:280px;max-width:280px;width:280px;border-right:1px solid var(--line-strong)}
 .grid thead .c-desc{z-index:7;background:var(--surface)}
 .grid td.c-desc{padding:0 8px;overflow:hidden;text-overflow:ellipsis}
@@ -144,7 +144,7 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 .rev-box{display:inline-flex;gap:3px;align-items:center}.rev-box input{width:240px;height:24px;font-size:12px;border:1px solid var(--bad);border-radius:4px;padding:0 6px}
 .grid td.acts input.lobs.need,.grid input.sname.need{border-color:var(--bad);background:var(--bad-soft)}
 .grid input.sname.gen{border:1px dashed var(--line-strong);font-style:italic;color:var(--muted)}
-.grid.hm-open th.fzb1,.grid.hm-open th.fzb2{text-align:left;padding-left:10px}
+.grid th.hmb{text-align:left!important;padding-left:10px!important;border-left:2px solid var(--line-strong)}.grid td.hm:first-of-type{}
 .grid .orient{color:var(--accent);max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;display:inline-block;white-space:nowrap}
 .grid tr>:last-child{position:sticky;right:0;z-index:4;background:inherit;min-width:150px;border-left:1px solid var(--line-strong);box-shadow:-6px 0 8px -6px rgba(0,0,0,.18)}
 .grid thead tr>:last-child{z-index:7;background:var(--surface)}
@@ -155,7 +155,9 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 /* colunas congeladas: descrição + histórico 2025 e jan–set/2026 */
 .grid td.hm,.grid th.hm{font-size:11px;min-width:58px;padding-inline:3px;color:var(--ref-ink)}
 .hm-tg{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--muted)}
-.hm-tg .btn.sm{font-size:11px;padding:1px 7px}.hm-tg .btn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.hm-tg .btn.sm{font-size:11px;padding:1px 7px}
+.hm-main{font-size:13px;text-transform:none;letter-spacing:0;color:var(--ink);flex-wrap:wrap;row-gap:3px;white-space:normal}
+.grid thead tr.band th.c-desc{text-align:left;white-space:normal}.hm-main .btn.sm{font-size:12.5px;padding:2px 10px}.hm-tg .btn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .grid td.hm.acima,.ldt td.acima{background:var(--warn-soft);color:var(--warn);font-weight:600}
 .acima-leg{background:var(--warn-soft);color:var(--warn);font-weight:600;padding:0 4px;border-radius:3px}
 .grid .ldr{border:0;background:none;color:var(--accent);cursor:pointer;padding:0 4px 0 0;font-size:11px}
@@ -176,7 +178,7 @@ tr.ldrill>td{background:var(--surface);padding:0!important}
   .grid .fz3{border-right:1px solid var(--line)}
   .grid .fz6,.grid .fzb2{border-right:2px solid var(--line-strong)}
   .grid .fzb1{min-width:176px;max-width:176px}.grid .fzb2{min-width:176px;max-width:176px}
-  .grid.hm-open .fz{position:static}.grid.hm-open .fzb1,.grid.hm-open .fzb2{min-width:0;max-width:none}
+
 }
 .grid .c-flag{padding:0 4px;white-space:nowrap;min-width:126px;border-left:1px solid var(--line)}
 .grid thead th.c-flag{text-align:left;color:var(--accent)}
@@ -956,9 +958,9 @@ function renderGrid(){
   S.hm=S.hm||{a25:false,a26:false};const H25=!!S.hm.a25,H26=!!S.hm.a26,HM=H25||H26;$("#grid").classList.toggle("hm-open",HM);
   const showM=i=>i<12?H25:H26;
   const MC=(a,b)=>Array.from({length:b-a},(_,k)=>a+k).filter(showM).map(i=>`<td class="num ref hm" data-r="hm${i}"></td>`).join("");
-  const REF=`<td class="num ref fz fz1" data-r="h25"></td><td class="num ref fz fz2" data-r="m25"></td><td class="num ref fz fz3" data-r="n25"></td>${MC(0,12)}<td class="num ref fz fz4" data-r="h26"></td><td class="num ref fz fz5" data-r="m26"></td><td class="num ref fz fz6" data-r="n26"></td>${MC(12,21)}`;
-  let h=`<thead><tr class="band"><th class="c-desc"><span class="hm-tg" role="group" aria-label="Abrir meses do histórico">Meses: <button class="btn sm${H25?" on":""}" data-hm="a25" aria-pressed="${H25}">2025</button><button class="btn sm${H26?" on":""}" data-hm="a26" aria-pressed="${H26}">2026</button><button class="btn sm${H25&&H26?" on":""}" data-hm="ambos" aria-pressed="${H25&&H26}">Ambos</button></span></th><th class="ref fz fzb1" colspan="${H25?15:3}">2025 · jan–dez</th><th class="ref fz fzb2" colspan="${H26?12:3}">2026 · jan–set</th><th></th><th></th><th colspan="12">${y} · valores mensais (R$)</th><th colspan="2"></th><th class="c-act"></th></tr>
-  <tr class="cols"><th class="c-desc">Item da base modelo</th><th class="ref fz fz1">Total</th><th class="ref fz fz2" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz3" title="Meses com gasto (de 12)">Mes.</th>${H25?MES.map(m=>`<th class="ref hm">${m}/25</th>`).join(""):""}<th class="ref fz fz4">Total</th><th class="ref fz fz5" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz6" title="Meses com gasto (de 9)">Mes.</th>${H26?MES.slice(0,9).map(m=>`<th class="ref hm">${m}/26</th>`).join(""):""}<th class="c-flag" title="Como preencher os 12 meses deste ano">Como preencher</th><th title="Preço unitário do ano para itens medidos em UN, M ou M2">Preço un.</th>${MES.map(m=>`<th>${m}</th>`).join("")}<th>Total ${y}</th><th>vs 2026</th><th style="text-align:left" title="Campo livre, opcional">Observação e ações</th></tr></thead><tbody>`;
+  const REF=`<td class="num ref fz fz1" data-r="h25"></td><td class="num ref fz fz2" data-r="m25"></td><td class="num ref fz fz3" data-r="n25"></td><td class="num ref fz fz4" data-r="h26"></td><td class="num ref fz fz5" data-r="m26"></td><td class="num ref fz fz6" data-r="n26"></td>${MC(0,12)}${MC(12,21)}`;
+  let h=`<thead><tr class="band"><th class="c-desc"><span class="hm-tg hm-main" role="group" aria-label="Detalhar meses do histórico">Detalhar meses: <button class="btn sm${H25?" on":""}" data-hm="a25" aria-pressed="${H25}">2025</button><button class="btn sm${H26?" on":""}" data-hm="a26" aria-pressed="${H26}">2026</button><button class="btn sm${H25&&H26?" on":""}" data-hm="ambos" aria-pressed="${H25&&H26}">Ambos</button></span></th><th class="ref fz fzb1" colspan="3">2025 · jan–dez</th><th class="ref fz fzb2" colspan="3">2026 · jan–set</th>${H25?`<th class="ref hmb" colspan="12">2025 · mês a mês</th>`:""}${H26?`<th class="ref hmb" colspan="9">2026 · mês a mês</th>`:""}<th></th><th></th><th colspan="12">${y} · valores mensais (R$)</th><th colspan="2"></th><th class="c-act"></th></tr>
+  <tr class="cols"><th class="c-desc">Item da base modelo</th><th class="ref fz fz1">Total</th><th class="ref fz fz2" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz3" title="Meses com gasto (de 12)">Mes.</th><th class="ref fz fz4">Total</th><th class="ref fz fz5" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz6" title="Meses com gasto (de 9)">Mes.</th>${H25?MES.map(m=>`<th class="ref hm">${m}/25</th>`).join(""):""}${H26?MES.slice(0,9).map(m=>`<th class="ref hm">${m}/26</th>`).join(""):""}<th class="c-flag" title="Como preencher os 12 meses deste ano">Como preencher</th><th title="Preço unitário do ano para itens medidos em UN, M ou M2">Preço un.</th>${MES.map(m=>`<th>${m}</th>`).join("")}<th>Total ${y}</th><th>vs 2026</th><th style="text-align:left" title="Campo livre, opcional">Observação e ações</th></tr></thead><tbody>`;
   lines.forEach((l,idx)=>{
     if(!visible(l))return;
     const pad=l.kind==="prod"?8:8+Math.max(0,(l.depth||1)-1)*14;
@@ -987,8 +989,8 @@ function renderGrid(){
     subs.forEach(sb=>{
       const sa=(doc.v[subKey(l,sb)]&&doc.v[subKey(l,sb)][y])||[];const sf=flagOf(subKey(l,sb),y);const sd=l.canEdit&&!flagAuto(sf)?"":"disabled";
       h+=`<tr class="sub" data-i="${idx}" data-s="${esc(sb.id)}"><td class="c-desc" style="padding-left:${pad+18}px"><span class="sub-mark">↳</span><input class="sname${nomeGenerico(sb.n)?(YEARS.some(yy=>((doc.v[subKey(l,sb)]||{})[yy]||[]).some(v=>+v))?" need":" gen"):""}" id="sn-${idx}-${esc(sb.id)}" data-sn="${idx}" data-sid="${esc(sb.id)}" value="${esc(sb.n)}" ${l.canEdit?"":"disabled"} aria-label="Nome do subitem" title="${nomeGenerico(sb.n)?"Troque “Detalhe” pelo nome do gasto (ex.: Aluguel da sede)":esc(sb.n)}" placeholder="Nome do gasto"></td>
-      ${(()=>{const hh=l.subH&&l.subH[sb.n];const st0=hh?histStats(hh):null;const mc=(a,b)=>Array.from({length:b-a},(_,k)=>a+k).filter(showM).map(i=>`<td class="num ref hm${hh&&acimaMedia(hh,i,st0)?" acima":""}">${hh?f0(hh[i]):""}</td>`).join("");if(!hh)return [1,2,3].map(i=>`<td class="ref fz fz${i}"></td>`).join("")+mc(0,12)+[4,5,6].map(i=>`<td class="ref fz fz${i}"></td>`).join("")+mc(12,21);const r=histStats(hh);
-        return `<td class="num ref fz fz1">${f0(r.h25)}</td><td class="num ref fz fz2">${f0(r.m25)}</td><td class="num ref fz fz3">${r.n25||"–"}</td>${mc(0,12)}<td class="num ref fz fz4">${f0(r.h26)}</td><td class="num ref fz fz5">${f0(r.m26)}</td><td class="num ref fz fz6">${r.n26||"–"}</td>${mc(12,21)}`})()}<td class="c-flag">${l.canEdit?flagSel(subKey(l,sb),y,idx,sb.id,y!=="2027"||!!(l.subH&&l.subH[sb.n])):""}</td><td></td>
+      ${(()=>{const hh=l.subH&&l.subH[sb.n];const st0=hh?histStats(hh):null;const mc=(a,b)=>Array.from({length:b-a},(_,k)=>a+k).filter(showM).map(i=>`<td class="num ref hm${hh&&acimaMedia(hh,i,st0)?" acima":""}">${hh?f0(hh[i]):""}</td>`).join("");if(!hh)return [1,2,3,4,5,6].map(i=>`<td class="ref fz fz${i}"></td>`).join("")+mc(0,12)+mc(12,21);const r=histStats(hh);
+        return `<td class="num ref fz fz1">${f0(r.h25)}</td><td class="num ref fz fz2">${f0(r.m25)}</td><td class="num ref fz fz3">${r.n25||"–"}</td><td class="num ref fz fz4">${f0(r.h26)}</td><td class="num ref fz fz5">${f0(r.m26)}</td><td class="num ref fz fz6">${r.n26||"–"}</td>${mc(0,12)}${mc(12,21)}`})()}<td class="c-flag">${l.canEdit?flagSel(subKey(l,sb),y,idx,sb.id,y!=="2027"||!!(l.subH&&l.subH[sb.n])):""}</td><td></td>
       ${MES.map((_,m)=>`<td class="cell"><input id="s-${idx}-${esc(sb.id)}-${m}" data-sk="${idx}" data-sid="${esc(sb.id)}" data-m="${m}" value="${f2(+sa[m]||0)}" class="${sa[m]?"has":""}" ${sd} inputmode="decimal" aria-label="${esc(sb.n)} ${MES[m]} ${y}"></td>`).join("")}
       <td class="num tot" data-st="t"></td><td></td><td class="acts">${l.canEdit?`<button data-sact="rep" data-i="${idx}" data-sid="${esc(sb.id)}">Repetir</button><button data-sact="rm" data-i="${idx}" data-sid="${esc(sb.id)}" title="Remove este subitem">Remover</button>`:""}</td></tr>`;
     });
@@ -996,6 +998,7 @@ function renderGrid(){
   });
   h+=`</tbody><tfoot><tr><td class="c-desc" style="padding-left:8px">Total da obra</td>${REF.replace(/data-r=/g,"data-f=")}<td class="c-flag"></td><td></td>${MES.map((_,m)=>`<td class="num" data-f="m${m}"></td>`).join("")}<td class="num tot" data-f="t"></td><td class="num" data-f="d"></td><td></td></tr></tfoot>`;
   $("#grid").innerHTML=h;
+  {const bt=$("#grid thead tr.band");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
   updateTotals();
 }
 function deltaHtml(t,p26){if(!t)return"";if(!p26)return`<span class="delta up">novo</span>`;const d=(t/p26-1)*100;const c=Math.abs(d)<2?"eq":d>0?"up":"dn";return`<span class="delta ${c}">${d>0?"+":""}${nf0.format(d)}%</span>`}
