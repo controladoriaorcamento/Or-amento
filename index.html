@@ -134,6 +134,12 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 .grid .un{font-size:10px;color:var(--muted);margin-left:6px;border:1px solid var(--line);border-radius:3px;padding:0 3px}
 .grid td.acts{padding:0 6px;text-align:left}
 .grid td.acts input.lobs{width:150px;margin-right:4px;vertical-align:middle;height:24px;border:1px solid var(--line);border-radius:4px;padding:0 6px;font-size:12px;background:var(--surface);color:var(--ink)}
+.guia{background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:13px}.guia ol{margin:6px 0 6px 18px;padding:0}.guia li{margin:2px 0}
+.guia.rev{background:var(--bad-soft);border-color:var(--bad)}
+.rev-note{display:block;font-size:11px;color:var(--bad);background:var(--bad-soft);border-radius:4px;padding:1px 6px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.grid tr.has-rev>td.c-desc{box-shadow:inset 3px 0 0 var(--bad)}
+.grid td.acts button.rev-on{color:var(--bad);border-color:var(--bad)}
+.rev-box{display:inline-flex;gap:3px;align-items:center}.rev-box input{width:240px;height:24px;font-size:12px;border:1px solid var(--bad);border-radius:4px;padding:0 6px}
 .grid td.acts input.lobs.need,.grid input.sname.need{border-color:var(--bad);background:var(--bad-soft)}
 .grid input.sname.gen{border:1px dashed var(--line-strong);font-style:italic;color:var(--muted)}
 .grid.hm-open th.fzb1,.grid.hm-open th.fzb2{text-align:left;padding-left:10px}
@@ -290,6 +296,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
           <span id="send-box"><button class="btn primary" id="btn-send">Enviar para a Controladoria</button></span>
         </div>
       </div>
+      <div id="guia" class="guia" hidden></div>
       <div id="consol" class="card consol" hidden></div>
       <div id="ver-banner" class="card" style="margin-bottom:12px;border-color:var(--warn)" hidden></div>
       <div id="ver-box" class="card" style="margin-bottom:12px" hidden></div>
@@ -302,6 +309,8 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <label class="row" style="gap:6px"><input type="checkbox" id="only-used"> Só itens com histórico ou valor</label>
         <label class="row" style="gap:6px"><input type="checkbox" id="only-mine"> Só itens que eu preencho</label>
         <label class="row" style="gap:6px"><input type="checkbox" id="only-empty"> Só itens ainda não preenchidos</label>
+        <label class="row" style="gap:6px"><input type="checkbox" id="only-filled"> Só itens preenchidos</label>
+        <label class="row" style="gap:6px" id="lb-only-rev" hidden><input type="checkbox" id="only-rev"> Só itens com apontamento <span class="pill reaberto" id="n-rev"></span></label>
         <button class="btn sm" id="btn-copy-prev" hidden>Copiar ano anterior</button>
         <button class="btn sm" id="btn-collapse">Recolher grupos</button>
         <button class="btn sm" id="btn-add">Adicionar item</button>
@@ -810,7 +819,7 @@ async function openObra(uid,o,fromAdm){
   const [hs,ds]=await Promise.all([S.db.doc(histPath).get(),S.db.doc(`gerentes/${uid}/orc/${o}`).get()]);
   const hist=hs.exists?hs.data():null;
   const raw=ds.exists?ds.data():{};
-  const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,exists:ds.exists};
+  const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,rev:JSON.parse(JSON.stringify(raw.rev||{})),exists:ds.exists};
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
   const editable= uid===S.me && !travado(doc.status);
@@ -826,6 +835,9 @@ async function openObra(uid,o,fromAdm){
     const back=document.createElement("button");back.className="btn sm";back.textContent="Voltar ao painel";back.onclick=()=>{showTab("adm")};$("#viewing-as").append(back);
   } else {$("#sel-obra").disabled=false;$("#viewing-as").textContent=""}
   if(!fromAdm)aplicarFiltroLinhas(true);else S.fDeps=null;
+  /* conferência da Controladoria: abre mostrando só o que o gerente preencheu */
+  S.onlyFilled=!!fromAdm;$("#only-filled").checked=S.onlyFilled;if(fromAdm){S.onlyEmpty=false;$("#only-empty").checked=false}
+  S.onlyRev=false;$("#only-rev").checked=false;atualizarContRev();renderGuia();
   renderStatus();renderGrid();renderSummary();
 }
 function renderStatus(){
@@ -839,6 +851,7 @@ function renderStatus(){
   $("#send-box").hidden=!mine||travado(st);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
+  renderGuia();
   $("#btn-add").hidden=!S.cur.editable;$("#btn-savever").hidden=!S.cur.editable;
 }
 
@@ -858,8 +871,10 @@ function visible(l){
     if(S.onlyMine&&!l.canEdit)return false;
     if(restrito()&&!l.mine)return false;
     if(S.onlyEmpty&&linhaPreenchida(l))return false;
+    if(S.onlyFilled&&!temValor(S.cur.doc,l))return false;
+    if(S.onlyRev&&!revDe(l))return false;
     if(S.fDeps&&!S.fDeps.has(l.area))return false;
-  } else if(S.onlyUsed||S.q||S.onlyMine||S.onlyEmpty||restrito()||S.fDeps){ if(!l.ch.some(visible))return false }
+  } else if(S.onlyUsed||S.q||S.onlyMine||S.onlyEmpty||S.onlyFilled||S.onlyRev||restrito()||S.fDeps){ if(!l.ch.some(visible))return false }
   if(l.parents&&l.parents.some(p=>S.collapsed.has(p.key)))return false;
   return true;
 }
@@ -906,6 +921,19 @@ function recalcFlags(){
 const regraKey=l=>`${(S.cur&&S.cur.info&&S.cur.info.tipo)||""}|${l.P}|${l.S}|${l.I}`;
 function orientacao(l){const q=S.subR&&S.subR.q;return q?(q[regraKey(l)]||""):""}
 function temValor(doc,l){return YEARS.some(y=>{const a=lineYearVals(doc,l,y);if(a&&a.some(v=>+v))return true;return subsOf(l).some(sb=>((doc.v[subKey(l,sb)]||{})[y]||[]).some(v=>+v))})}
+const revDe=l=>{const r=S.cur&&S.cur.doc.rev&&S.cur.doc.rev[l.key];return r&&r.t?r:null};
+const modoRevisao=()=>!!(S.cur&&S.owner&&S.cur.uid!==S.me);
+function atualizarContRev(){if(!S.cur)return;setTimeout(renderGuia,0);const n=Object.values(S.cur.doc.rev||{}).filter(r=>r&&r.t).length;$("#lb-only-rev").hidden=!n&&!modoRevisao();$("#n-rev").textContent=n||"";$("#n-rev").hidden=!n}
+async function salvarRev(){const c=S.cur;try{await S.db.doc(`gerentes/${c.uid}/orc/${c.o}`).set({...payloadFrom(c),rev:c.doc.rev||{}});atualizarContRev();toast("Apontamento salvo")}catch(e){toast("Não foi possível salvar o apontamento.")}}
+/* faixa de orientação: muda conforme quem está usando e a situação da obra */
+function renderGuia(){const g=$("#guia");if(!S.cur){g.hidden=true;return}const st=S.cur.doc.status;const nRev=Object.values(S.cur.doc.rev||{}).filter(r=>r&&r.t).length;
+  let fech=false;try{fech=localStorage.getItem("orc.guia.ok")==="1"}catch(e){}
+  if(modoRevisao()){g.className="guia rev";g.innerHTML=`<b>Conferência do orçamento enviado</b><ol><li>A tabela mostra <b>só os itens que o gerente preencheu</b> (desmarque “Só itens preenchidos” para ver tudo).</li><li>Achou algo errado? Clique em <b>⚠ Apontar</b> no item e escreva o que corrigir${nRev?` · <b>${nRev}</b> apontamento(s) até agora`:""}.</li><li>No alto: <b>Devolver ao gerente</b> (ele vê os apontamentos e corrige) ou <b>Validar e travar</b>.</li></ol>`;g.hidden=false;return}
+  if(st==="reaberto"&&nRev){g.className="guia rev";g.innerHTML=`<b>A Controladoria devolveu esta obra com ${nRev} apontamento(s).</b> Os itens apontados estão marcados em vermelho. <button class="btn sm" id="guia-rev">Mostrar só os itens apontados</button> Corrija e clique em <b>Enviar para a Controladoria</b> de novo.`;g.hidden=false;return}
+  if(fech||S.owner){g.hidden=true;return}
+  g.className="guia";g.innerHTML=`<b>Como preencher</b><ol><li>Escolha a <b>obra</b> no quadro verde.</li><li>Em cada insumo, preencha os <b>subitens</b>: troque “Detalhe 1” pelo nome do gasto (ex.: Aluguel da sede) e digite os valores dos meses. Use <b>Como preencher</b> para repetir o valor ou aplicar reajuste. O histórico 2025/2026 fica à esquerda como referência.</li><li>Confira os anos <b>2027, 2028 e 2029</b> e clique em <b>Enviar para a Controladoria</b>. Tudo é salvo sozinho enquanto você digita.</li></ol><button class="btn sm" id="guia-ok">Entendi, esconder</button>`;g.hidden=false}
+document.addEventListener("click",e=>{if(e.target.id==="guia-ok"){try{localStorage.setItem("orc.guia.ok","1")}catch(_){}$("#guia").hidden=true}
+  if(e.target.id==="guia-rev"){S.onlyRev=true;$("#only-rev").checked=true;renderGrid()}});
 function precisaObs(l){return false /* observação opcional desde 05/10/2026: o detalhe é feito nos subitens */}
 const nomeGenerico=n=>/^\s*detalhe\s*\d*\s*$/i.test(n||"");
 function subsSemNome(){const d=S.cur.doc,out=[];S.cur.lines.forEach((l,idx)=>{if(l.kind!=="leaf"||!prodOk(l)||(restrito()&&!l.mine)||!l.canEdit)return;
@@ -942,7 +970,8 @@ function renderGrid(){
       if(hs) acts=`<button data-act="sadd" data-i="${idx}" title="Inclui mais uma linha de detalhe">+ Subitem</button>${l.obrig?"":`<button data-act="sdel" data-i="${idx}" title="Remove os subitens e mantém o total no item">Desfazer detalhe</button>`}`;
       else acts=`<button data-act="rep" data-i="${idx}" title="Repete o primeiro valor preenchido em todos os meses">Repetir</button>${q?"":`<button data-act="avg" data-i="${idx}" title="Preenche os 12 meses com a média de 2026 (total ÷ meses com gasto)">Média 26</button><button data-act="det" data-i="${idx}" title="Abre subitens só para preenchimento (ex.: IRRF, 13º, VA, VT). O Excel recebe apenas o total do item">Detalhar</button>`}<button data-act="clr" data-i="${idx}" title="Limpa os 12 meses deste ano">Limpar</button>`;
     }
-    h+=`<tr data-i="${idx}" class="${hs?"has-sub":""}"><td class="c-desc" style="padding-left:${pad}px" title="${esc(l.desc)} ${esc(l.S)} ${esc(l.I)}"><button class="ldr" data-ldr="${idx}" title="Abrir os meses de 2025 e 2026 deste insumo" aria-expanded="${!!(S.lineOpen&&S.lineOpen.has(l.key))}">${S.lineOpen&&S.lineOpen.has(l.key)?"▾":"▸"}</button><button class="dlink" data-det="${idx}">${esc(l.desc)}</button>${q?`<span class="un">${esc(l.un)}</span>`:""}${hs?`<span class="un" title="Soma dos subitens">detalhado</span>`:""}${l.area&&!restrito()?`<span class="area" title="Quem planeja: ${esc(l.area)}">${esc(AREA_CURTA[l.area]||l.area)}</span>`:""}${l.obrigRegra&&!OBRIG_TODOS?`<span class="un" title="Obrigatório preencher pelos subitens">obrigatório detalhar</span>`:""}${orientacao(l)?`<span class="un orient" title="${esc(orientacao(l))}">ⓘ ${esc(orientacao(l))}</span>`:""}${!l.canEdit&&editable?`<span class="lock" title="${esc(l.lockMsg)}">${l.area?"bloqueado":"sem regra"}</span>`:""}</td>
+    if(modoRevisao())acts+=`<button data-act="rev" data-i="${idx}" class="${revDe(l)?"rev-on":""}" title="Escrever o que está errado neste insumo (o gerente vê ao reabrir)">${revDe(l)?"✎ Apontamento":"⚠ Apontar"}</button>`;
+    h+=`<tr data-i="${idx}" class="${hs?"has-sub":""}${revDe(l)?" has-rev":""}"><td class="c-desc" style="padding-left:${pad}px" title="${esc(l.desc)} ${esc(l.S)} ${esc(l.I)}"><button class="ldr" data-ldr="${idx}" title="Abrir os meses de 2025 e 2026 deste insumo" aria-expanded="${!!(S.lineOpen&&S.lineOpen.has(l.key))}">${S.lineOpen&&S.lineOpen.has(l.key)?"▾":"▸"}</button><button class="dlink" data-det="${idx}">${esc(l.desc)}</button>${q?`<span class="un">${esc(l.un)}</span>`:""}${hs?`<span class="un" title="Soma dos subitens">detalhado</span>`:""}${l.area&&!restrito()?`<span class="area" title="Quem planeja: ${esc(l.area)}">${esc(AREA_CURTA[l.area]||l.area)}</span>`:""}${l.obrigRegra&&!OBRIG_TODOS?`<span class="un" title="Obrigatório preencher pelos subitens">obrigatório detalhar</span>`:""}${orientacao(l)?`<span class="un orient" title="${esc(orientacao(l))}">ⓘ ${esc(orientacao(l))}</span>`:""}${!l.canEdit&&editable?`<span class="lock" title="${esc(l.lockMsg)}">${l.area?"bloqueado":"sem regra"}</span>`:""}${revDe(l)?`<div class="rev-note" title="${esc(revDe(l).t)}">⚠ Controladoria: ${esc(revDe(l).t)}</div>`:""}</td>
     ${REF}
     <td class="c-flag">${ce&&!hs?flagSel(l.key,y,idx,undefined,y!=="2027"||!q):hs?`<span class="muted" style="font-size:11px">nos subitens ↓</span>`:""}</td>
     <td class="cell">${q?`<input id="pr-${idx}" data-pr="${idx}" value="${f2(+pr)}" ${l.canEdit?"":"disabled"} aria-label="Preço unitário ${esc(l.desc)}" inputmode="decimal">`:`<span class="empty-cell" style="padding:0 8px">—</span>`}</td>
@@ -1080,6 +1109,11 @@ $("#grid").addEventListener("click",e=>{
       d.sub[l.key]=presetsFor(l).map((n,i)=>({id:"s"+Date.now().toString(36)+i,n}));
       if(ex){const first=d.sub[l.key][0];YEARS.forEach(y=>{const va=lineYearVals(d,l,y);if(va){const k=subKey(l,first);if(!d.v[k])d.v[k]={};d.v[k][y]=va.slice()}})}
       syncLeaf(l);renderGrid();changed();toast(ex?"Valores já digitados foram para o primeiro subitem":"Subitens criados. Eles ficam só no formulário; o Excel recebe o total do item");return}
+    if(b.dataset.act==="rev"){const td=b.parentElement;if(td.querySelector(".rev-box"))return;const r=revDe(l);const w=document.createElement("span");w.className="rev-box";
+      w.innerHTML=`<input class="rev-in" value="${esc(r?r.t:"")}" placeholder="O que precisa corrigir neste insumo?" aria-label="Apontamento"><button class="rev-ok">Salvar</button>${r?`<button class="rev-del">Tirar</button>`:""}<button class="rev-no">×</button>`;td.append(w);w.querySelector("input").focus();
+      const fim=async t=>{if(!S.cur.doc.rev)S.cur.doc.rev={};if(t)S.cur.doc.rev[l.key]={t,por:await quemSou(),em:nowISO()};else delete S.cur.doc.rev[l.key];await salvarRev();renderGrid()};
+      w.querySelector(".rev-ok").onclick=()=>fim(w.querySelector("input").value.trim());w.querySelector("input").onkeydown=e=>{if(e.key==="Enter")fim(e.target.value.trim());if(e.key==="Escape")w.remove()};
+      if(w.querySelector(".rev-del"))w.querySelector(".rev-del").onclick=()=>fim("");w.querySelector(".rev-no").onclick=()=>w.remove();return}
     if(b.dataset.act==="sadd"){const arr=subsOf(l).slice();arr.push({id:"s"+Date.now().toString(36),n:"Detalhe "+(arr.length+1)});d.sub[l.key]=arr;renderGrid();changed();return}
     if(b.dataset.act==="sdel"){subsOf(l).forEach(sb=>delete d.v[subKey(l,sb)]);delete d.sub[l.key];renderGrid();changed();toast("Detalhe removido. O total ficou no item");return}
     if(b.dataset.act==="rep"){const v=a.find(x=>x);if(!v){toast("Preencha ao menos um mês para repetir");return}for(let m=0;m<12;m++)setVal(l,m,v)}
@@ -1097,7 +1131,7 @@ function payload(){
   const {doc,lines}=S.cur;const ext={};
   lines.forEach(l=>{if(l.kind==="leaf"&&l.extra&&(doc.v[l.key]||doc.pr[l.key]||doc.ext[l.key]))ext[l.key]={d:l.desc,un:l.un,item:l.item||""}});
   doc.ext=ext;
-  return {o:doc.o,tipo:doc.tipo,status:doc.status,v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},obs:doc.obs,lobs:doc.lobs||{},totais:docTotals(doc,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null};
+  return {o:doc.o,tipo:doc.tipo,status:doc.status,v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},obs:doc.obs,lobs:doc.lobs||{},totais:docTotals(doc,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null,rev:doc.rev||{}};
 }
 async function save(){
   if(!S.cur||!S.cur.editable||!S.cur.dirty)return;
@@ -1144,7 +1178,9 @@ async function exportarMeuExcel(){
   try{await S.dl.save({filename:`MEU_ORCAMENTO_2027_2029_${nm}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast("Excel gerado")}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
 }
 $("#btn-exp-me").addEventListener("click",()=>exportarMeuExcel().catch(()=>toast("Não foi possível gerar o Excel.")));
-$("#only-empty").addEventListener("change",e=>{S.onlyEmpty=e.target.checked;renderGrid()});
+$("#only-empty").addEventListener("change",e=>{S.onlyEmpty=e.target.checked;if(S.onlyEmpty){S.onlyFilled=false;$("#only-filled").checked=false}renderGrid()});
+$("#only-filled").addEventListener("change",e=>{S.onlyFilled=e.target.checked;if(S.onlyFilled){S.onlyEmpty=false;$("#only-empty").checked=false}renderGrid()});
+$("#only-rev").addEventListener("change",e=>{S.onlyRev=e.target.checked;renderGrid()});
 $("#btn-collapse").addEventListener("click",()=>{const grps=S.cur.lines.filter(l=>l.kind==="grp"&&l.depth<=2);if(S.collapsed.size){S.collapsed.clear();$("#btn-collapse").textContent="Recolher grupos"}else{grps.forEach(l=>S.collapsed.add(l.key));$("#btn-collapse").textContent="Expandir grupos"}renderGrid()});
 $("#btn-copy-prev").addEventListener("click",()=>{
   const b=$("#btn-copy-prev");if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar: substituir "+S.year+" pelos valores de "+(+S.year-1);setTimeout(()=>{delete b.dataset.arm;renderGrid()},5000);return}
@@ -1212,12 +1248,12 @@ $("#btn-validar").addEventListener("click",async()=>{const b=$("#btn-validar");
 $("#btn-reopen").addEventListener("click",()=>{
   const box=$("#btn-reopen").parentElement;if($("#dev-box"))return;
   const w=document.createElement("span");w.id="dev-box";w.className="confirm";
-  w.innerHTML=`<input id="dev-mot" placeholder="Motivo da devolução (o gerente vê)" style="min-width:260px;padding:6px 8px;border:1px solid var(--line);border-radius:6px"><button class="btn sm primary" id="dev-ok">Devolver</button><button class="btn sm" id="dev-no">Cancelar</button>`;
+  w.innerHTML=`<input id="dev-mot" placeholder="Resumo da devolução (os apontamentos por item vão junto)" style="min-width:260px;padding:6px 8px;border:1px solid var(--line);border-radius:6px"><button class="btn sm primary" id="dev-ok">Devolver</button><button class="btn sm" id="dev-no">Cancelar</button>`;
   box.append(w);$("#dev-mot").focus();
   $("#dev-no").onclick=()=>w.remove();
   $("#dev-ok").onclick=async()=>{const mot=$("#dev-mot").value.trim();if(!mot){toast("Escreva o motivo da devolução.");return}
-    const c=S.cur;try{await saveVersion(c.uid,c.o,payloadFrom(c),"Antes de devolver").catch(()=>{});const por=await quemSou();
-      const dv={motivo:mot,em:nowISO(),por};const p={...payloadFrom(c),status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv};
+    const c=S.cur;try{await saveVersion(c.uid,c.o,payloadFrom(c),"Antes de devolver").catch(()=>{});const por=await quemSou();const nRev=Object.values(c.doc.rev||{}).filter(r=>r&&r.t).length;
+      const dv={motivo:mot+(nRev?` (${nRev} apontamento(s) nos itens; marque "Só itens com apontamento")`:""),em:nowISO(),por,apontamentos:nRev};const p={...payloadFrom(c),status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv};
       await S.db.doc(`gerentes/${c.uid}/orc/${c.o}`).set(p);Object.assign(c.doc,{status:"reaberto",validadoEm:null,validadoPor:null,devolucao:dv});w.remove();renderStatus();toast("Obra devolvida ao gerente")}
     catch(e){toast("Não foi possível devolver.")}};
 });
@@ -1247,7 +1283,7 @@ $("#ver-box").addEventListener("click",async e=>{const b=e.target.closest("butto
     Object.assign(c.doc,{v:JSON.parse(JSON.stringify(v.v||{})),pr:JSON.parse(JSON.stringify(v.pr||{})),sub:JSON.parse(JSON.stringify(v.sub||{})),flag:JSON.parse(JSON.stringify(v.flag||{})),ext:JSON.parse(JSON.stringify(v.ext||{})),obs:v.obs||"",lobs:JSON.parse(JSON.stringify(v.lobs||{}))});
     c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v));applyRules(c);$("#obs").value=c.doc.obs;renderGrid();c.dirty=true;changed();toast("Versão restaurada. A versão anterior também foi guardada.");renderVersoes()}
 });
-function payloadFrom(c){const d=c.doc;return {o:d.o,tipo:d.tipo,status:d.status,v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},obs:d.obs,lobs:d.lobs||{},totais:docTotals(d,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm,validadoEm:d.validadoEm||null,validadoPor:d.validadoPor||null,devolucao:d.devolucao||null}}
+function payloadFrom(c){const d=c.doc;return {o:d.o,tipo:d.tipo,status:d.status,v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},obs:d.obs,lobs:d.lobs||{},totais:docTotals(d,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm,validadoEm:d.validadoEm||null,validadoPor:d.validadoPor||null,devolucao:d.devolucao||null,rev:d.rev||{}}}
 
 /* ---------- Controladoria ---------- */
 function showTab(t){
