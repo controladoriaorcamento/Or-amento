@@ -1102,7 +1102,9 @@ const obsCurta=(d,l)=>((d.lobs||{})[l.key]||"").trim().length<OBS_MIN;
 function faltandoObs(){const d=S.cur.doc;return S.cur.lines.filter(l=>l.kind==="leaf"&&prodOk(l)&&(!restrito()||l.mine)&&precisaObs(l)&&obsCurta(d,l))}
 function marcaObs(idx){const el=$("#lo-"+idx);if(!el)return;const l=S.cur.lines[idx];const tem=temValor(S.cur.doc,l)||!!((S.cur.doc.lobs||{})[l.key]||"");el.hidden=!tem;el.classList.toggle("need",precisaObs(l)&&obsCurta(S.cur.doc,l))}
 /* várias obras na mesma tabela: Empresa → Obra; a obra aberta mostra os itens para preencher, as outras ficam numa linha (clique para abrir) */
-function montarMulti(corpo,nCols){const ids=(S.navIds||[]).slice();const conf=S.cur&&S.cur.uid!==S.me;
+function montarMulti(corpo,nCols){const conf=S.cur&&S.cur.uid!==S.me;
+  /* só as obras da MESMA empresa da obra aberta (respeitando o filtro) — deixa a tela leve */
+  const empCur=S.cur&&String(((S.fInfo||{})[S.cur.o]||S.cur.info||{}).emp||"");const ids=(S.navIds||[]).filter(o=>String(((S.fInfo||{})[o]||{}).emp||"")===empCur);
   if(conf||ids.length<2||!S.cur||!ids.includes(S.cur.o))return S.curFechado?"":corpo;
   const info=S.fInfo||{};const cat=o=>S.catMap&&S.catMap.get(o);
   ids.sort((a,b)=>String((info[a]||{}).emp||"").localeCompare(String((info[b]||{}).emp||""),undefined,{numeric:true})||String((info[a]||{}).obra||a).localeCompare(String((info[b]||{}).obra||b),undefined,{numeric:true}));
