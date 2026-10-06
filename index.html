@@ -1020,6 +1020,7 @@ function nomeProd(P,tipo,hist){const tp=T&&T.tipos&&T.tipos[tipo];return (tp&&tp
 function produtosDaObra(hist,lines){const pd=Object.keys((hist&&hist.pd)||{});const s=new Set(pd);lines.forEach(l=>{if(l.kind==="leaf"&&l.P&&sum(l.h))s.add(l.P)});return s.size?s:null}
 const oculto=l=>{const oc=S.regras&&S.regras.ocSet;return !!(oc&&oc.has(`${(S.cur&&S.cur.info&&S.cur.info.tipo)||""}|${l.P}|${l.S}|${l.I}`))};
 const prodOk=l=>!(S.cur&&S.cur.prods&&l.P&&l.key!=="P:extra"&&!String(l.key).startsWith("GX:")&&!l.extra&&!S.cur.prods.has(l.P));
+function visivelFiltro(c){const sv=S.collapsed;if(!sv.size)return visible(c);S.collapsed=new Set();try{return visible(c)}finally{S.collapsed=sv}}
 function visible(l){
   if(!prodOk(l))return false;
   if(l.kind==="leaf"&&(oculto(l)||(l.absorvido&&!sum(l.h)))&&!temValor(S.cur.doc,l))return false;
@@ -1032,7 +1033,7 @@ function visible(l){
     if(S.onlyFilled&&!temValor(S.cur.doc,l))return false;
     if(S.onlyRev&&!revDe(l))return false;
     if(S.fDeps&&!S.fDeps.has(l.area))return false;
-  } else if(S.onlyUsed||S.q||S.onlyMine||S.onlyEmpty||S.onlyFilled||S.onlyRev||restrito()||S.fDeps){ if(!l.ch.some(visible))return false }
+  } else if(S.onlyUsed||S.q||S.onlyMine||S.onlyEmpty||S.onlyFilled||S.onlyRev||restrito()||S.fDeps){ /* o grupo continua aparecendo quando recolhido: avalia os filhos ignorando o recolher (como a matriz do Power BI) */ if(!l.ch.some(visivelFiltro))return false }
   if(l.parents&&l.parents.some(p=>S.collapsed.has(p.key)))return false;
   return true;
 }
