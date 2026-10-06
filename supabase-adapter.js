@@ -69,29 +69,35 @@
           <button id="lg-ok" type="submit" style="${btn}">Continuar</button>
           <p id="lg-msg" style="margin:12px 0 0;font-size:13px;color:#5A6862">${msg||"Use o e-mail cadastrado pela Controladoria."}</p>
           <p style="margin:10px 0 0;font-size:11px;color:#7A8782">Para controle da Controladoria, o sistema registra a data, a hora e o tempo de uso de cada acesso.</p>
-          <p style="margin:10px 0 0;font-size:12px"><a href="#" id="lg-trocar" hidden>Usar outro e-mail</a></p>
+          <p style="margin:10px 0 0;font-size:12px;display:flex;gap:16px"><a href="#" id="lg-trocar" hidden>Usar outro e-mail</a><a href="#" id="lg-esqueci" hidden>Esqueci minha senha</a></p>
         </form></div>`;
       document.body.appendChild(box);const lv=document.getElementById("v-loading");if(lv)lv.hidden=true;
       const $=id=>document.getElementById(id),m=$("lg-msg");let modo="email",em="";
-      const fase=f=>{modo=f;$("lg-p1").hidden=f==="email";$("lg-p2").hidden=f!=="novo";$("lg-email").readOnly=f!=="email";$("lg-trocar").hidden=f==="email";
-        $("lg-l1").textContent=f==="novo"?"Crie uma senha (mínimo 8 caracteres)":"Senha";$("lg-s1").autocomplete=f==="novo"?"new-password":"current-password";
-        $("lg-ok").textContent=f==="email"?"Continuar":f==="novo"?"Criar senha e entrar":"Entrar";if(f!=="email")setTimeout(()=>$("lg-s1").focus(),0)};
+      const fase=f=>{modo=f;const cria=f==="novo"||f==="reset";$("lg-p1").hidden=f==="email";$("lg-p2").hidden=!cria;$("lg-email").readOnly=f!=="email";$("lg-trocar").hidden=f==="email";$("lg-esqueci").hidden=f!=="cadastrado";
+        $("lg-l1").textContent=f==="novo"?"Crie uma senha (mínimo 8 caracteres)":f==="reset"?"Crie a sua NOVA senha (mínimo 8 caracteres)":"Senha";$("lg-s1").autocomplete=cria?"new-password":"current-password";
+        $("lg-ok").textContent=f==="email"?"Continuar":cria?"Criar senha e entrar":"Entrar";if(f!=="email")setTimeout(()=>$("lg-s1").focus(),0)};
+      $("lg-esqueci").onclick=async e=>{e.preventDefault();try{const r=await sb.rpc("pedir_nova_senha",{p:em});if(r.error)throw r.error;m.textContent="Pedido enviado à Controladoria. Quando liberarem, digite seu e-mail aqui de novo e crie a senha nova."}catch(x){m.textContent="Não foi possível registrar o pedido. Fale com a Controladoria."}};
       $("lg-trocar").onclick=e=>{e.preventDefault();$("lg-s1").value=$("lg-s2").value="";m.textContent="";fase("email")};
       $("lg-form").onsubmit=async e=>{e.preventDefault();const b=$("lg-ok");b.disabled=true;
         try{
           if(modo==="email"){em=$("lg-email").value.trim().toLowerCase();
             const {data,error}=await sb.rpc("email_status",{p:em});if(error)throw error;
             if(data==="negado"){m.textContent="Este e-mail não está liberado para o Orçamento 2027–2029. Fale com a Controladoria.";return}
-            m.textContent=data==="novo"?"Primeiro acesso: crie a sua senha.":"Digite a sua senha.";fase(data);return}
+            m.textContent=data==="novo"?"Primeiro acesso: crie a sua senha.":data==="reset"?"A Controladoria liberou uma nova senha para você: crie a sua senha nova.":"Digite a sua senha.";fase(data);return}
           const s1=$("lg-s1").value;
-          if(modo==="novo"){
+          if(modo==="reset"){
+            if(s1.length<8){m.textContent="A senha precisa ter pelo menos 8 caracteres.";return}
+            if(s1!==$("lg-s2").value){m.textContent="As duas senhas não são iguais.";return}
+            const r=await sb.rpc("definir_nova_senha",{p:em,s:s1});if(r.error)throw r.error;
+            const {error}=await sb.auth.signInWithPassword({email:em,password:s1});if(error)throw error;
+          }else if(modo==="novo"){
             if(s1.length<8){m.textContent="A senha precisa ter pelo menos 8 caracteres.";return}
             if(s1!==$("lg-s2").value){m.textContent="As duas senhas não são iguais.";return}
             const {data,error}=await sb.auth.signUp({email:em,password:s1});if(error)throw error;
             if(!data.session){m.textContent="Senha criada, mas o acesso não abriu (confirmação de e-mail ligada no Supabase). Fale com a Controladoria.";return}
           }else{
             const {error}=await sb.auth.signInWithPassword({email:em,password:s1});
-            if(error){m.textContent=/invalid/i.test(error.message)?"Senha incorreta. Esqueceu? Peça à Controladoria para zerar a sua senha.":error.message;return}
+            if(error){m.textContent=/invalid/i.test(error.message)?"Senha incorreta. Esqueceu? Clique em \"Esqueci minha senha\" abaixo.":error.message;return}
           }
           location.reload();
         }catch(x){m.textContent="Não foi possível entrar: "+(x.message||x)}finally{b.disabled=false}};
@@ -120,7 +126,8 @@
     admin=!!(r.data&&r.data.admin);
     // botão sair
     const b=document.createElement("button");b.textContent="Sair ("+em+")";b.className="btn";b.style.cssText="position:fixed;right:12px;bottom:12px;z-index:50;font-size:12px";
-    b.onclick=async()=>{await sb.auth.signOut();location.reload()};document.body.appendChild(b);
+    b.title="Encerrar a sessão neste computador";b.onclick=async()=>{b.disabled=true;try{if(window.ORC_FLUSH)await window.ORC_FLUSH()}catch(e){}await sb.auth.signOut();location.reload()};
+    const host=document.querySelector("header.top .top-in");if(host){b.textContent="Sair";b.title="Sair ("+em+")";b.style.cssText="margin-left:10px;font-size:13px;padding:5px 12px";const w=document.createElement("span");w.className="quem-logado";w.style.cssText="margin-left:12px;font-size:12px;color:var(--muted,#5A6862);white-space:nowrap";w.textContent=em;host.append(w,b)}else document.body.appendChild(b);
     if(admin)botaoCarga();
     registrarSessao();
     try{const d=await sb.rpc("sou_dono");if(d.data)abaAcessos()}catch(e){}
@@ -142,10 +149,25 @@
     sec.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Acessos ao site</h2><p class="desc" style="margin:4px 0 0">Quem entrou, quando e quanto tempo ficou com o site aberto (tempo com a aba visível). Visível só para você.</p></div>
       <div class="row" style="gap:8px"><select id="log-dias" class="btn"><option value="1">Hoje</option><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="365">12 meses</option></select><button class="btn" id="log-ref">Atualizar</button><button class="btn" id="log-xlsx">Baixar Excel</button></div></div>
       <p class="muted" id="log-res" style="margin:12px 0 8px"></p><h3 style="font-size:14px;margin:8px 0">Por pessoa</h3><div class="tbl-box"><table class="list" id="log-pess"></table></div>
-      <h3 style="font-size:14px;margin:16px 0 8px">Sessões</h3><div class="tbl-box"><table class="list" id="log-sess"></table></div></div>`;
+      <h3 style="font-size:14px;margin:16px 0 8px">Sessões</h3><div class="tbl-box"><table class="list" id="log-sess"></table></div></div>
+      <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Usuários e senhas</h2><p class="desc" style="margin:4px 0 0">Ninguém vê as senhas. "Gerar nova senha" invalida a senha atual e encerra as sessões da pessoa; no próximo acesso ela digita o e-mail e cria uma senha nova (vale por 7 dias).</p></div>
+      <div class="row" style="gap:8px"><input id="us-q" type="search" placeholder="Pesquisar e-mail…" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px"><button class="btn" id="us-ref">Atualizar</button></div></div>
+      <p class="muted" id="us-res" style="margin:10px 0 8px"></p><div class="tbl-box"><table class="list" id="us-tbl"></table></div></div>`;
     document.querySelector("main.wrap").appendChild(sec);
     const views=["v-fill","v-adm","v-sg"];
-    bt.onclick=()=>{views.forEach(v=>{const e=document.getElementById(v);if(e)e.hidden=true});document.querySelectorAll("#tabs .tab").forEach(t=>t.setAttribute("aria-selected",t===bt));sec.hidden=false;carregar()};
+    bt.onclick=()=>{views.forEach(v=>{const e=document.getElementById(v);if(e)e.hidden=true});document.querySelectorAll("#tabs .tab").forEach(t=>t.setAttribute("aria-selected",t===bt));sec.hidden=false;carregar();usuarios()};
+    let US=[];
+    async function usuarios(){const m=document.getElementById("us-res");m.textContent="Carregando…";
+      const r=await sb.rpc("admin_usuarios");if(r.error){m.textContent=/admin_usuarios|function/i.test(r.error.message)?"Controle de senhas ainda não ativado no banco (falta aplicar o script 05_redefinir_senha.sql).":"Erro: "+r.error.message;US=[];desenhaUs();return}
+      US=r.data||[];const pend=US.filter(u=>/pediu/.test(u.situacao)).length;m.innerHTML=`<b>${US.length}</b> usuários · ${US.filter(u=>u.situacao==="ativo").length} ativos · ${pend?`<b style="color:var(--warn,#B45309)">${pend} pedido(s) de nova senha</b>`:"nenhum pedido de nova senha"}`;desenhaUs()}
+    function desenhaUs(){const q=(document.getElementById("us-q").value||"").toLowerCase();const L=US.filter(u=>!q||u.email.includes(q));
+      document.getElementById("us-tbl").innerHTML=L.length?`<thead><tr><th>E-mail</th><th>Situação</th><th>Senha criada em</th><th>Último login</th><th>Pedido de nova senha</th><th>Nova senha liberada</th><th></th></tr></thead><tbody>${L.map(u=>`<tr><td>${esc2(u.email)}</td><td>${/pediu/.test(u.situacao)?`<b style="color:var(--warn,#B45309)">${esc2(u.situacao)}</b>`:esc2(u.situacao)}</td><td>${u.criado_em?fmtDt(u.criado_em):"—"}</td><td>${u.ultimo_login?fmtDt(u.ultimo_login):"—"}</td><td>${u.pedido_em?fmtDt(u.pedido_em):"—"}</td><td>${u.liberado_em?fmtDt(u.liberado_em)+(u.liberado_por?" · "+esc2(u.liberado_por):""):"—"}</td><td>${u.criado_em?`<button class="btn sm" data-reset="${esc2(u.email)}">Gerar nova senha</button>`:""}</td></tr>`).join("")}</tbody>`:"";}
+    document.getElementById("us-q").oninput=desenhaUs;document.getElementById("us-ref").onclick=usuarios;
+    document.getElementById("us-tbl").addEventListener("click",async e=>{const b=e.target.closest("[data-reset]");if(!b)return;const em2=b.dataset.reset;
+      if(b.dataset.conf!=="1"){b.dataset.conf="1";b.textContent="Confirmar? A senha atual para de valer";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.conf="";b.textContent="Gerar nova senha";b.classList.remove("primary")}},6000);return}
+      b.disabled=true;b.textContent="Gerando…";const r=await sb.rpc("admin_gerar_nova_senha",{p:em2});
+      if(r.error){b.disabled=false;b.textContent="Erro: tente de novo";return}
+      document.getElementById("us-res").textContent=`Nova senha liberada para ${em2}. Avise a pessoa: no próximo acesso ela digita o e-mail e cria a senha nova.`;usuarios()});
     document.querySelectorAll("#tabs .tab").forEach(t=>{if(t!==bt)t.addEventListener("click",()=>{sec.hidden=true;bt.setAttribute("aria-selected","false")})});
     let dados=null;
     async function carregar(){const m=document.getElementById("log-res");m.textContent="Carregando…";

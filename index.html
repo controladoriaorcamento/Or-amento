@@ -245,8 +245,8 @@ table.list{border-collapse:collapse;width:100%;font-size:13px}
 table.list th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line-strong);white-space:nowrap}
 table.list td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
 table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-#fill-main.sem-obra :is(#summary,.obra-meta,#btn-ver,#btn-validar,#btn-reopen,#send-box,#viewing-as,#orc-quem,#guia,#detail,.toolbar,#add-box,#grid-box,.legend,#ver-banner,#ver-box){display:none!important}
-.sem-obra-msg{margin:10px 0;border-left:4px solid var(--accent);font-size:14px}.niv-n{margin-left:6px;font-weight:600}
+#fill-main.sem-obra :is(.obs-box,#summary,.obra-meta,#btn-ver,#btn-validar,#btn-reopen,#send-box,#viewing-as,#orc-quem,#guia,#detail,.toolbar,#add-box,#grid-box,.legend,#ver-banner,#ver-box){display:none!important}
+.sem-obra-msg{margin:10px 0;border-left:4px solid var(--accent);font-size:14px}.niv-bts{display:inline-flex;gap:3px;margin:0 4px}.niv-bts .btn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .dev-ov{position:fixed;inset:0;background:rgba(10,20,15,.45);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto}
 .dev-box{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;max-width:720px;width:100%;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
 .dev-hd{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.dev-hd h3{margin:2px 0 4px;font-size:19px}.dev-st{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
@@ -347,7 +347,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <label class="row" style="gap:6px"><input type="checkbox" id="only-filled"> Só itens preenchidos</label>
         <label class="row" style="gap:6px" id="lb-only-rev" hidden><input type="checkbox" id="only-rev"> Só itens com apontamento <span class="pill reaberto" id="n-rev"></span></label>
         <button class="btn sm" id="btn-copy-prev" hidden>Copiar ano anterior</button>
-        <span class="hm-tg niv-tg" id="niv-tg" role="group" aria-label="Recolher ou expandir a estrutura">Estrutura: <button class="btn sm" data-niv="0" title="Mostra só os produtos">Recolher tudo</button><button class="btn sm" data-nstep="-1" title="Fecha o nível mais aberto (um de cada vez)">− Recolher 1 nível</button><button class="btn sm" data-nstep="1" title="Abre mais um nível (um de cada vez)">+ Abrir 1 nível</button><button class="btn sm" data-niv="all" title="Abre toda a estrutura até os insumos">Expandir tudo</button><span class="niv-n muted" id="niv-n"></span></span>
+        <span class="hm-tg niv-tg" id="niv-tg" role="group" aria-label="Níveis da estrutura">Estrutura: <button class="btn sm" data-nstep="-1" title="Fecha um nível (o mais aberto)">− Recolher 1 nível</button><span id="niv-bts" class="niv-bts"></span><button class="btn sm" data-nstep="1" title="Abre mais um nível">+ Abrir 1 nível</button></span>
         <button class="btn sm" id="btn-add">Adicionar item</button>
         <button class="btn sm" id="btn-savever" title="Guarda uma cópia do orçamento como está agora">Salvar versão</button>
         <button class="btn sm" id="btn-exp-me" title="Baixa em Excel o que você orçou nas suas obras">Baixar meu Excel</button>
@@ -368,7 +368,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <span>“bloqueado” = item de outra área · “sem regra” = falta definir na aba Bases - Gerais · G&amp;G = Gente &amp; Gestão · Eng. = Engenharia</span>
         <span>“Detalhar” abre subitens (ex.: IRRF, 13º, VA, VT) só para o preenchimento; o Excel leva o total do item</span>
       </div>
-      <div style="margin-top:16px;max-width:900px">
+      <div class="obs-box" style="margin-top:16px;max-width:900px">
         <label class="lbl" for="obs">Premissas e observações desta obra</label>
         <textarea id="obs" placeholder="Ex.: reajuste previsto, contratos novos, início/fim de etapas"></textarea>
       </div>
@@ -733,7 +733,7 @@ async function loadMine(){
   S.selAll=obras.sort((a,b)=>String(a[1].obra||a[0]).localeCompare(String(b[1].obra||b[0]))||String(a[1].emp||"").localeCompare(String(b[1].emp||""),undefined,{numeric:true})).map(([o,i])=>{const st=(S.myOrc[o]&&S.myOrc[o].status)||"não iniciado";return `<option value="${esc(o)}">${esc(obraLbl(o,i))} (${esc(st)})</option>`}).join("");
   sel.innerHTML=S.selAll;S.selIds=obras.map(x=>x[0]);$("#busca-obra").value="";$("#busca-obra-n").textContent=obras.length>1?"- "+obras.length+" obras":"";$("#busca-obra").parentElement.hidden=obras.length<2;
   await carregarOrcIndex();await montarFiltros();
-  if(S.selIds.length===1)await openObra(S.me,S.selIds[0],false);else semObra(true);
+  if(S.selIds.length===1)await openObra(S.me,S.selIds[0],false);else{semObra(true);filtrarObras()}
 }
 /* filtros da obra: empresa, gerente e cargo (masters) e busca por texto; Enter abre a primeira encontrada */
 const semAc=t=>String(t).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
@@ -831,28 +831,35 @@ function consolLinhas(o){const i=(S.fInfo||{})[o]||{};const deps=depsDaObra(o);c
   lines.forEach(l=>{if(l.kind==="grp"&&l.S)gS=l.desc;if(l.kind!=="leaf")return;if(prods&&l.P&&!l.extra&&!prods.has(l.P))return;const r=ruleFor(i.tipo,l,o);const a=r&&r[1]||"";
     if(deps&&!deps.includes(a))return;const oc=S.regras&&S.regras.ocSet&&S.regras.ocSet.has(`${i.tipo||""}|${l.P}|${l.S}|${l.I}`);if(oc&&!sum(l.h))return;
     const st=histStats(l.h);out.push({P:l.P,S:l.S,sd:SDESC[l.S]||gS,I:l.I,d:l.desc,a,h25:st.h25,h26:st.h26})});return out}
-function renderConsol(ids){const box=$("#consol");const ativo=fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length>1;
+function renderConsol(ids){const box=$("#consol");const ativo=ids.length>1||fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length>1;
   if(!ativo||S.consolOff){box.hidden=!ativo||!S.consolOff?true:false;if(ativo&&S.consolOff){box.hidden=false;box.innerHTML=`<button class="btn sm" id="cs-show">Mostrar a lista das ${ids.length} obras filtradas</button>`}return}
   S.consolIds=ids;S.consolOpen=S.consolOpen||new Set();const info=S.fInfo||{};const cat=o=>S.catMap&&S.catMap.get(o);
   const porEmp=new Map();ids.forEach(o=>{const i=info[o]||{};const e=String(i.emp||"");if(!porEmp.has(e))porEmp.set(e,{n:i.empNome||"",obras:[]});porEmp.get(e).obras.push(o)});
   const t25=ids.reduce((a,o)=>a+(+((cat(o)||[])[4])||0),0),t26=ids.reduce((a,o)=>a+(+((cat(o)||[])[5])||0),0);
-  const mx=400;let n=0;
-  box.hidden=false;box.innerHTML=`<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2 style="margin:0">Obras no filtro: ${ids.length}</h2><p class="desc" style="margin:2px 0 0">Clique em ▸ para abrir até o insumo. "Abrir" leva a obra para a tabela de preenchimento abaixo.${S.catMap?` Histórico das obras: 2025 R$ ${f0(t25)} · jan–set/2026 R$ ${f0(t26)}.`:""}</p></div>
-    <div class="row" style="gap:6px"><button class="btn sm" id="cs-all">Abrir todas${ids.length>60?" (primeiras 60)":""}</button><button class="btn sm" id="cs-none">Fechar todas</button><button class="btn sm" id="cs-xlsx">Baixar Excel</button><button class="btn sm" id="cs-hide">Ocultar lista</button></div></div>
+  const mx=400;let n=0;const nEmp=porEmp.size;
+  /* empresas recolhidas: começa só com as empresas (resumo) quando há mais de uma */
+  if(!S.csEmp||S.csEmp.ids!==ids.join(",")){S.csEmp={ids:ids.join(","),ab:new Set(nEmp===1?[...porEmp.keys()]:[])}}
+  const empAb=e=>S.csEmp.ab.has(e);
+  box.hidden=false;box.innerHTML=`<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2 style="margin:0">Resumo por empresa e obra · ${nEmp} empresa(s), ${ids.length} obra(s)${(fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length)?" no filtro":""}</h2><p class="desc" style="margin:2px 0 0">▸ na empresa mostra as obras; ▸ na obra mostra até o insumo. "Abrir" leva a obra para a tabela de preenchimento abaixo.${S.catMap?` Histórico das obras: 2025 R$ ${f0(t25)} · jan–set/2026 R$ ${f0(t26)}.`:""}</p></div>
+    <div class="row" style="gap:6px"><span class="hm-tg" role="group" aria-label="Níveis do resumo">Níveis: <button class="btn sm" id="cs-emp0" title="Mostra só as empresas">Só empresas</button><button class="btn sm" id="cs-emp1" title="Mostra as obras de todas as empresas">Empresas e obras</button></span><button class="btn sm" id="cs-all">Abrir todas${ids.length>60?" (primeiras 60)":""}</button><button class="btn sm" id="cs-none">Fechar todas</button><button class="btn sm" id="cs-xlsx">Baixar Excel</button><button class="btn sm" id="cs-hide">Ocultar lista</button></div></div>
     <div class="tbl-box" style="max-height:520px;overflow:auto;margin-top:8px"><table class="list"><thead><tr><th style="width:30px"></th><th>Obra</th><th>Base</th><th>Quem planeja</th><th class="num">Histórico 2025</th><th class="num">Histórico jan–set/26</th><th>Preenchimento</th><th></th></tr></thead><tbody>
-    ${[...porEmp.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([e,x])=>`<tr class="c-emp"><td></td><td colspan="7">Empresa ${esc(e)}${SEP}${esc(x.n)} <span class="muted" style="font-weight:400">· ${x.obras.length} obra(s)</span></td></tr>`+
-      x.obras.map(o=>{if(n++>mx)return "";const i=info[o]||{};const c=cat(o);const ab=S.consolOpen.has(o);const deps=depsDaObra(o);
+    ${[...porEmp.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([e,x])=>{const ea=empAb(e);const e25=x.obras.reduce((a,o)=>a+(+((cat(o)||[])[4])||0),0),e26=x.obras.reduce((a,o)=>a+(+((cat(o)||[])[5])||0),0);const nPre=x.obras.filter(o=>chipsPreench(o)).length;
+      return `<tr class="c-emp"><td><button class="btn sm" data-cse="${esc(e)}" aria-expanded="${ea}" title="${ea?"Recolher":"Mostrar"} as obras desta empresa">${ea?"▾":"▸"}</button></td><td colspan="3">Empresa ${esc(e)}${SEP}${esc(x.n)} <span class="muted" style="font-weight:400">· ${x.obras.length} obra(s)</span></td><td class="num">${f0(e25)}</td><td class="num">${f0(e26)}</td><td style="font-size:12px;font-weight:400">${nPre?`${nPre} com orçamento salvo`:'<span class="muted">nenhuma salva</span>'}</td><td></td></tr>`+
+      (ea?x.obras.map(o=>{if(n++>mx)return "";const i=info[o]||{};const c=cat(o);const ab=S.consolOpen.has(o);const deps=depsDaObra(o);
         let det="";if(ab){const ls=(S.histCache&&o in S.histCache)?consolLinhas(o):null;
           if(!ls)det=`<tr class="c-ins"><td></td><td colspan="7" class="muted">Carregando…</td></tr>`;else if(!ls.length)det=`<tr class="c-ins"><td></td><td colspan="7" class="muted">Nenhum insumo para este filtro nesta obra.</td></tr>`;
           else{const byS=new Map();ls.forEach(l=>{const k=l.P+"|"+l.S;if(!byS.has(k))byS.set(k,{P:l.P,S:l.S,sd:l.sd,it:[]});byS.get(k).it.push(l)});
             det=[...byS.values()].map(g=>`<tr class="c-srv"><td></td><td colspan="3" style="padding-left:24px"><b>${esc(nomeProd(g.P,i.tipo,(S.histCache||{})[o]))}</b> · ${esc(g.sd||g.S||"")}</td><td class="num">${f0(g.it.reduce((a,l)=>a+l.h25,0))}</td><td class="num">${f0(g.it.reduce((a,l)=>a+l.h26,0))}</td><td></td><td></td></tr>`+g.it.map(l=>`<tr class="c-ins"><td></td><td style="padding-left:44px"><span style="font-family:var(--f-mono)">${esc(l.I)}</span> ${esc(l.d)}</td><td></td><td class="muted">${esc(l.a)}</td><td class="num">${f0(l.h25)}</td><td class="num">${f0(l.h26)}</td><td></td><td></td></tr>`).join("")).join("")}}
-        return `<tr><td><button class="btn sm" data-cso="${esc(o)}">${ab?"▾":"▸"}</button></td><td><span style="font-family:var(--f-mono)">${esc(i.obra||o)}</span> ${esc(i.nome||"")}</td><td class="muted">${esc(i.tipo||"—")}</td><td style="font-size:12px">${esc((deps||[]).join(", ")||"—")}</td><td class="num">${f0(c?c[4]:0)}</td><td class="num">${f0(c?c[5]:0)}</td><td style="font-size:12px">${chipsPreench(o)||'<span class="muted">ninguém salvou</span>'}</td><td><button class="btn sm" data-csab="${esc(o)}" title="Abrir a sua visão desta obra na tabela">Abrir</button></td></tr>${det}`}).join("")).join("")}
+        return `<tr><td><button class="btn sm" data-cso="${esc(o)}">${ab?"▾":"▸"}</button></td><td><span style="font-family:var(--f-mono)">${esc(i.obra||o)}</span> ${esc(i.nome||"")}</td><td class="muted">${esc(i.tipo||"—")}</td><td style="font-size:12px">${esc((deps||[]).join(", ")||"—")}</td><td class="num">${f0(c?c[4]:0)}</td><td class="num">${f0(c?c[5]:0)}</td><td style="font-size:12px">${chipsPreench(o)||'<span class="muted">ninguém salvou</span>'}</td><td><button class="btn sm" data-csab="${esc(o)}" title="Abrir a sua visão desta obra na tabela">Abrir</button></td></tr>${det}`}).join(""):"")}).join("")}
     ${n>mx?`<tr><td colspan="8" class="muted">Mostrando ${mx} obras. Refine o filtro ou baixe o Excel para ver todas.</td></tr>`:""}</tbody></table></div>`}
 $("#consol").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;
   if(b.id==="cs-hide"){S.consolOff=true;renderConsol(S.consolIds||[]);return}
   if(b.id==="cs-show"){S.consolOff=false;renderConsol(S.consolIds||[]);return}
   if(b.id==="cs-none"){S.consolOpen=new Set();renderConsol(S.consolIds);return}
-  if(b.id==="cs-all"){const ids=(S.consolIds||[]).slice(0,60);ids.forEach(o=>S.consolOpen.add(o));renderConsol(S.consolIds);for(let i=0;i<ids.length;i+=15)await Promise.all(ids.slice(i,i+15).map(histObra));renderConsol(S.consolIds);return}
+  if(b.dataset.cse!=null){const e2=b.dataset.cse;S.csEmp.ab.has(e2)?S.csEmp.ab.delete(e2):S.csEmp.ab.add(e2);renderConsol(S.consolIds);return}
+  if(b.id==="cs-emp0"){S.csEmp.ab=new Set();S.consolOpen=new Set();renderConsol(S.consolIds);return}
+  if(b.id==="cs-emp1"){const info=S.fInfo||{};S.csEmp.ab=new Set((S.consolIds||[]).map(o=>String((info[o]||{}).emp||"")));renderConsol(S.consolIds);return}
+  if(b.id==="cs-all"){const ids=(S.consolIds||[]).slice(0,60);{const info=S.fInfo||{};ids.forEach(o=>S.csEmp.ab.add(String((info[o]||{}).emp||"")))}ids.forEach(o=>S.consolOpen.add(o));renderConsol(S.consolIds);for(let i=0;i<ids.length;i+=15)await Promise.all(ids.slice(i,i+15).map(histObra));renderConsol(S.consolIds);return}
   if(b.dataset.cso){const o=b.dataset.cso;if(S.consolOpen.has(o)){S.consolOpen.delete(o);renderConsol(S.consolIds);return}S.consolOpen.add(o);renderConsol(S.consolIds);await histObra(o);renderConsol(S.consolIds);return}
   if(b.dataset.csab){S.abertaLista=b.dataset.csab;const sel=$("#sel-obra");sel.value=b.dataset.csab;sel.dispatchEvent(new Event("change"));setTimeout(()=>$("#grid-box")&&$("#grid-box").scrollIntoView({block:"start",behavior:"smooth"}),600);return}
   if(b.id==="cs-xlsx"){const ids=S.consolIds||[];toast(`Montando o Excel de ${ids.length} obra(s)…`);for(let i=0;i<ids.length;i+=20)await Promise.all(ids.slice(i,i+20).map(histObra));
@@ -1067,7 +1074,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
   h+=`</tbody><tfoot><tr><td class="c-desc" style="padding-left:8px">Total da obra</td>${REF.replace(/data-r=/g,"data-f=")}<td class="c-flag"></td><td></td>${MES.map((_,m)=>`<td class="num" data-f="m${m}"></td>`).join("")}<td class="num tot" data-f="t"></td><td class="num" data-f="d"></td><td></td></tr></tfoot>`;
   $("#grid").innerHTML=h;
   document.querySelectorAll("#grid textarea.sname").forEach(t=>{t.style.height="auto";t.style.height=t.scrollHeight+"px"});
-  {const bt=$("#grid thead tr.band"),ct=$("#grid thead tr.ctx");if(ct)$("#grid").style.setProperty("--ctxH",ct.getBoundingClientRect().height+"px");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
+  try{marcarNivel()}catch(e){}{const bt=$("#grid thead tr.band"),ct=$("#grid thead tr.ctx");if(ct)$("#grid").style.setProperty("--ctxH",ct.getBoundingClientRect().height+"px");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
   updateTotals();
 }
 function deltaHtml(t,p26){if(!t)return"";if(!p26)return`<span class="delta up">novo</span>`;const d=(t/p26-1)*100;const c=Math.abs(d)<2?"eq":d>0?"up":"dn";return`<span class="delta ${c}">${d>0?"+":""}${nf0.format(d)}%</span>`}
@@ -1224,6 +1231,7 @@ async function save(){
   await saving;
 }
 async function flush(){clearTimeout(changed.t);await save()}
+window.ORC_FLUSH=()=>flush();
 window.addEventListener("beforeunload",e=>{if(S.cur&&S.cur.dirty){e.preventDefault();e.returnValue=""}});
 
 /* ano, filtros, ferramentas */
@@ -1278,13 +1286,23 @@ $("#btn-exp-me").addEventListener("click",e=>{e.stopPropagation();menuMeuExcel()
 $("#only-empty").addEventListener("change",e=>{S.onlyEmpty=e.target.checked;if(S.onlyEmpty){S.onlyFilled=false;$("#only-filled").checked=false}renderGrid()});
 $("#only-filled").addEventListener("change",e=>{S.onlyFilled=e.target.checked;if(S.onlyFilled){S.onlyEmpty=false;$("#only-empty").checked=false}renderGrid()});
 $("#only-rev").addEventListener("change",e=>{S.onlyRev=e.target.checked;renderGrid()});
-function nivelEstrutura(n){if(!S.cur)return;S.niv=n;S.collapsed=new Set();
-  if(n!=="all"){const k=+n;S.cur.lines.forEach(l=>{if(l.kind==="leaf")return;const lv=l.kind==="prod"?0:(l.parents||[]).length;if(lv===k)S.collapsed.add(l.key)})}
-  marcarNivel();renderGrid()}
-function maxNivel(){let m=0;(S.cur&&S.cur.lines||[]).forEach(l=>{if(l.kind==="grp")m=Math.max(m,(l.parents||[]).length)});return m}
-function passoNivel(d){if(!S.cur)return;const mx=maxNivel();const cur=(S.niv==null||S.niv==="all")?mx+1:+S.niv;let nx=cur+d;if(nx<0)nx=0;nivelEstrutura(nx>mx?"all":nx)}
-function marcarNivel(){const nn=$("#niv-n");if(nn){const mx=maxNivel()+1;const c=S.niv==null?"":S.niv==="all"?mx:+S.niv;nn.textContent=c===""?"":`nível ${c} de ${mx}`}document.querySelectorAll("#niv-tg [data-niv]").forEach(b=>{const on=S.niv!=null&&String(S.niv)===b.dataset.niv;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on)})}
-$("#niv-tg").addEventListener("click",e=>{const b=e.target.closest("[data-niv],[data-nstep]");if(!b)return;if(b.dataset.nstep)passoNivel(+b.dataset.nstep);else nivelEstrutura(b.dataset.niv)});
+/* Níveis da estrutura (como os botões 1-2-3 de agrupamento do Excel):
+   nível 1 = só produtos; cada nível seguinte abre mais uma camada; o último mostra tudo até os insumos. */
+const lvDe=l=>l.kind==="prod"?0:(l.parents||[]).length;
+function gruposComFilho(){const c=new Set();S.cur.lines.forEach(l=>{if(l.kind==="prod"||!l.parents||!l.parents.length)return;const p=l.parents[l.parents.length-1];if(l.kind!=="leaf"||temLinhaVisivel(l))c.add(p.key)});return c}
+/* a linha apareceria se todos os grupos acima estivessem abertos? (respeita filtros/buscas) */
+function temLinhaVisivel(l){const sv=S.collapsed;S.collapsed=new Set();try{return visible(l)}finally{S.collapsed=sv}}
+function totalNiveis(){if(!S.cur||!S.cur.lines)return 1;const cf=gruposComFilho();let mx=-1;S.cur.lines.forEach(l=>{if(l.kind!=="leaf"&&cf.has(l.key)&&prodOk(l))mx=Math.max(mx,lvDe(l))});return mx+2}
+function nivelAtual(){if(S.niv!=null)return S.niv;const cf=gruposComFilho();let m=-1;S.cur.lines.forEach(l=>{if(l.kind!=="leaf"&&cf.has(l.key)&&prodOk(l)&&!S.collapsed.has(l.key)&&!(l.parents||[]).some(p=>S.collapsed.has(p.key)))m=Math.max(m,lvDe(l))});return m+2}
+function nivelEstrutura(n){if(!S.cur)return;const L=totalNiveis();n=Math.max(1,Math.min(L,+n||L));S.niv=n;S.collapsed=new Set();
+  if(n<L)S.cur.lines.forEach(l=>{if(l.kind!=="leaf"&&lvDe(l)===n-1)S.collapsed.add(l.key)});
+  renderGrid()}
+function passoNivel(d){if(!S.cur)return;nivelEstrutura(nivelAtual()+d)}
+function marcarNivel(){const bx=$("#niv-bts");if(!bx)return;if(!S.cur||!S.cur.lines){bx.innerHTML="";return}
+  const L=totalNiveis(),cur=nivelAtual();
+  bx.innerHTML=Array.from({length:L},(_,i)=>i+1).map(n=>`<button class="btn sm${n===cur?" on":""}" data-niv="${n}" aria-pressed="${n===cur}" title="${n===1?"Só os produtos":n===L?"Tudo aberto, até os insumos":"Abre até o "+n+"º nível"}">${n===1?"1 · Produtos":n===L?n+" · Tudo":n}</button>`).join("");
+  $("#niv-tg [data-nstep='-1']").disabled=cur<=1;$("#niv-tg [data-nstep='1']").disabled=cur>=L}
+$("#niv-tg").addEventListener("click",e=>{const b=e.target.closest("[data-niv],[data-nstep]");if(!b||b.disabled)return;if(b.dataset.nstep)passoNivel(+b.dataset.nstep);else nivelEstrutura(+b.dataset.niv)});
 $("#btn-copy-prev").addEventListener("click",()=>{
   const b=$("#btn-copy-prev");if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar: substituir "+S.year+" pelos valores de "+(+S.year-1);setTimeout(()=>{delete b.dataset.arm;renderGrid()},5000);return}
   delete b.dataset.arm;const d=S.cur.doc,py=String(+S.year-1);
