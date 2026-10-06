@@ -1,0 +1,1 @@
+Versao do site: 06/10/2026 - republicacao apos falha do GitHub Actions
