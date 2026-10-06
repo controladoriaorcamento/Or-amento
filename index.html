@@ -715,7 +715,12 @@ async function boot(){
 function semObra(on){const fm=$("#fill-main");if(!fm)return;fm.classList.toggle("sem-obra",!!on);const m=$("#sem-obra");if(!m)return;m.hidden=!on;
   if(on){const pend=S.cur&&S.cur.dirty?flush().catch(()=>{}):null;Promise.resolve(pend).then(()=>{if(fm.classList.contains("sem-obra"))S.cur=null});S.abertaLista=null;$("#em-edicao").innerHTML="";$("#obra-tipo").textContent="";$("#obra-status").innerHTML="";$("#grid").innerHTML="";
     const n=obrasFiltradas().length;
-    m.innerHTML=`<b>Nenhuma obra aberta.</b> ${n?`Os filtros mostram <b>${n}</b> obra(s). Escolha <b>uma obra</b> no filtro <b>Obra / centro de custo</b>${n>1?` ou clique em <b>Abrir</b> na lista de obras`:""} para ver e preencher a tabela.`:"Nenhuma obra com esses filtros. Clique em <b>Limpar filtros</b>."}`}}
+    const ok=obrasFiltradas();const lb=new Map();{const t=document.createElement("select");t.innerHTML=S.selAll||"";[...t.options].forEach(o=>lb.set(o.value,o.textContent))}
+    m.innerHTML=ok.length?`<div class="row" style="gap:10px;flex-wrap:wrap;align-items:center"><b>Escolha a obra para abrir o formulário de preenchimento:</b>
+      <select id="so-sel" style="min-width:320px;max-width:100%;padding:6px 8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink)"><option value="">— ${ok.length} obra(s) ${ok.length<(S.selIds||[]).length?"no filtro":"disponíveis"} —</option>${ok.slice(0,3000).map(o=>`<option value="${esc(o)}">${esc(lb.get(o)||o)}</option>`).join("")}</select>
+      <button class="btn primary" id="so-abrir">Abrir formulário</button></div><div class="muted" style="margin-top:6px;font-size:12.5px">Também dá para escolher pelo filtro <b>Obra / centro de custo</b> ou pelo botão <b>Abrir</b> no resumo.</div>`
+      :`<b>Nenhuma obra com esses filtros.</b> Clique em <b>Limpar filtros</b>.`;
+    const so=$("#so-sel"),sa=$("#so-abrir");if(so&&sa){const ir=()=>{if(!so.value)return;S.abertaLista=so.value;const sel=$("#sel-obra");sel.value=so.value;sel.dispatchEvent(new Event("change"))};sa.onclick=ir;so.onchange=ir}}}
 async function loadMine(){
   const snap=await S.db.doc("gerentes/"+S.me).get();
   S.perfil=snap.exists?snap.data():{obras:{}};S.perfil.obras=S.perfil.obras||{};
