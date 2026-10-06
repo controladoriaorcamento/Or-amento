@@ -247,6 +247,11 @@ table.list td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align
 table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 #fill-main.sem-obra :is(.obs-box,#summary,.obra-meta,#btn-ver,#btn-validar,#btn-reopen,#send-box,#viewing-as,#orc-quem,#guia,#detail,.toolbar,#add-box,#grid-box,.legend,#ver-banner,#ver-box){display:none!important}
 .obra-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}.obra-nav select{max-width:min(560px,70vw);padding:5px 8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink);font-weight:600}.obra-nav .muted{font-size:12px}
+#grid tr.m-emp td{background:var(--prod);font-weight:700;font-size:12.5px;padding:6px 8px;border-top:2px solid var(--line-strong)}
+#grid tr.m-obra td{background:var(--group);cursor:pointer;padding:5px 8px;font-size:12.5px}#grid tr.m-obra:hover td{background:var(--accent-soft)}
+#grid tr.m-obra.on td{background:var(--accent-soft);border-top:2px solid var(--accent)}#grid tr.m-obra .m-abrir{color:var(--accent);font-weight:600;margin-left:6px}
+#grid .m-sticky{position:sticky;left:290px}#grid tr.m-emp .m-sticky{left:8px}#grid tr.m-info td{padding:6px 8px}
+#grid tr.m-obra>td:last-child,#grid tr.m-emp>td,#grid tr.m-info>td{position:static;box-shadow:none;border-left:0;min-width:0}
 .consol tr.c-reg td{background:var(--prod);font-weight:700}
 .sem-obra-msg{margin:10px 0;border-left:4px solid var(--accent);font-size:14px}.niv-txt{margin-left:8px;font-size:12px;color:var(--ink)}
 .dev-ov{position:fixed;inset:0;background:rgba(10,20,15,.45);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto}
@@ -875,7 +880,7 @@ function filtrarObras(){if(!S.selAll)return;atualizarListas();const q="";
   const conf=S.cur&&S.cur.uid!==S.me;S.navIds=ok.map(o=>o.value);
   if(!conf){if(!ok.length)semObra(true);
     else if(!S.cur||!okIds.has(S.cur.o)){let last=null;try{last=localStorage.getItem("orc.last")}catch(e){}const alvo=last&&okIds.has(last)?last:ok[0].value;sel.value=alvo;sel.dispatchEvent(new Event("change"))}}
-  renderNavObra();
+  renderNavObra();if(!conf&&S.cur&&S.cur.lines&&okIds.has(S.cur.o))renderGrid();
   renderConsol(ok.map(o=>o.value));aplicarFiltroLinhas();renderResumoFiltros()}
 /* ---------- visão das obras filtradas: empresa → obra → serviço → insumo (como uma segmentação do Power BI) ---------- */
 function depsDaObra(o){const ger=fVals("f-ger"),cg=fVals("f-cargo");let d=null;
@@ -1095,6 +1100,24 @@ const OBS_MIN=10;
 const obsCurta=(d,l)=>((d.lobs||{})[l.key]||"").trim().length<OBS_MIN;
 function faltandoObs(){const d=S.cur.doc;return S.cur.lines.filter(l=>l.kind==="leaf"&&prodOk(l)&&(!restrito()||l.mine)&&precisaObs(l)&&obsCurta(d,l))}
 function marcaObs(idx){const el=$("#lo-"+idx);if(!el)return;const l=S.cur.lines[idx];const tem=temValor(S.cur.doc,l)||!!((S.cur.doc.lobs||{})[l.key]||"");el.hidden=!tem;el.classList.toggle("need",precisaObs(l)&&obsCurta(S.cur.doc,l))}
+/* várias obras na mesma tabela: Empresa → Obra; a obra aberta mostra os itens para preencher, as outras ficam numa linha (clique para abrir) */
+function montarMulti(corpo,nCols){const ids=(S.navIds||[]).slice();const conf=S.cur&&S.cur.uid!==S.me;
+  if(conf||ids.length<2||!S.cur||!ids.includes(S.cur.o))return S.curFechado?"":corpo;
+  const info=S.fInfo||{};const cat=o=>S.catMap&&S.catMap.get(o);
+  ids.sort((a,b)=>String((info[a]||{}).emp||"").localeCompare(String((info[b]||{}).emp||""),undefined,{numeric:true})||String((info[a]||{}).obra||a).localeCompare(String((info[b]||{}).obra||b),undefined,{numeric:true}));
+  const MX=400;const iCur=ids.indexOf(S.cur.o);let ini=0;if(ids.length>MX){ini=Math.max(0,Math.min(iCur-MX/2,ids.length-MX))}
+  const vis=ids.slice(ini,ini+MX);let out="",empAtual=null;const yy=S.year;
+  if(ini>0)out+=`<tr class="m-info"><td colspan="${nCols}" class="muted">… ${ini} obra(s) antes desta parte da lista. Use os filtros para reduzir.</td></tr>`;
+  vis.forEach(o=>{const i=info[o]||{};const e=String(i.emp||"");
+    if(e!==empAtual){empAtual=e;const n=ids.filter(x=>String((info[x]||{}).emp||"")===e).length;out+=`<tr class="m-emp"><td colspan="${nCols}"><span class="m-sticky">Empresa ${esc(e)}${i.empNome?" – "+esc(i.empNome):""} <span class="muted">· ${n} obra(s)</span></span></td></tr>`}
+    const atual=o===S.cur.o;const oc=(S.myOrc||{})[o];const st=atual?S.cur.doc.status:(oc&&oc.status)||"";const tot=atual?docTotals(S.cur.doc,S.cur.lines)[yy]:(oc&&oc.totais&&oc.totais[yy]);const c=cat(o);
+    out+=`<tr class="m-obra${atual?" on":""}" data-mob="${esc(o)}"><td class="c-desc"><button class="tg" aria-expanded="${atual&&!S.curFechado}" title="${atual?(S.curFechado?"Mostrar":"Recolher")+" os itens desta obra":"Abrir esta obra para preencher"}">${atual&&!S.curFechado?"▾":"▸"}</button><b>${esc(i.obra||o)}</b> ${esc(i.nome||"")}</td><td colspan="${nCols-1}"><span class="m-sticky">${st?`<span class="pill ${esc(st)}">${esc(ST_NOME[st]||st)}</span> `:'<span class="muted">não iniciada</span> '}${tot?`<span class="muted">· ${yy}: R$ ${f0(tot)}</span>`:""}${c?` <span class="muted">· histórico 2025: R$ ${f0(+c[4]||0)}</span>`:""}${atual?"":` <span class="m-abrir">clique para abrir e preencher</span>`}</span></td></tr>`;
+    if(atual&&!S.curFechado)out+=corpo});
+  if(ini+MX<ids.length)out+=`<tr class="m-info"><td colspan="${nCols}" class="muted">… mais ${ids.length-ini-MX} obra(s) depois. Use os filtros para reduzir.</td></tr>`;
+  return out}
+document.addEventListener("click",async e=>{const tr=e.target.closest("#grid tr.m-obra");if(!tr)return;const o=tr.dataset.mob;
+  if(S.cur&&o===S.cur.o){S.curFechado=!S.curFechado;renderGrid();return}
+  S.curFechado=false;await irObra(o);setTimeout(()=>{const r=document.querySelector(`#grid tr.m-obra[data-mob="${CSS.escape(o)}"]`);if(r)r.scrollIntoView({block:"start"})},700)});
 function renderGrid(){if(!S.cur||!S.cur.lines)return;
   const {lines,doc,editable}=S.cur, y=S.year;
   $("#btn-copy-prev").hidden=!(editable&&y!=="2027");
@@ -1107,6 +1130,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
   const ctx=`<tr class="ctx"><th colspan="${nCols}"><div class="ctx-in"><span><span class="ctx-l">Empresa</span> <b>${esc(ci.emp!=null?ci.emp+(ci.empNome?" – "+ci.empNome:""):"—")}</b></span><span><span class="ctx-l">Obra</span> <b>${esc(obraLbl(S.cur.o,ci))}</b></span><span><span class="ctx-l">Base</span> ${esc(ci.tipo||"—")}</span>${S.cur.uid!==S.me?`<span><span class="ctx-l">Gerente</span> <b>${esc(S.cur.quem||"…")}</b></span>`:""}<span><span class="ctx-l">Ano</span> <b>${y}</b></span></div></th></tr>`;
   let h=`<thead>${ctx}<tr class="band"><th class="c-desc"><span class="hm-tg hm-main" role="group" aria-label="Detalhar meses do histórico">Detalhar meses: <button class="btn sm${H25?" on":""}" data-hm="a25" aria-pressed="${H25}">2025</button><button class="btn sm${H26?" on":""}" data-hm="a26" aria-pressed="${H26}">2026</button><button class="btn sm${H25&&H26?" on":""}" data-hm="ambos" aria-pressed="${H25&&H26}">Ambos</button></span></th><th class="ref fz fzb1" colspan="3">2025 · jan–dez</th><th class="ref fz fzb2" colspan="3">2026 · jan–set</th>${H25?`<th class="ref hmb" colspan="12">2025 · mês a mês</th>`:""}${H26?`<th class="ref hmb" colspan="9">2026 · mês a mês</th>`:""}<th></th><th></th><th colspan="12">${y} · valores mensais (R$)</th><th colspan="2"></th><th class="c-act"></th></tr>
   <tr class="cols"><th class="c-desc">Item da base modelo</th><th class="ref fz fz1">Total</th><th class="ref fz fz2" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz3" title="Meses com gasto (de 12)">Mes.</th><th class="ref fz fz4">Total</th><th class="ref fz fz5" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz6" title="Meses com gasto (de 9)">Mes.</th>${H25?MES.map(m=>`<th class="ref hm">${m}/25</th>`).join(""):""}${H26?MES.slice(0,9).map(m=>`<th class="ref hm">${m}/26</th>`).join(""):""}<th class="c-flag" title="Como preencher os 12 meses deste ano">Como preencher</th><th title="Preço unitário do ano para itens medidos em UN, M ou M2">Preço un.</th>${MES.map(m=>`<th>${m}</th>`).join("")}<th>Total ${y}</th><th>vs 2026</th><th style="text-align:left" title="Campo livre, opcional">Observação e ações</th></tr></thead><tbody>`;
+  const iniLinhas=h.length;
   lines.forEach((l,idx)=>{
     if(!visible(l))return;
     const pad=l.kind==="prod"?8:8+Math.max(0,(l.depth||1)-1)*14;
@@ -1142,6 +1166,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
     });
     if(S.lineOpen&&S.lineOpen.has(l.key))h+=drillLinha(l,idx);
   });
+  {const corpo=h.slice(iniLinhas);h=h.slice(0,iniLinhas)+montarMulti(corpo,nCols)}
   h+=`</tbody><tfoot><tr><td class="c-desc" style="padding-left:8px">Total da obra</td>${REF.replace(/data-r=/g,"data-f=")}<td class="c-flag"></td><td></td>${MES.map((_,m)=>`<td class="num" data-f="m${m}"></td>`).join("")}<td class="num tot" data-f="t"></td><td class="num" data-f="d"></td><td></td></tr></tfoot>`;
   $("#grid").innerHTML=h;
   document.querySelectorAll("#grid textarea.sname").forEach(t=>{t.style.height="auto";t.style.height=t.scrollHeight+"px"});
