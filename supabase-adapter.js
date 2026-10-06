@@ -40,6 +40,7 @@
   /* tabela de acessos (aba "3. Gerentes"), gravada quando a Controladoria carrega a CONFIGURAÇÃO */
   window.ORC_HOOKS={
     /* índice dos orçamentos salvos: obra → [{uid,status,atualizado,t27,t28,t29}] (só admin enxerga todos) */
+    regionalPainel:async()=>{const r=await sb.rpc("regional_painel");if(r.error){console.warn("regional_painel",r.error);return null}return r.data},
     orcIndex:async()=>{const out=[];let from=0;for(;;){const {data,error}=await sb.from("docs").select("path,status:data->>status,t27:data->totais->>2027,t28:data->totais->>2028,t29:data->totais->>2029,updated_at").like("path","gerentes/%/orc/%").order("path").range(from,from+999);if(error)break;
       data.forEach(r=>{const m=/^gerentes\/([^/]+)\/orc\/([^/]+)$/.exec(r.path);if(m)out.push({uid:m[1],o:m[2],status:r.status,atualizado:r.updated_at,t:{"2027":+r.t27||0,"2028":+r.t28||0,"2029":+r.t29||0}})});if(data.length<1000)break;from+=1000}return out},
     /* usuários que têm orçamento salvo (inclusive masters sem perfil de gerente) */
@@ -113,6 +114,8 @@
         if(/\.jsonl$/i.test(f.name)){const docs=txt.split("\n").filter(Boolean).map(l=>JSON.parse(l));let lote=[],tam=0,n=0;
           const envia=async()=>{if(!lote.length)return;const {error}=await sb.from("docs").upsert(lote,{onConflict:"path"});err(error,"carga docs");n+=lote.length;m.textContent=`${n}/${docs.length} documentos…`;lote=[];tam=0};
           for(const d of docs){const s=JSON.stringify(d).length;if(tam+s>1500000||lote.length>=200)await envia();lote.push({path:d.path,data:d.data});tam+=s}await envia();}
+        else if(/regionais/i.test(f.name)){const rows=JSON.parse(txt);let r=await sb.from("regionais").delete().neq("email","");err(r.error,"limpar regionais");
+          for(let i=0;i<rows.length;i+=500){r=await sb.from("regionais").insert(rows.slice(i,i+500));err(r.error,"gravar regionais")}m.textContent+=` · ${rows.length} regionais`}
         else if(/acessos/i.test(f.name)){const rows=JSON.parse(txt);let r=await sb.from("acessos").delete().neq("email","");err(r.error,"limpar acessos");
           for(let i=0;i<rows.length;i+=500){r=await sb.from("acessos").insert(rows.slice(i,i+500));err(r.error,"gravar acessos")}m.textContent+=` · ${rows.length} acessos`}}
         m.textContent+=" · concluído. Recarregue a página.";}catch(x){m.textContent="Erro: "+x.message}});

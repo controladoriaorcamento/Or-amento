@@ -247,6 +247,7 @@ table.list td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align
 table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 #fill-main.sem-obra :is(.obs-box,#summary,.obra-meta,#btn-ver,#btn-validar,#btn-reopen,#send-box,#viewing-as,#orc-quem,#guia,#detail,.toolbar,#add-box,#grid-box,.legend,#ver-banner,#ver-box){display:none!important}
 .obra-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}.obra-nav select{max-width:min(560px,70vw);padding:5px 8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink);font-weight:600}.obra-nav .muted{font-size:12px}
+.consol tr.c-reg td{background:var(--prod);font-weight:700}
 .sem-obra-msg{margin:10px 0;border-left:4px solid var(--accent);font-size:14px}.niv-txt{margin-left:8px;font-size:12px;color:var(--ink)}
 .dev-ov{position:fixed;inset:0;background:rgba(10,20,15,.45);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow:auto}
 .dev-box{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;max-width:720px;width:100%;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
@@ -270,6 +271,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
     <button class="tab" id="tab-fill" aria-selected="true">Preencher</button>
     <button class="tab" id="tab-adm" aria-selected="false">Controladoria</button>
     <button class="tab" id="tab-sg" aria-selected="false">Sem gerente</button>
+    <button class="tab" id="tab-reg" aria-selected="false" hidden>Regional</button>
   </nav>
 </div></header>
 
@@ -313,6 +315,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
       <div class="summary" id="summary"></div>
       <div class="obra-bar">
         <div class="filtros" id="filtros">
+          <div class="fcol" id="fc-reg" hidden><label class="lbl">Regional</label><div class="slicer" id="sl-reg" data-f="f-reg"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Regional"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
           <div class="fcol"><label class="lbl">Empresa</label><div class="slicer" id="sl-emp" data-f="f-emp"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Empresa"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
           <div class="fcol" id="fc-ger" hidden><label class="lbl">Gerente</label><div class="slicer" id="sl-ger" data-f="f-ger"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todos</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Gerente"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
           <div class="fcol" id="fc-cargo" hidden><label class="lbl">Quem planeja</label><div class="slicer" id="sl-cargo" data-f="f-cargo"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todos</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Quem planeja"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
@@ -374,6 +377,14 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <textarea id="obs" placeholder="Ex.: reajuste previsto, contratos novos, início/fim de etapas"></textarea>
       </div>
     </div>
+  </section>
+
+  <!-- GERENTE REGIONAL -->
+  <section id="v-reg" hidden>
+    <div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2 style="margin:0">Orçamentos da sua regional</h2>
+      <p class="desc" style="margin:4px 0 0">Você vê o que cada gerente preencheu nas obras da sua regional e pode ajustar enquanto o orçamento não foi enviado. O envio é sempre para a Controladoria; depois de enviado, só volta a editar se a Controladoria devolver.</p></div>
+      <div class="row" style="gap:6px;flex-wrap:wrap"><input id="rg-q" type="search" placeholder="Pesquisar obra, empresa ou gerente…" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;min-width:240px"><select id="rg-st" class="btn"><option value="">Todas as situações</option><option value="nao">Ainda não começou</option><option value="rascunho">Rascunho</option><option value="reaberto">Devolvido</option><option value="enviado">Enviado</option><option value="validado">Validado</option></select><button class="btn" id="rg-ref">Atualizar</button></div></div>
+      <p class="muted" id="rg-res" style="margin:10px 0 8px"></p><div class="tbl-box" style="max-height:70vh;overflow:auto"><table class="list" id="rg-tbl"></table></div></div>
   </section>
 
   <!-- CONTROLADORIA -->
@@ -711,7 +722,32 @@ async function boot(){
   $("#v-fill").hidden=false;
   await loadMine();
   if(S.owner)loadSolic().catch(()=>{});
+  /* Gerente Regional: aba própria */
+  try{const pr=window.ORC_HOOKS&&window.ORC_HOOKS.regionalPainel?await window.ORC_HOOKS.regionalPainel():null;
+    if(pr&&pr.obras&&pr.obras.length){S.regional=pr;$("#tabs").hidden=false;$("#tab-reg").hidden=false;if(!S.owner){$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}
+      if(!$("#fill-empty").hidden){$("#req-card").hidden=true;$("#tab-fill").hidden=true;showTab("reg")}}}catch(e){console.warn("regional",e)}
 }
+/* ---------- aba Regional ---------- */
+async function carregarRegional(){const m=$("#rg-res");if(!m)return;m.textContent="Carregando…";
+  try{const pr=await window.ORC_HOOKS.regionalPainel();if(pr)S.regional=pr}catch(e){m.textContent="Não foi possível carregar.";return}
+  desenharRegional()}
+function linhasRegional(){const R=S.regional||{};const info=R.info||{};const regDeO=new Map((R.obras||[]).map(x=>[x.o,x.reg]));const L=[];const usados=new Set();
+  const ger=R.gerentes||[];const orcs=R.orcs||[];
+  ger.forEach(g=>{const oc=orcs.find(x=>x.o===g.o&&String(x.email||"").toLowerCase()===String(g.email||"").toLowerCase());if(oc)usados.add(oc.uid+"|"+oc.o);L.push({o:g.o,reg:regDeO.get(g.o)||"",i:info[g.o]||{},dep:g.dep,nome:g.nome||g.email,email:g.email,oc})});
+  orcs.forEach(oc=>{if(usados.has(oc.uid+"|"+oc.o))return;L.push({o:oc.o,reg:regDeO.get(oc.o)||"",i:info[oc.o]||{},dep:"",nome:oc.nome||oc.email||"—",email:oc.email,oc})});
+  return L.sort((a,b)=>a.reg.localeCompare(b.reg)||String(a.i.emp||"").localeCompare(String(b.i.emp||""),undefined,{numeric:true})||a.o.localeCompare(b.o)||a.dep.localeCompare(b.dep))}
+const ST_NOME={rascunho:"Rascunho",reaberto:"Devolvido",enviado:"Enviado",validado:"Validado"};
+function desenharRegional(){const q=semAc($("#rg-q").value||"").trim(),st=$("#rg-st").value;const L=linhasRegional();
+  const V=L.filter(r=>{const s2=r.oc?r.oc.status||"rascunho":"nao";if(st&&s2!==st)return false;return !q||q.split(/\s+/).every(w=>semAc([r.reg,r.i.emp,r.i.empNome,r.i.obra,r.i.nome,r.o,r.nome,r.email,r.dep].join(" ")).includes(w))});
+  const cont=k=>L.filter(r=>(r.oc?r.oc.status||"rascunho":"nao")===k).length;
+  $("#rg-res").innerHTML=`<b>${new Set(L.map(r=>r.o)).size}</b> obra(s) · ${L.length} orçamento(s) por área · não começou: ${cont("nao")} · rascunho: ${cont("rascunho")} · devolvido: ${cont("reaberto")} · enviado: ${cont("enviado")} · validado: ${cont("validado")}`;
+  $("#rg-tbl").innerHTML=`<thead><tr><th>Regional</th><th>Empresa</th><th>Obra</th><th>Quem planeja</th><th>Gerente</th><th>Situação</th><th class="num">Total 2027</th><th>Atualizado</th><th></th></tr></thead><tbody>${V.slice(0,1500).map(r=>{const s2=r.oc?r.oc.status||"rascunho":"nao";const t27=r.oc&&r.oc.totais?r.oc.totais["2027"]:null;
+    return `<tr><td>${esc(r.reg)}</td><td>${esc(r.i.emp||"")}${r.i.empNome?" – "+esc(r.i.empNome):""}</td><td><span style="font-family:var(--f-mono)">${esc(r.i.obra||r.o)}</span> ${esc(r.i.nome||"")}</td><td>${esc(r.dep||"—")}</td><td>${esc(r.nome||"")}</td><td>${s2==="nao"?'<span class="muted">ainda não começou</span>':`<span class="pill ${esc(s2)}">${esc(ST_NOME[s2]||s2)}</span>`}</td><td class="num">${t27!=null?f0(t27):"—"}</td><td class="muted">${r.oc&&r.oc.atualizadoEm?fmtDate(r.oc.atualizadoEm):"—"}</td><td>${r.oc?`<button class="btn sm" data-rgab="${esc(r.oc.uid)}|${esc(r.o)}">${travado(s2)?"Ver":"Abrir e ajustar"}</button>`:""}</td></tr>`}).join("")||'<tr><td colspan="9" class="muted">Nada encontrado.</td></tr>'}</tbody>`}
+document.addEventListener("input",e=>{if(e.target.id==="rg-q")desenharRegional()});
+document.addEventListener("change",e=>{if(e.target.id==="rg-st")desenharRegional()});
+document.addEventListener("click",async e=>{if(e.target.id==="rg-ref"){carregarRegional();return}
+  const b=e.target.closest("[data-rgab]");if(!b)return;const [uid,o]=b.dataset.rgab.split("|");await flush();S.voltarPara="reg";showTab("fill");$("#tab-fill").hidden=false;$("#fill-empty").hidden=true;$("#fill-main").hidden=false;await openObra(uid,o,true)});
+$("#tab-reg").addEventListener("click",async()=>{await flush();showTab("reg")});
 /* Sem uma obra definida pelos filtros, a tela não mostra obra nenhuma (evita preencher a obra errada) */
 /* navegação entre as obras do filtro: ◀ anterior · lista · próxima ▶ */
 function renderNavObra(){const box=$("#obra-nav");if(!box)return;const ids=S.navIds||S.selIds||[];const conf=S.cur&&S.cur.uid!==S.me;
@@ -760,18 +796,22 @@ async function montarFiltros(){
     S.fAO=(ao.exists&&ao.data().m)||{};S.fGerObras=new Map();L.forEach(l=>{const em=String(l[0]||"").toLowerCase();if(!em)return;const m=S.fGerObras.get(em)||new Map();const d=m.get(l[1])||new Set();if(l[3])d.add(l[3]);m.set(l[1],d);S.fGerObras.set(em,m)});
     $("#fc-ger").hidden=false;$("#fc-cargo").hidden=false}catch(e){}}
   $("#sl-emp").parentElement.hidden=new Set((S.selIds||[]).map(o=>String((S.fInfo[o]||{}).emp))).size<2;
+  try{const rd=await S.db.doc("regras/regional_obra").get();S.regObra=rd.exists?(rd.data().m||null):null}catch(e){S.regObra=null}
+  $("#fc-reg").hidden=!S.regObra||new Set((S.selIds||[]).map(regDe)).size<2;
   atualizarListas();
 }
 /* filtros tipo "segmentação de dados" (Power BI): lista com pesquisa e caixas de marcação; várias escolhas; em cascata */
-S.fSel=S.fSel||{"f-emp":[],"f-ger":[],"f-cargo":[],"f-obra":[]};
+S.fSel=S.fSel||{"f-reg":[],"f-emp":[],"f-ger":[],"f-cargo":[],"f-obra":[]};S.fSel["f-reg"]=S.fSel["f-reg"]||[];
 function fVals(id){return (S.fSel[id]||[]).map(x=>x[0])}
-function obrasFiltradas(skip){const info=S.fInfo||{};const emp=skip==="f-emp"?[]:fVals("f-emp"),ger=skip==="f-ger"?[]:fVals("f-ger"),cg=skip==="f-cargo"?[]:fVals("f-cargo");
+const regDe=o=>(S.regObra&&S.regObra[o])||"Sem regional";
+function obrasFiltradas(skip){const info=S.fInfo||{};const rg=skip==="f-reg"?[]:fVals("f-reg");const emp=skip==="f-emp"?[]:fVals("f-emp"),ger=skip==="f-ger"?[]:fVals("f-ger"),cg=skip==="f-cargo"?[]:fVals("f-cargo");
   const go=ger.length&&S.fGerObras?gerUniao(ger):null;
   const ob=skip==="f-obra"?[]:fVals("f-obra");
-  return (S.selIds||[]).filter(o=>{const i=info[o]||{};if(ob.length&&!ob.includes(o))return false;if(emp.length&&!emp.includes(String(i.emp)))return false;if(go&&!go.has(o))return false;
+  return (S.selIds||[]).filter(o=>{const i=info[o]||{};if(rg.length&&!rg.includes(regDe(o)))return false;if(ob.length&&!ob.includes(o))return false;if(emp.length&&!emp.includes(String(i.emp)))return false;if(go&&!go.has(o))return false;
     if(cg.length){const deps=go?[...go.get(o)]:((S.fAO||{})[o]||[]);if(!cg.some(c=>deps.includes(c)))return false}return true})}
 function gerUniao(ems){const u=new Map();ems.forEach(em=>{const m=S.fGerObras.get(em);if(m)m.forEach((d,o)=>{const x=u.get(o)||new Set();d.forEach(v=>x.add(v));u.set(o,x)})});return u}
 function atualizarListas(){const info=S.fInfo||{};S.fOpts={};
+  {const m=new Map();obrasFiltradas("f-reg").forEach(o=>{const k=regDe(o);const x=m.get(k)||[k,k,0];x[2]++;m.set(k,x)});S.fOpts["f-reg"]=[...m.values()].sort((a,b)=>a[0]==="Sem regional"?1:b[0]==="Sem regional"?-1:a[0].localeCompare(b[0]))}
   {const oE=obrasFiltradas("f-emp");const m=new Map();oE.forEach(o=>{const i=info[o]||{};if(i.emp==null)return;const k=String(i.emp);const x=m.get(k)||[k,k+SEP+(i.empNome||""),0];x[2]++;m.set(k,x)});
     S.fOpts["f-emp"]=[...m.values()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true}))}
   if(S.fGerObras){const oG=new Set(obrasFiltradas("f-ger"));const cg=fVals("f-cargo");const gs=[];S.fGerObras.forEach((m,em)=>{let n=0;m.forEach((d,o)=>{if(oG.has(o)&&(!cg.length||cg.some(c=>d.has(c))))n++});if(n)gs.push([em,(S.fNomes&&S.fNomes.get(em))||em,n])});
@@ -781,8 +821,8 @@ function atualizarListas(){const info=S.fInfo||{};S.fOpts={};
   {const lb=new Map();const tmp=document.createElement("select");tmp.innerHTML=S.selAll||"";[...tmp.options].forEach(o=>lb.set(o.value,o.textContent));
     S.fOpts["f-obra"]=obrasFiltradas("f-obra").map(o=>[o,lb.get(o)||o,0])}
   /* escolhas que não existem mais na cascata continuam marcadas e aparecem no topo */
-  ["f-emp","f-ger","f-cargo","f-obra"].forEach(id=>{const ks=new Set((S.fOpts[id]||[]).map(x=>x[0]));(S.fSel[id]||[]).forEach(([k,lb])=>{if(!ks.has(k))(S.fOpts[id]=S.fOpts[id]||[]).unshift([k,lb,0])})});
-  ["emp","ger","cargo","obra"].forEach(renderSlicer)}
+  ["f-reg","f-emp","f-ger","f-cargo","f-obra"].forEach(id=>{const ks=new Set((S.fOpts[id]||[]).map(x=>x[0]));(S.fSel[id]||[]).forEach(([k,lb])=>{if(!ks.has(k))(S.fOpts[id]=S.fOpts[id]||[]).unshift([k,lb,0])})});
+  ["reg","emp","ger","cargo","obra"].forEach(renderSlicer)}
 function renderSlicer(nm){const box=$("#sl-"+nm);if(!box)return;const id="f-"+nm;const opts=S.fOpts&&S.fOpts[id]||[];const sel=new Set(fVals(id));
   const q=semAc(box.querySelector(".sl-q").value||"").trim();const vis=opts.filter(o=>!q||semAc(o[1]+" "+o[0]).includes(q));
   box.querySelector(".sl-list").innerHTML=vis.slice(0,1500).map(([k,lb,n])=>`<label class="sl-it${sel.has(k)?" on":""}"><input type="checkbox" data-k="${esc(k)}" data-lb="${esc(lb)}" ${sel.has(k)?"checked":""}><span>${esc(lb)}</span><span class="muted">${n||""}</span></label>`).join("")||`<div class="muted" style="padding:6px">Nada encontrado.</div>`;
@@ -798,7 +838,7 @@ document.querySelectorAll(".slicer[data-f]").forEach(box=>{const id=box.dataset.
 document.addEventListener("click",e=>{const mp=$("#mx-pop");if(mp&&!e.target.closest("#mx-pop")&&e.target.id!=="btn-exp-me")mp.remove()});
 document.addEventListener("click",e=>{if(!e.target.closest(".slicer"))document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true)});
 function renderResumoFiltros(){const r=$("#f-resumo");if(!r)return;const t=(id,v)=>{const ss=S.fSel[id]||[];return !ss.length?v:ss.length===1?ss[0][1]:ss.length+" selecionados"};
-  r.innerHTML=`<span class="fr-it">Empresa: <b>${esc(t("f-emp","Todas"))}</b></span>${S.owner?`<span class="fr-it">Gerente: <b>${esc(t("f-ger","Todos"))}</b></span><span class="fr-it">Quem planeja: <b>${esc(t("f-cargo","Todos"))}</b></span>`:""}<span class="fr-it">Obra: <b>${esc(t("f-obra","Todas"))}</b> <span class="muted">${esc($("#busca-obra-n").textContent||"")}</span></span><button type="button" class="btn sm" id="f-expandir">▾ Editar filtros</button>`}
+  r.innerHTML=`${S.regObra?`<span class="fr-it">Regional: <b>${esc(t("f-reg","Todas"))}</b></span>`:""}<span class="fr-it">Empresa: <b>${esc(t("f-emp","Todas"))}</b></span>${S.owner?`<span class="fr-it">Gerente: <b>${esc(t("f-ger","Todos"))}</b></span><span class="fr-it">Quem planeja: <b>${esc(t("f-cargo","Todos"))}</b></span>`:""}<span class="fr-it">Obra: <b>${esc(t("f-obra","Todas"))}</b> <span class="muted">${esc($("#busca-obra-n").textContent||"")}</span></span><button type="button" class="btn sm" id="f-expandir">▾ Editar filtros</button>`}
 function setCompacto(on){$("#filtros").classList.toggle("compacto",!!on);try{localStorage.setItem("orc.fcomp",on?"1":"0")}catch(e){}renderResumoFiltros()}
 $("#f-recolher").addEventListener("click",()=>setCompacto(true));
 document.addEventListener("click",e=>{if(e.target&&e.target.id==="f-expandir")setCompacto(false)});
@@ -829,7 +869,7 @@ function filtrarObras(){if(!S.selAll)return;atualizarListas();const q="";
   const ok=[...tmp.options].filter(o=>okIds.has(o.value)&&(!q||q.split(/\s+/).every(w=>semAc(o.textContent+" "+o.value).includes(w))));
   sel.innerHTML=ok.length?ok.map(o=>o.outerHTML).join(""):`<option value="">Nenhuma obra com esses filtros</option>`;
   if(ok.some(o=>o.value===atual))sel.value=atual;else if(ok.length){sel.insertAdjacentHTML("afterbegin",`<option value="" selected>— ${ok.length} obra(s): escolha —</option>`)}
-  const filtrando=!!(fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length);$("#filtros").classList.toggle("ativo",filtrando);
+  const filtrando=!!(fVals("f-reg").length||fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length);$("#filtros").classList.toggle("ativo",filtrando);
   $("#busca-obra-n").textContent=filtrando?`- ${ok.length} de ${S.selIds.length}`:`- ${S.selIds.length} obras`;
   /* não obriga filtrar uma só obra: mantém a obra aberta se ela estiver no filtro; senão abre a última usada (se estiver no filtro) ou a primeira */
   const conf=S.cur&&S.cur.uid!==S.me;S.navIds=ok.map(o=>o.value);
@@ -848,35 +888,44 @@ function consolLinhas(o){const i=(S.fInfo||{})[o]||{};const deps=depsDaObra(o);c
   lines.forEach(l=>{if(l.kind==="grp"&&l.S)gS=l.desc;if(l.kind!=="leaf")return;if(prods&&l.P&&!l.extra&&!prods.has(l.P))return;const r=ruleFor(i.tipo,l,o);const a=r&&r[1]||"";
     if(deps&&!deps.includes(a))return;const oc=S.regras&&S.regras.ocSet&&S.regras.ocSet.has(`${i.tipo||""}|${l.P}|${l.S}|${l.I}`);if(oc&&!sum(l.h))return;
     const st=histStats(l.h);out.push({P:l.P,S:l.S,sd:SDESC[l.S]||gS,I:l.I,d:l.desc,a,h25:st.h25,h26:st.h26})});return out}
-function renderConsol(ids){const box=$("#consol");const ativo=ids.length>1||fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length>1;
+function chaveEmp(o){const i=(S.fInfo||{})[o]||{};return (S.regObra?regDe(o)+"\u0001":"")+String(i.emp||"")}
+function renderConsol(ids){const box=$("#consol");const ativo=ids.length>1||fVals("f-reg").length||fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length>1;
   if(!ativo||S.consolOff){box.hidden=!ativo||!S.consolOff?true:false;if(ativo&&S.consolOff){box.hidden=false;box.innerHTML=`<button class="btn sm" id="cs-show">Mostrar a lista das ${ids.length} obras filtradas</button>`}return}
   S.consolIds=ids;S.consolOpen=S.consolOpen||new Set();const info=S.fInfo||{};const cat=o=>S.catMap&&S.catMap.get(o);
-  const porEmp=new Map();ids.forEach(o=>{const i=info[o]||{};const e=String(i.emp||"");if(!porEmp.has(e))porEmp.set(e,{n:i.empNome||"",obras:[]});porEmp.get(e).obras.push(o)});
+  const comReg=!!S.regObra;const porEmp=new Map();ids.forEach(o=>{const i=info[o]||{};const e=String(i.emp||"");const k=chaveEmp(o);if(!porEmp.has(k))porEmp.set(k,{n:i.empNome||"",e,reg:comReg?regDe(o):"",obras:[]});porEmp.get(k).obras.push(o)});
+  const regs=comReg?[...new Set([...porEmp.values()].map(x=>x.reg))]:[];
+  if(comReg&&(!S.csReg||S.csReg.ids!==ids.join(","))){S.csReg={ids:ids.join(","),ab:new Set(regs.length===1?regs:[])}}
   const t25=ids.reduce((a,o)=>a+(+((cat(o)||[])[4])||0),0),t26=ids.reduce((a,o)=>a+(+((cat(o)||[])[5])||0),0);
   const mx=400;let n=0;const nEmp=porEmp.size;
   /* empresas recolhidas: começa só com as empresas (resumo) quando há mais de uma */
   if(!S.csEmp||S.csEmp.ids!==ids.join(",")){S.csEmp={ids:ids.join(","),ab:new Set(nEmp===1?[...porEmp.keys()]:[])}}
   const empAb=e=>S.csEmp.ab.has(e);
-  box.hidden=false;box.innerHTML=`<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2 style="margin:0">Resumo por empresa e obra · ${nEmp} empresa(s), ${ids.length} obra(s)${(fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length)?" no filtro":""}</h2><p class="desc" style="margin:2px 0 0">▸ na empresa mostra as obras; ▸ na obra mostra até o insumo. "Abrir" leva a obra para a tabela de preenchimento abaixo.${S.catMap?` Histórico das obras: 2025 R$ ${f0(t25)} · jan–set/2026 R$ ${f0(t26)}.`:""}</p></div>
-    <div class="row" style="gap:6px"><span class="hm-tg" role="group" aria-label="Níveis do resumo">Níveis: <button class="btn sm" id="cs-emp0" title="Mostra só as empresas">Só empresas</button><button class="btn sm" id="cs-emp1" title="Mostra as obras de todas as empresas">Empresas e obras</button></span><button class="btn sm" id="cs-all">Abrir todas${ids.length>60?" (primeiras 60)":""}</button><button class="btn sm" id="cs-none">Fechar todas</button><button class="btn sm" id="cs-xlsx">Baixar Excel</button><button class="btn sm" id="cs-hide">Ocultar lista</button></div></div>
+  box.hidden=false;box.innerHTML=`<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2 style="margin:0">Resumo por ${comReg?"regional, ":""}empresa e obra · ${comReg?regs.length+" regional(is), ":""}${new Set([...porEmp.values()].map(x=>x.e)).size} empresa(s), ${ids.length} obra(s)${(fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length)?" no filtro":""}</h2><p class="desc" style="margin:2px 0 0">▸ na empresa mostra as obras; ▸ na obra mostra até o insumo. "Abrir" leva a obra para a tabela de preenchimento abaixo.${S.catMap?` Histórico das obras: 2025 R$ ${f0(t25)} · jan–set/2026 R$ ${f0(t26)}.`:""}</p></div>
+    <div class="row" style="gap:6px"><span class="hm-tg" role="group" aria-label="Níveis do resumo">Níveis: ${comReg?`<button class="btn sm" id="cs-reg0" title="Mostra só as regionais">Só regionais</button>`:""}<button class="btn sm" id="cs-emp0" title="Mostra só as empresas">${comReg?"Regionais e empresas":"Só empresas"}</button><button class="btn sm" id="cs-emp1" title="Mostra as obras de todas as empresas">Empresas e obras</button></span><button class="btn sm" id="cs-all">Abrir todas${ids.length>60?" (primeiras 60)":""}</button><button class="btn sm" id="cs-none">Fechar todas</button><button class="btn sm" id="cs-xlsx">Baixar Excel</button><button class="btn sm" id="cs-hide">Ocultar lista</button></div></div>
     <div class="tbl-box" style="max-height:520px;overflow:auto;margin-top:8px"><table class="list"><thead><tr><th style="width:30px"></th><th>Obra</th><th>Base</th><th>Quem planeja</th><th class="num">Histórico 2025</th><th class="num">Histórico jan–set/26</th><th>Preenchimento</th><th></th></tr></thead><tbody>
-    ${[...porEmp.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([e,x])=>{const ea=empAb(e);const e25=x.obras.reduce((a,o)=>a+(+((cat(o)||[])[4])||0),0),e26=x.obras.reduce((a,o)=>a+(+((cat(o)||[])[5])||0),0);const nPre=x.obras.filter(o=>chipsPreench(o)).length;
-      return `<tr class="c-emp"><td><button class="btn sm" data-cse="${esc(e)}" aria-expanded="${ea}" title="${ea?"Recolher":"Mostrar"} as obras desta empresa">${ea?"▾":"▸"}</button></td><td colspan="3">Empresa ${esc(e)}${SEP}${esc(x.n)} <span class="muted" style="font-weight:400">· ${x.obras.length} obra(s)</span></td><td class="num">${f0(e25)}</td><td class="num">${f0(e26)}</td><td style="font-size:12px;font-weight:400">${nPre?`${nPre} com orçamento salvo`:'<span class="muted">nenhuma salva</span>'}</td><td></td></tr>`+
+    ${(()=>{let regAtual=null;return [...porEmp.entries()].sort((a,b)=>(a[1].reg===b[1].reg?0:a[1].reg==="Sem regional"?1:b[1].reg==="Sem regional"?-1:a[1].reg.localeCompare(b[1].reg))||a[1].e.localeCompare(b[1].e,undefined,{numeric:true})).map(([e,x])=>{
+      let cab="";if(comReg&&x.reg!==regAtual){regAtual=x.reg;const ra=S.csReg.ab.has(x.reg);const ob=[...porEmp.values()].filter(y=>y.reg===x.reg).flatMap(y=>y.obras);const r25=ob.reduce((a,o)=>a+(+((cat(o)||[])[4])||0),0),r26=ob.reduce((a,o)=>a+(+((cat(o)||[])[5])||0),0);
+        cab=`<tr class="c-reg"><td><button class="btn sm" data-csr="${esc(x.reg)}" aria-expanded="${ra}" title="${ra?"Recolher":"Mostrar"} as empresas desta regional">${ra?"▾":"▸"}</button></td><td colspan="3">${esc(x.reg)} <span class="muted" style="font-weight:400">· ${new Set([...porEmp.values()].filter(y=>y.reg===x.reg).map(y=>y.e)).size} empresa(s), ${ob.length} obra(s)</span></td><td class="num">${f0(r25)}</td><td class="num">${f0(r26)}</td><td style="font-size:12px;font-weight:400">${ob.filter(o=>chipsPreench(o)).length} com orçamento salvo</td><td></td></tr>`}
+      if(comReg&&!S.csReg.ab.has(x.reg))return cab;
+      const ea=empAb(e);const e25=x.obras.reduce((a,o)=>a+(+((cat(o)||[])[4])||0),0),e26=x.obras.reduce((a,o)=>a+(+((cat(o)||[])[5])||0),0);const nPre=x.obras.filter(o=>chipsPreench(o)).length;
+      return cab+`<tr class="c-emp"><td><button class="btn sm" data-cse="${esc(e)}" aria-expanded="${ea}" title="${ea?"Recolher":"Mostrar"} as obras desta empresa">${ea?"▾":"▸"}</button></td><td colspan="3"${comReg?' style="padding-left:18px"':""}>Empresa ${esc(x.e)}${SEP}${esc(x.n)} <span class="muted" style="font-weight:400">· ${x.obras.length} obra(s)</span></td><td class="num">${f0(e25)}</td><td class="num">${f0(e26)}</td><td style="font-size:12px;font-weight:400">${nPre?`${nPre} com orçamento salvo`:'<span class="muted">nenhuma salva</span>'}</td><td></td></tr>`+
       (ea?x.obras.map(o=>{if(n++>mx)return "";const i=info[o]||{};const c=cat(o);const ab=S.consolOpen.has(o);const deps=depsDaObra(o);
         let det="";if(ab){const ls=(S.histCache&&o in S.histCache)?consolLinhas(o):null;
           if(!ls)det=`<tr class="c-ins"><td></td><td colspan="7" class="muted">Carregando…</td></tr>`;else if(!ls.length)det=`<tr class="c-ins"><td></td><td colspan="7" class="muted">Nenhum insumo para este filtro nesta obra.</td></tr>`;
           else{const byS=new Map();ls.forEach(l=>{const k=l.P+"|"+l.S;if(!byS.has(k))byS.set(k,{P:l.P,S:l.S,sd:l.sd,it:[]});byS.get(k).it.push(l)});
             det=[...byS.values()].map(g=>`<tr class="c-srv"><td></td><td colspan="3" style="padding-left:24px"><b>${esc(nomeProd(g.P,i.tipo,(S.histCache||{})[o]))}</b> · ${esc(g.sd||g.S||"")}</td><td class="num">${f0(g.it.reduce((a,l)=>a+l.h25,0))}</td><td class="num">${f0(g.it.reduce((a,l)=>a+l.h26,0))}</td><td></td><td></td></tr>`+g.it.map(l=>`<tr class="c-ins"><td></td><td style="padding-left:44px"><span style="font-family:var(--f-mono)">${esc(l.I)}</span> ${esc(l.d)}</td><td></td><td class="muted">${esc(l.a)}</td><td class="num">${f0(l.h25)}</td><td class="num">${f0(l.h26)}</td><td></td><td></td></tr>`).join("")).join("")}}
-        return `<tr><td><button class="btn sm" data-cso="${esc(o)}">${ab?"▾":"▸"}</button></td><td><span style="font-family:var(--f-mono)">${esc(i.obra||o)}</span> ${esc(i.nome||"")}</td><td class="muted">${esc(i.tipo||"—")}</td><td style="font-size:12px">${esc((deps||[]).join(", ")||"—")}</td><td class="num">${f0(c?c[4]:0)}</td><td class="num">${f0(c?c[5]:0)}</td><td style="font-size:12px">${chipsPreench(o)||'<span class="muted">ninguém salvou</span>'}</td><td><button class="btn sm" data-csab="${esc(o)}" title="Abrir a sua visão desta obra na tabela">Abrir</button></td></tr>${det}`}).join(""):"")}).join("")}
+        return `<tr><td><button class="btn sm" data-cso="${esc(o)}">${ab?"▾":"▸"}</button></td><td><span style="font-family:var(--f-mono)">${esc(i.obra||o)}</span> ${esc(i.nome||"")}</td><td class="muted">${esc(i.tipo||"—")}</td><td style="font-size:12px">${esc((deps||[]).join(", ")||"—")}</td><td class="num">${f0(c?c[4]:0)}</td><td class="num">${f0(c?c[5]:0)}</td><td style="font-size:12px">${chipsPreench(o)||'<span class="muted">ninguém salvou</span>'}</td><td><button class="btn sm" data-csab="${esc(o)}" title="Abrir a sua visão desta obra na tabela">Abrir</button></td></tr>${det}`}).join(""):"")}).join("")})()}
     ${n>mx?`<tr><td colspan="8" class="muted">Mostrando ${mx} obras. Refine o filtro ou baixe o Excel para ver todas.</td></tr>`:""}</tbody></table></div>`}
 $("#consol").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;
   if(b.id==="cs-hide"){S.consolOff=true;renderConsol(S.consolIds||[]);return}
   if(b.id==="cs-show"){S.consolOff=false;renderConsol(S.consolIds||[]);return}
   if(b.id==="cs-none"){S.consolOpen=new Set();renderConsol(S.consolIds);return}
   if(b.dataset.cse!=null){const e2=b.dataset.cse;S.csEmp.ab.has(e2)?S.csEmp.ab.delete(e2):S.csEmp.ab.add(e2);renderConsol(S.consolIds);return}
-  if(b.id==="cs-emp0"){S.csEmp.ab=new Set();S.consolOpen=new Set();renderConsol(S.consolIds);return}
-  if(b.id==="cs-emp1"){const info=S.fInfo||{};S.csEmp.ab=new Set((S.consolIds||[]).map(o=>String((info[o]||{}).emp||"")));renderConsol(S.consolIds);return}
-  if(b.id==="cs-all"){const ids=(S.consolIds||[]).slice(0,60);{const info=S.fInfo||{};ids.forEach(o=>S.csEmp.ab.add(String((info[o]||{}).emp||"")))}ids.forEach(o=>S.consolOpen.add(o));renderConsol(S.consolIds);for(let i=0;i<ids.length;i+=15)await Promise.all(ids.slice(i,i+15).map(histObra));renderConsol(S.consolIds);return}
+  if(b.dataset.csr!=null){const r2=b.dataset.csr;S.csReg.ab.has(r2)?S.csReg.ab.delete(r2):S.csReg.ab.add(r2);renderConsol(S.consolIds);return}
+  if(b.id==="cs-reg0"){S.csReg.ab=new Set();S.csEmp.ab=new Set();S.consolOpen=new Set();renderConsol(S.consolIds);return}
+  if(b.id==="cs-emp0"){if(S.csReg)S.csReg.ab=new Set((S.consolIds||[]).map(regDe));S.csEmp.ab=new Set();S.consolOpen=new Set();renderConsol(S.consolIds);return}
+  if(b.id==="cs-emp1"){if(S.csReg)S.csReg.ab=new Set((S.consolIds||[]).map(regDe));S.csEmp.ab=new Set((S.consolIds||[]).map(chaveEmp));renderConsol(S.consolIds);return}
+  if(b.id==="cs-all"){const ids=(S.consolIds||[]).slice(0,60);ids.forEach(o=>{S.csEmp.ab.add(chaveEmp(o));if(S.csReg)S.csReg.ab.add(regDe(o))});ids.forEach(o=>S.consolOpen.add(o));renderConsol(S.consolIds);for(let i=0;i<ids.length;i+=15)await Promise.all(ids.slice(i,i+15).map(histObra));renderConsol(S.consolIds);return}
   if(b.dataset.cso){const o=b.dataset.cso;if(S.consolOpen.has(o)){S.consolOpen.delete(o);renderConsol(S.consolIds);return}S.consolOpen.add(o);renderConsol(S.consolIds);await histObra(o);renderConsol(S.consolIds);return}
   if(b.dataset.csab){S.abertaLista=b.dataset.csab;const sel=$("#sel-obra");sel.value=b.dataset.csab;sel.dispatchEvent(new Event("change"));setTimeout(()=>$("#grid-box")&&$("#grid-box").scrollIntoView({block:"start",behavior:"smooth"}),600);return}
   if(b.id==="cs-xlsx"){const ids=S.consolIds||[];toast(`Montando o Excel de ${ids.length} obra(s)…`);for(let i=0;i<ids.length;i+=20)await Promise.all(ids.slice(i,i+20).map(histObra));
@@ -907,6 +956,9 @@ async function openObra(uid,o,fromAdm){
   await refreshRegras();
   const perfil=uid===S.me?S.perfil:(((await S.db.doc("gerentes/"+uid).get()).data())||{obras:{}});perfil.obras=perfil.obras||{};
   let info=perfil.obras[o]||((S.acomp||[]).find(r=>r.uid===uid&&r.o===o)||{}).info;
+  if(!info&&S.voltarPara==="reg"&&S.regional){const ri=(S.regional.info||{})[o];const oc=(S.regional.orcs||[]).find(x=>x.uid===uid&&x.o===o)||{};
+    const deps=(S.regional.gerentes||[]).filter(g=>g.o===o&&String(g.email||"").toLowerCase()===String(oc.email||"").toLowerCase()).map(g=>g.dep);
+    info=ri?{...ri,todas:true,areas:deps}:{nome:o,todas:true,areas:deps}}
   if(!info){if(!S.catMap&&S.owner)await loadCat().catch(()=>{});const c=S.catMap&&S.catMap.get(o);info=c?{...catInfo(c),todas:true}:((S.perfil.obras||{})[o]||{nome:o,todas:true})}
   const histPath=info.todas?`restrito/hist/eo/${o}`:`gerentes/${uid}/hist/${o}`;
   const [hs,ds]=await Promise.all([S.db.doc(histPath).get(),S.db.doc(`gerentes/${uid}/orc/${o}`).get()]);
@@ -915,7 +967,7 @@ async function openObra(uid,o,fromAdm){
   const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,rev:JSON.parse(JSON.stringify(raw.rev||{})),exists:ds.exists};
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
-  const editable= uid===S.me && !travado(doc.status);
+  const editable= (uid===S.me || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,prods:produtosDaObra(hist,lines)};applyRules(S.cur);
   semObra(false);S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}S.year="2027";
   document.querySelectorAll("#years button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.y===S.year));
@@ -925,17 +977,18 @@ async function openObra(uid,o,fromAdm){
   $("#obra-tipo").textContent=(info.emp?`Empresa ${info.emp}${info.empNome?" – "+info.empNome:""} · `:"")+"Base modelo: "+(info.tipo?info.tipo+" · ":"")+TIPO_NOME[info.tipo||""];
   if(fromAdm){
     $("#sel-obra").innerHTML=`<option>${esc(obraLbl(o,info))}</option>`;$("#sel-obra").disabled=true;
-    const ps=await S.user.profiles([uid]);S.cur.quem=(ps[uid]&&ps[uid].name)||"gerente";$("#viewing-as").textContent="Visualizando o orçamento de "+((ps[uid]&&ps[uid].name)||"gerente")+" · ";
-    const back=document.createElement("button");back.className="btn sm";back.textContent=S.voltarPara==="fill"?"Voltar à minha visão":"Voltar ao Acompanhamento";back.onclick=async()=>{if(S.voltarPara==="fill"){S.voltarPara=null;S.cur=null;await loadMine()}else showTab("adm")};$("#viewing-as").append(back);
+    let nmQ="gerente";if(S.voltarPara==="reg"){const oc=((S.regional||{}).orcs||[]).find(x=>x.uid===uid&&x.o===o);nmQ=(oc&&(oc.nome||oc.email))||"gerente"}else{const ps=await S.user.profiles([uid]);nmQ=(ps[uid]&&ps[uid].name)||"gerente"}
+    S.cur.quem=nmQ;$("#viewing-as").textContent=(S.voltarPara==="reg"&&S.cur.editable?"Ajustando o orçamento de ":"Visualizando o orçamento de ")+nmQ+" · ";
+    const back=document.createElement("button");back.className="btn sm";back.textContent=S.voltarPara==="fill"?"Voltar à minha visão":S.voltarPara==="reg"?"Voltar à aba Regional":"Voltar ao Acompanhamento";back.onclick=async()=>{await flush();if(S.voltarPara==="fill"){S.voltarPara=null;S.cur=null;await loadMine()}else if(S.voltarPara==="reg"){showTab("reg")}else showTab("adm")};$("#viewing-as").append(back);
   } else {$("#sel-obra").disabled=false;$("#viewing-as").textContent=""}
   try{renderNavObra()}catch(e){}
   if(!fromAdm)aplicarFiltroLinhas(true);else{
     /* conferência: limpa todos os filtros para mostrar exatamente o que o gerente preencheu */
-    S.fDeps=null;S.fDepsKey=null;Object.keys(S.fSel||{}).forEach(k=>S.fSel[k]=[]);["emp","ger","cargo","obra"].forEach(n=>{try{renderSlicer(n)}catch(e){}});try{renderResumoFiltros()}catch(e){}
+    S.fDeps=null;S.fDepsKey=null;Object.keys(S.fSel||{}).forEach(k=>S.fSel[k]=[]);["reg","emp","ger","cargo","obra"].forEach(n=>{try{renderSlicer(n)}catch(e){}});try{renderResumoFiltros()}catch(e){}
     S.q="";$("#q").value="";S.onlyUsed=S.onlyMine=S.onlyEmpty=false;["#only-used","#only-mine","#only-empty"].forEach(q=>$(q).checked=false);S.collapsed=new Set();
     $("#consol").hidden=true;$("#filtros").classList.remove("ativo")}
   /* conferência da Controladoria: abre mostrando só o que o gerente preencheu */
-  S.onlyFilled=!!fromAdm;$("#only-filled").checked=S.onlyFilled;if(fromAdm){S.onlyEmpty=false;$("#only-empty").checked=false}
+  S.onlyFilled=!!fromAdm&&S.voltarPara!=="reg";$("#only-filled").checked=S.onlyFilled;if(fromAdm){S.onlyEmpty=false;$("#only-empty").checked=false}
   S.onlyRev=false;$("#only-rev").checked=false;atualizarContRev();renderGuia();renderQuem();
   renderStatus();renderGrid();renderSummary();
 }
@@ -946,7 +999,7 @@ function renderStatus(){
   const quando=st==="validado"&&d.validadoEm?"validado em "+fmtDate(d.validadoEm)+(d.validadoPor?" por "+d.validadoPor:""):d.enviadoEm&&st==="enviado"?"enviado em "+fmtDate(d.enviadoEm):d.atualizadoEm?"salvo em "+fmtDate(d.atualizadoEm):"";
   const mot=st==="reaberto"&&d.devolucao&&d.devolucao.motivo?` <span style="font-size:12px;color:var(--bad)"><b>Motivo da devolução:</b> ${esc(d.devolucao.motivo)}</span>`:"";
   $("#obra-status").innerHTML=`<span class="pill ${st}">${lab}</span> <span class="muted" style="font-size:12px">${esc(quando)}</span>${mot}`;
-  const mine=S.cur.uid===S.me;
+  const mine=S.cur.uid===S.me||(S.voltarPara==="reg"&&S.cur.editable!==undefined&&!S.owner);
   $("#send-box").hidden=!mine||travado(st);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
@@ -1259,11 +1312,11 @@ $("#only-used").addEventListener("change",e=>{S.onlyUsed=e.target.checked;render
 $("#only-mine").addEventListener("change",e=>{S.onlyMine=e.target.checked;renderGrid()});
 /* "Baixar meu Excel": escolhe anos, itens (só preenchidos ou todos os meus, com os meses em branco para preencher) e obras */
 function menuMeuExcel(){let m=$("#mx-pop");if(m){m.remove();return}const b=$("#btn-exp-me");m=document.createElement("div");m.id="mx-pop";m.className="mx-pop";
-  const nOb=(S.selIds||[]).length,nF=S.owner?obrasFiltradas().length:nOb;
+  const nOb=(S.selIds||[]).length,nF=obrasFiltradas().length;const filtrou=nF<nOb;
   m.innerHTML=`<b>Baixar meu Excel</b>
    <fieldset><legend>Anos</legend><label><input type="radio" name="mx-a" value="2027" checked> Só 2027</label><label><input type="radio" name="mx-a" value="todos"> 2027, 2028 e 2029</label></fieldset>
    <fieldset><legend>Itens</legend><label><input type="radio" name="mx-i" value="todos" checked> Todos os itens que eu preencho (meses em branco para preencher)</label><label><input type="radio" name="mx-i" value="preench"> Só os já preenchidos</label></fieldset>
-   <fieldset><legend>Obras</legend><label><input type="radio" name="mx-o" value="atual" checked> Só a obra da tabela${S.cur?": "+esc(obraLbl(S.cur.o,S.cur.info)):""}</label><label><input type="radio" name="mx-o" value="todas"> ${S.owner?`Obras do filtro (${nF})`:`Todas as minhas obras (${nOb})`}</label></fieldset>
+   <fieldset><legend>Obras</legend><label><input type="radio" name="mx-o" value="todas" ${nF>1?"checked":""}> ${filtrou?`Todas as obras do filtro (${nF}) – várias empresas juntas`:`Todas as ${S.owner?"":"minhas "}obras (${nF})`}</label><label><input type="radio" name="mx-o" value="atual" ${nF>1?"":"checked"}> Só a obra da tabela${S.cur?": "+esc(obraLbl(S.cur.o,S.cur.info)):""}</label>${nF>300?`<div class="muted" style="font-size:11.5px">São ${nF} obras; o Excel leva as primeiras 300. Use os filtros (Regional, Empresa…) para escolher.</div>`:""}</fieldset>
    <div class="row" style="gap:6px;justify-content:flex-end"><button class="btn sm" id="mx-no">Cancelar</button><button class="btn sm primary" id="mx-ok">Baixar</button></div>`;
   b.parentElement.style.position="relative";b.after(m);
   $("#mx-no").onclick=()=>m.remove();
@@ -1275,7 +1328,7 @@ async function exportarMeuExcel(op){op=op||{anos:YEARS.slice(),todos:false,obras
   await flush().catch(()=>{});toast("Montando o Excel…");
   const M=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
   const aoa=[["Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição do insumo","Subitem (nome do gasto)","Ano",...M,"Total","Histórico 2025","Histórico jan–set/2026","Observação"]];
-  let ids=op.obras==="atual"&&S.cur?[S.cur.o]:(S.owner?obrasFiltradas():(S.selIds||[])).filter(Boolean);
+  let ids=op.obras==="atual"&&S.cur?[S.cur.o]:obrasFiltradas().filter(Boolean);
   if(ids.length>300){toast(`São ${ids.length} obras; vou exportar as primeiras 300. Use os filtros para escolher.`);ids=ids.slice(0,300)}
   const r2=x=>Math.round((+x||0)*100)/100;
   for(const o of ids){const info=S.perfil.obras[o]||(S.catMap&&S.catMap.get(o)?{...catInfo(S.catMap.get(o)),todas:true}:null);if(!info)continue;
@@ -1470,8 +1523,9 @@ function setCard(c,on,semSalvar){c.classList.toggle("recolhido",on);const h=c.qu
   [...c.children].forEach(ch=>{if(!ch.contains(h)&&!ch.classList.contains("card-tg"))ch.classList.toggle("rec-hide",on)});c.querySelectorAll("p.desc").forEach(p=>p.classList.toggle("rec-hide",on));const b=c.querySelector(".card-tg");if(b)b.textContent=on?"▾ Abrir":"▴ Recolher";
   if(!semSalvar){let st={};try{st=JSON.parse(localStorage.getItem("orc.cards")||"{}")}catch(e){}st[c.dataset.cid]=on;try{localStorage.setItem("orc.cards",JSON.stringify(st))}catch(e){}}}
 function showTab(t){
-  $("#tab-fill").setAttribute("aria-selected",t==="fill");$("#tab-adm").setAttribute("aria-selected",t==="adm");$("#tab-sg").setAttribute("aria-selected",t==="sg");
-  $("#v-fill").hidden=t!=="fill";$("#v-adm").hidden=t!=="adm";$("#v-sg").hidden=t!=="sg";
+  $("#tab-fill").setAttribute("aria-selected",t==="fill");$("#tab-adm").setAttribute("aria-selected",t==="adm");$("#tab-sg").setAttribute("aria-selected",t==="sg");$("#tab-reg").setAttribute("aria-selected",t==="reg");
+  $("#v-fill").hidden=t!=="fill";$("#v-adm").hidden=t!=="adm";$("#v-sg").hidden=t!=="sg";$("#v-reg").hidden=t!=="reg";
+  if(t==="reg")carregarRegional();
   if(t==="adm"){prepararRecolher();loadAdm()}
   if(t==="sg")loadSemGerente().catch(e=>{$("#sg-resumo").textContent="Não foi possível carregar: "+(e.message||e)});
 }
