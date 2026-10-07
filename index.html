@@ -888,7 +888,7 @@ function depsDaObra(o){const ger=fVals("f-ger"),cg=fVals("f-cargo");let d=null;
   if(!d){const i=(S.fInfo||{})[o]||{};d=S.owner?((S.fAO||{})[o]||null):(i.areas||null)}return d}
 async function histObra(o){S.histCache=S.histCache||{};if(o in S.histCache)return S.histCache[o];const i=(S.fInfo||{})[o]||{};
   try{const h=await S.db.doc(i.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();S.histCache[o]=h.exists?h.data():null}catch(e){S.histCache[o]=null}return S.histCache[o]}
-function consolLinhas(o){const i=(S.fInfo||{})[o]||{};const deps=depsDaObra(o);const hist=(S.histCache||{})[o]||null;const lines=buildLines(i.tipo,hist,{});const prods=produtosDaObra(hist,lines);
+function consolLinhas(o){const i=(S.fInfo||{})[o]||{};const deps=depsDaObra(o);const hist=(S.histCache||{})[o]||null;const lines=buildLines(i.tipo,hist,{});const prods=produtosDaObra(hist,lines,o,i.tipo);
   const fake={uid:S.me,o,info:i,doc:{sub:{}},lines,editable:false};const out=[];let gS="";
   lines.forEach(l=>{if(l.kind==="grp"&&l.S)gS=l.desc;if(l.kind!=="leaf")return;if(prods&&l.P&&!l.extra&&!prods.has(l.P))return;const r=ruleFor(i.tipo,l,o);const a=r&&r[1]||"";
     if(deps&&!deps.includes(a))return;const oc=S.regras&&S.regras.ocSet&&S.regras.ocSet.has(`${i.tipo||""}|${l.P}|${l.S}|${l.I}`);if(oc&&!sum(l.h))return;
@@ -950,7 +950,7 @@ $("#sel-obra").addEventListener("change",async e=>{if(!e.target.value)return;if(
 
 async function temItensMeus(o,info){
   const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();
-  const hd=hs.exists?hs.data():null;const lines=buildLines(info.tipo,hd,{});const prods=produtosDaObra(hd,lines);
+  const hd=hs.exists?hs.data():null;const lines=buildLines(info.tipo,hd,{});const prods=produtosDaObra(hd,lines,o,info.tipo);
   const cur={uid:S.me,o,info,doc:{sub:{}},lines,editable:false};applyRules(cur);
   return cur.lines.some(l=>l.kind==="leaf"&&l.mine&&(!prods||!l.P||l.extra||prods.has(l.P)));
 }
@@ -973,7 +973,7 @@ async function openObra(uid,o,fromAdm){
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
   const editable= (uid===S.me || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
-  S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,prods:produtosDaObra(hist,lines)};applyRules(S.cur);
+  S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,prods:produtosDaObra(hist,lines,o,info.tipo)};applyRules(S.cur);
   semObra(false);S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}S.year="2027";
   document.querySelectorAll("#years button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.y===S.year));
   $("#detail").hidden=true;$("#add-box").hidden=true;$("#btn-add").textContent="Adicionar item";$("#ver-box").hidden=true;$("#ver-banner").hidden=true;
@@ -1017,7 +1017,12 @@ function linhaPreenchida(l){const d=S.cur.doc,y=S.year;if(lineTotal(d,l,y))retur
 const restrito=()=>!!(S.cur&&!S.owner&&S.cur.uid===S.me);
 /* produtos da obra: só os que a obra usa (histórico); obra sem histórico mostra todos os do modelo */
 function nomeProd(P,tipo,hist){const tp=T&&T.tipos&&T.tipos[tipo];return (tp&&tp.prods&&tp.prods[P])||(hist&&hist.pd&&hist.pd[P])||(P?"Produto "+P:"Sem produto")}
-function produtosDaObra(hist,lines){const pd=Object.keys((hist&&hist.pd)||{});const s=new Set(pd);lines.forEach(l=>{if(l.kind==="leaf"&&l.P&&sum(l.h))s.add(l.P)});return s.size?s:null}
+/* Regra 07/10/2026: obras que começam com 6 (exceto empresa 3) sempre mostram o produto "Despesas com Vendas" do modelo,
+   mesmo sem histórico; os insumos seguem a aba 1 (aparece para preenchimento / quem planeja). */
+function obraComVendas(o){const m=/^(\d+)-(\d+)/.exec(String(o||""));return !!m&&m[1]!=="3"&&m[2].startsWith("6")}
+function prodsVendas(tipo){const tp=T.tipos[tipo];if(!tp)return[];return Object.keys(tp.prods).filter(P=>/^DESPESAS COM VENDAS/i.test(tp.prods[P]))}
+function produtosDaObra(hist,lines,o,tipo){const pd=Object.keys((hist&&hist.pd)||{});const s=new Set(pd);lines.forEach(l=>{if(l.kind==="leaf"&&l.P&&sum(l.h))s.add(l.P)});
+  if(s.size&&o&&obraComVendas(o))prodsVendas(tipo).forEach(P=>s.add(P));return s.size?s:null}
 const oculto=l=>{const oc=S.regras&&S.regras.ocSet;return !!(oc&&oc.has(`${(S.cur&&S.cur.info&&S.cur.info.tipo)||""}|${l.P}|${l.S}|${l.I}`))};
 const prodOk=l=>!(S.cur&&S.cur.prods&&l.P&&l.key!=="P:extra"&&!String(l.key).startsWith("GX:")&&!l.extra&&!S.cur.prods.has(l.P));
 function visivelFiltro(c){const sv=S.collapsed;if(!sv.size)return visible(c);S.collapsed=new Set();try{return visible(c)}finally{S.collapsed=sv}}
@@ -1362,7 +1367,7 @@ async function exportarMeuExcel(op){op=op||{anos:YEARS.slice(),todos:false,obras
   for(const o of ids){const info=S.perfil.obras[o]||(S.catMap&&S.catMap.get(o)?{...catInfo(S.catMap.get(o)),todas:true}:null);if(!info)continue;
     const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();const hd=hs.exists?hs.data():null;
     const ds=await S.db.doc(`gerentes/${S.me}/orc/${o}`).get();const raw=ds.exists?ds.data():{};
-    const doc={v:raw.v||{},pr:raw.pr||{},sub:raw.sub||{},lobs:raw.lobs||{}};const lines=buildLines(info.tipo,hd,extOrf(raw.ext,raw.v));const prods=produtosDaObra(hd,lines);
+    const doc={v:raw.v||{},pr:raw.pr||{},sub:raw.sub||{},lobs:raw.lobs||{}};const lines=buildLines(info.tipo,hd,extOrf(raw.ext,raw.v));const prods=produtosDaObra(hd,lines,o,info.tipo);
     const cur={uid:S.me,o,info,doc:{sub:JSON.parse(JSON.stringify(doc.sub))},lines,editable:true};applyRules(cur);
     lines.filter(l=>l.kind==="leaf"&&(S.owner||l.mine)&&(!prods||!l.P||l.extra||prods.has(l.P))).forEach(l=>{
       const oc=S.regras&&S.regras.ocSet&&S.regras.ocSet.has(`${info.tipo||""}|${l.P}|${l.S}|${l.I}`);if(oc&&!sum(l.h)&&!temValor({v:doc.v,sub:doc.sub},l))return;
