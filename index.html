@@ -38,7 +38,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;backgroun
 .brand{display:flex;align-items:baseline;gap:10px;min-width:0}
 .brand h1{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0;letter-spacing:-.01em}
 .brand span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-nav.tabs{display:flex;gap:4px;margin-left:auto}
+nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}
 .tab{border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
 button{font:inherit;cursor:pointer}
@@ -720,7 +720,7 @@ async function boot(){
   S.me=await user.id();
   S.owner=!!(await user.isOwner());
   if(!S.me){$("#v-nodb").hidden=false;return}
-  if(S.owner){$("#tabs").hidden=false}
+  if(S.owner){$("#tabs").hidden=false}else{$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}
   try{const rg=await db.doc("regras/atual").get();S.regras=rg.exists?rg.data():{r:{}}}catch(e){S.regras={r:{}}}indexRegras();
   try{const dp=await db.doc("regras/depara").get();S.dpR=dp.exists?dp.data():null}catch(e){S.dpR=null}
   try{const sb=await db.doc("regras/subitens").get();S.subR=sb.exists?sb.data():null}catch(e){S.subR=null}
@@ -738,7 +738,11 @@ async function carregarRegional(){const m=$("#rg-res");if(!m)return;m.textConten
   desenharRegional()}
 function linhasRegional(){const R=S.regional||{};const info=R.info||{};const regDeO=new Map((R.obras||[]).map(x=>[x.o,x.reg]));const L=[];const usados=new Set();
   const ger=R.gerentes||[];const orcs=R.orcs||[];
-  ger.forEach(g=>{const oc=orcs.find(x=>x.o===g.o&&String(x.email||"").toLowerCase()===String(g.email||"").toLowerCase());if(oc)usados.add(oc.uid+"|"+oc.o);L.push({o:g.o,reg:regDeO.get(g.o)||"",i:info[g.o]||{},dep:g.dep,nome:g.nome||g.email,email:g.email,oc})});
+  const lc=x=>String(x||"").toLowerCase();
+  ger.forEach(g=>{let oc=orcs.find(x=>x.o===g.o&&lc(x.email)===lc(g.email));let comp=false;
+    /* mesma área com dois gerentes: o orçamento é um só (compartilhado) */
+    if(!oc){oc=orcs.find(x=>x.o===g.o&&ger.some(h=>h.o===g.o&&h.dep===g.dep&&lc(h.email)===lc(x.email)));comp=!!oc}
+    if(oc)usados.add(oc.uid+"|"+oc.o);L.push({o:g.o,reg:regDeO.get(g.o)||"",i:info[g.o]||{},dep:g.dep,nome:(g.nome||g.email)+(comp?" (compartilhado com "+(oc.nome||oc.email)+")":""),email:g.email,oc})});
   orcs.forEach(oc=>{if(usados.has(oc.uid+"|"+oc.o))return;L.push({o:oc.o,reg:regDeO.get(oc.o)||"",i:info[oc.o]||{},dep:"",nome:oc.nome||oc.email||"—",email:oc.email,oc})});
   return L.sort((a,b)=>a.reg.localeCompare(b.reg)||String(a.i.emp||"").localeCompare(String(b.i.emp||""),undefined,{numeric:true})||a.o.localeCompare(b.o)||a.dep.localeCompare(b.dep))}
 const ST_NOME={rascunho:"Rascunho",reaberto:"Devolvido",enviado:"Enviado",validado:"Validado"};
@@ -755,7 +759,7 @@ document.addEventListener("click",async e=>{if(e.target.id==="rg-ref"){carregarR
 $("#tab-reg").addEventListener("click",async()=>{await flush();showTab("reg")});
 /* Sem uma obra definida pelos filtros, a tela não mostra obra nenhuma (evita preencher a obra errada) */
 /* navegação entre as obras do filtro: ◀ anterior · lista · próxima ▶ */
-function renderNavObra(){const box=$("#obra-nav");if(!box)return;const ids=S.navIds||S.selIds||[];const conf=S.cur&&S.cur.uid!==S.me;
+function renderNavObra(){const box=$("#obra-nav");if(!box)return;const ids=S.navIds||S.selIds||[];const conf=S.cur&&!meuCur();
   if(conf||!S.cur||ids.length<2){box.innerHTML="";return}
   const i=ids.indexOf(S.cur.o);const lb=new Map();{const t=document.createElement("select");t.innerHTML=S.selAll||"";[...t.options].forEach(o=>lb.set(o.value,o.textContent))}
   box.innerHTML=`<button class="btn sm" data-nav="-1" ${i<=0?"disabled":""} title="Obra anterior do filtro">◀</button><select id="nav-sel" aria-label="Trocar de obra">${ids.slice(0,3000).map(o=>`<option value="${esc(o)}" ${o===S.cur.o?"selected":""}>${esc(lb.get(o)||o)}</option>`).join("")}</select><button class="btn sm" data-nav="1" ${i<0||i>=ids.length-1?"disabled":""} title="Próxima obra do filtro">▶</button><span class="muted">obra ${i+1} de ${ids.length} no filtro</span>`}
@@ -784,8 +788,9 @@ async function loadMine(){
   $("#fill-empty").hidden=true;$("#fill-main").hidden=false;$("#req-card").hidden=true;$("#btn-req").hidden=!!S.owner||!!S.offline;
   const q=await S.db.collection("gerentes/"+S.me+"/orc").get();
   S.myOrc={};q.docs.forEach(d=>S.myOrc[d.id]=d.data());
+  await carregarColegas();
   const sel=$("#sel-obra");
-  S.selAll=obras.sort((a,b)=>String(a[1].obra||a[0]).localeCompare(String(b[1].obra||b[0]))||String(a[1].emp||"").localeCompare(String(b[1].emp||""),undefined,{numeric:true})).map(([o,i])=>{const st=(S.myOrc[o]&&S.myOrc[o].status)||"não iniciado";return `<option value="${esc(o)}">${esc(obraLbl(o,i))} (${esc(st)})</option>`}).join("");
+  S.selAll=obras.sort((a,b)=>String(a[1].obra||a[0]).localeCompare(String(b[1].obra||b[0]))||String(a[1].emp||"").localeCompare(String(b[1].emp||""),undefined,{numeric:true})).map(([o,i])=>{const st=(orcVis(o)&&orcVis(o).status)||"não iniciado";return `<option value="${esc(o)}">${esc(obraLbl(o,i))} (${esc(st)})</option>`}).join("");
   sel.innerHTML=S.selAll;S.selIds=obras.map(x=>x[0]);$("#busca-obra").value="";$("#busca-obra-n").textContent=obras.length>1?"- "+obras.length+" obras":"";$("#busca-obra").parentElement.hidden=obras.length<2;
   await carregarOrcIndex();await montarFiltros();
   {let last=null;try{last=localStorage.getItem("orc.last")}catch(e){}await openObra(S.me,last&&S.perfil.obras[last]?last:S.selIds[0],false);filtrarObras()}
@@ -855,7 +860,7 @@ async function carregarOrcIndex(forcar){if(!S.owner||!(window.ORC_HOOKS&&window.
 const ST_LAB={rascunho:"Em preenchimento",enviado:"Aguardando validação",validado:"Validado",reaberto:"Devolvido"};
 function chipsPreench(o){const a=(S.orcIdx&&S.orcIdx.get(o))||[];return a.map(x=>`<span class="oq">${esc(x.nome)} <span class="pill ${esc(x.status||"rascunho")}">${esc(ST_LAB[x.status]||x.status||"")}</span>${x.t["2027"]?`<span class="muted">2027: ${f0(x.t["2027"])}</span>`:""}<button class="btn sm primary" data-verorc="${esc(x.uid)}|${esc(o)}">Ver o que preencheu</button></span>`).join("")}
 function renderQuem(){const box=$("#orc-quem");if(!S.cur||!S.owner){box.hidden=true;return}
-  if(S.cur.uid!==S.me){box.hidden=true;return}
+  if(!meuCur()){box.hidden=true;return}
   const a=(S.orcIdx&&S.orcIdx.get(S.cur.o))||[];
   box.innerHTML=a.length?`<b>Preenchimentos desta obra:</b>${chipsPreench(S.cur.o)}<span class="muted" style="font-size:12px">A tabela abaixo é a <b>sua</b> visão (Controladoria). Clique em “Ver o que preencheu” para conferir o orçamento do gerente.</span>`:`<span class="muted">Nenhum gerente salvou orçamento nesta obra ainda. A tabela abaixo é a sua visão (Controladoria).</span>`;box.hidden=false}
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("button[data-verorc]");if(!b)return;const [uid,o]=b.dataset.verorc.split("|");
@@ -877,7 +882,7 @@ function filtrarObras(){if(!S.selAll)return;atualizarListas();const q="";
   const filtrando=!!(fVals("f-reg").length||fVals("f-emp").length||fVals("f-ger").length||fVals("f-cargo").length||fVals("f-obra").length);$("#filtros").classList.toggle("ativo",filtrando);
   $("#busca-obra-n").textContent=filtrando?`- ${ok.length} de ${S.selIds.length}`:`- ${S.selIds.length} obras`;
   /* não obriga filtrar uma só obra: mantém a obra aberta se ela estiver no filtro; senão abre a última usada (se estiver no filtro) ou a primeira */
-  const conf=S.cur&&S.cur.uid!==S.me;S.navIds=ok.map(o=>o.value);
+  const conf=S.cur&&!meuCur();S.navIds=ok.map(o=>o.value);
   if(!conf){if(!ok.length)semObra(true);
     else if(!S.cur||!okIds.has(S.cur.o)){let last=null;try{last=localStorage.getItem("orc.last")}catch(e){}const alvo=last&&okIds.has(last)?last:ok[0].value;sel.value=alvo;sel.dispatchEvent(new Event("change"))}}
   renderNavObra();if(!conf&&S.cur&&S.cur.lines&&okIds.has(S.cur.o))renderGrid();
@@ -946,7 +951,7 @@ function aplicarFiltroLinhas(semRender){if(!S.cur)return;const ger=fVals("f-ger"
   const novo=deps?S.cur.o+"#"+[...deps].sort().join("|"):null;if(novo===S.fDepsKey&&!semRender)return;S.fDepsKey=novo;S.fDeps=deps;if(!semRender&&S.cur.lines)renderGrid()}
 ["#busca-obra"].forEach(q=>$(q).addEventListener("input",filtrarObras));
 $("#busca-obra").addEventListener("keydown",async e=>{if(e.key!=="Enter")return;e.preventDefault();const sel=$("#sel-obra");const o=[...sel.options].find(x=>x.value);if(!o)return;sel.value=o.value;sel.dispatchEvent(new Event("change"))});
-$("#sel-obra").addEventListener("change",async e=>{if(!e.target.value)return;if(S.cur&&S.cur.uid!==S.me){S.voltarPara=null}else await flush();try{localStorage.setItem("orc.last",e.target.value)}catch(_){}await openObra(S.me,e.target.value,false)});
+$("#sel-obra").addEventListener("change",async e=>{if(!e.target.value)return;if(S.cur&&!meuCur()){S.voltarPara=null}else await flush();try{localStorage.setItem("orc.last",e.target.value)}catch(_){}await openObra(S.me,e.target.value,false)});
 
 async function temItensMeus(o,info){
   const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();
@@ -959,21 +964,24 @@ async function refreshRegras(){if(S.rgEm&&Date.now()-S.rgEm<60000)return;S.rgEm=
     if(rg.exists){S.regras=rg.data();indexRegras()}S.dpR=dp.exists?dp.data():null;S.subR=sb.exists?sb.data():null}catch(e){}}
 async function openObra(uid,o,fromAdm){
   await refreshRegras();
-  const perfil=uid===S.me?S.perfil:(((await S.db.doc("gerentes/"+uid).get()).data())||{obras:{}});perfil.obras=perfil.obras||{};
+  let compart=false;if(uid===S.me&&!fromAdm&&!S.owner&&!S.offline){const d=donoDoc(o);if(d!==S.me){uid=d;compart=true}}
+  const perfil=(uid===S.me||compart)?S.perfil:(((await S.db.doc("gerentes/"+uid).get()).data())||{obras:{}});perfil.obras=perfil.obras||{};
   let info=perfil.obras[o]||((S.acomp||[]).find(r=>r.uid===uid&&r.o===o)||{}).info;
   if(!info&&S.voltarPara==="reg"&&S.regional){const ri=(S.regional.info||{})[o];const oc=(S.regional.orcs||[]).find(x=>x.uid===uid&&x.o===o)||{};
     const deps=(S.regional.gerentes||[]).filter(g=>g.o===o&&String(g.email||"").toLowerCase()===String(oc.email||"").toLowerCase()).map(g=>g.dep);
     info=ri?{...ri,todas:true,areas:deps}:{nome:o,todas:true,areas:deps}}
   if(!info){if(!S.catMap&&S.owner)await loadCat().catch(()=>{});const c=S.catMap&&S.catMap.get(o);info=c?{...catInfo(c),todas:true}:((S.perfil.obras||{})[o]||{nome:o,todas:true})}
-  const histPath=info.todas?`restrito/hist/eo/${o}`:`gerentes/${uid}/hist/${o}`;
+  const histPath=info.todas?`restrito/hist/eo/${o}`:`gerentes/${compart?S.me:uid}/hist/${o}`;
   const [hs,ds]=await Promise.all([S.db.doc(histPath).get(),S.db.doc(`gerentes/${uid}/orc/${o}`).get()]);
   const hist=hs.exists?hs.data():null;
   const raw=ds.exists?ds.data():{};
   const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,rev:JSON.parse(JSON.stringify(raw.rev||{})),exists:ds.exists};
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
-  const editable= (uid===S.me || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
-  S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,prods:produtosDaObra(hist,lines,o,info.tipo)};applyRules(S.cur);
+  const editable= (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
+  S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,prods:produtosDaObra(hist,lines,o,info.tipo)};applyRules(S.cur);
+  marcarBase(S.cur,raw);
+  if(compart){const c=colegaDe(o,uid);S.cur.quem=(c&&c.nome)||"colega da mesma área";juntarMeuRascunho(S.cur)}
   semObra(false);S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}S.year="2027";
   document.querySelectorAll("#years button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.y===S.year));
   $("#detail").hidden=true;$("#add-box").hidden=true;$("#btn-add").textContent="Adicionar item";$("#ver-box").hidden=true;$("#ver-banner").hidden=true;
@@ -985,7 +993,7 @@ async function openObra(uid,o,fromAdm){
     let nmQ="gerente";if(S.voltarPara==="reg"){const oc=((S.regional||{}).orcs||[]).find(x=>x.uid===uid&&x.o===o);nmQ=(oc&&(oc.nome||oc.email))||"gerente"}else{const ps=await S.user.profiles([uid]);nmQ=(ps[uid]&&ps[uid].name)||"gerente"}
     S.cur.quem=nmQ;$("#viewing-as").textContent=(S.voltarPara==="reg"&&S.cur.editable?"Ajustando o orçamento de ":"Visualizando o orçamento de ")+nmQ+" · ";
     const back=document.createElement("button");back.className="btn sm";back.textContent=S.voltarPara==="fill"?"Voltar à minha visão":S.voltarPara==="reg"?"Voltar à aba Regional":"Voltar ao Acompanhamento";back.onclick=async()=>{await flush();if(S.voltarPara==="fill"){S.voltarPara=null;S.cur=null;await loadMine()}else if(S.voltarPara==="reg"){showTab("reg")}else showTab("adm")};$("#viewing-as").append(back);
-  } else {$("#sel-obra").disabled=false;$("#viewing-as").textContent=""}
+  } else {$("#sel-obra").disabled=false;$("#viewing-as").textContent=compart?"Orçamento compartilhado com "+S.cur.quem+" (mesma área): o que um salva, o outro vê. · ":""}
   try{renderNavObra()}catch(e){}
   if(!fromAdm)aplicarFiltroLinhas(true);else{
     /* conferência: limpa todos os filtros para mostrar exatamente o que o gerente preencheu */
@@ -1004,7 +1012,7 @@ function renderStatus(){
   const quando=st==="validado"&&d.validadoEm?"validado em "+fmtDate(d.validadoEm)+(d.validadoPor?" por "+d.validadoPor:""):d.enviadoEm&&st==="enviado"?"enviado em "+fmtDate(d.enviadoEm):d.atualizadoEm?"salvo em "+fmtDate(d.atualizadoEm):"";
   const mot=st==="reaberto"&&d.devolucao&&d.devolucao.motivo?` <span style="font-size:12px;color:var(--bad)"><b>Motivo da devolução:</b> ${esc(d.devolucao.motivo)}</span>`:"";
   $("#obra-status").innerHTML=`<span class="pill ${st}">${lab}</span> <span class="muted" style="font-size:12px">${esc(quando)}</span>${mot}`;
-  const mine=S.cur.uid===S.me||(S.voltarPara==="reg"&&S.cur.editable!==undefined&&!S.owner);
+  const mine=meuCur()||(S.voltarPara==="reg"&&S.cur.editable!==undefined&&!S.owner);
   $("#send-box").hidden=!mine||travado(st);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
@@ -1014,7 +1022,9 @@ function renderStatus(){
 
 /* ---------- grade ---------- */
 function linhaPreenchida(l){const d=S.cur.doc,y=S.year;if(lineTotal(d,l,y))return true;return subsOf(l).some(sb=>sum(((d.v[subKey(l,sb)]||{})[y]||[]).map(v=>+v||0)))}
-const restrito=()=>!!(S.cur&&!S.owner&&S.cur.uid===S.me);
+const restrito=()=>!!(S.cur&&!S.owner&&meuCur());
+/* orçamento do próprio usuário OU o orçamento compartilhado com o colega da mesma área */
+const meuCur=()=>!!(S.cur&&(S.cur.uid===S.me||S.cur.compart));
 /* produtos da obra: só os que a obra usa (histórico); obra sem histórico mostra todos os do modelo */
 function nomeProd(P,tipo,hist){const tp=T&&T.tipos&&T.tipos[tipo];return (tp&&tp.prods&&tp.prods[P])||(hist&&hist.pd&&hist.pd[P])||(P?"Produto "+P:"Sem produto")}
 /* Regra 07/10/2026: obras que começam com 6 (exceto empresa 3) sempre mostram o produto "Despesas com Vendas" do modelo,
@@ -1086,9 +1096,9 @@ const regraKey=l=>`${(S.cur&&S.cur.info&&S.cur.info.tipo)||""}|${l.P}|${l.S}|${l
 function orientacao(l){const q=S.subR&&S.subR.q;return q?(q[regraKey(l)]||""):""}
 function temValor(doc,l){return YEARS.some(y=>{const a=lineYearVals(doc,l,y);if(a&&a.some(v=>+v))return true;return subsOf(l).some(sb=>((doc.v[subKey(l,sb)]||{})[y]||[]).some(v=>+v))})}
 const revDe=l=>{const r=S.cur&&S.cur.doc.rev&&S.cur.doc.rev[l.key];return r&&r.t?r:null};
-const modoRevisao=()=>!!(S.cur&&S.owner&&S.cur.uid!==S.me);
+const modoRevisao=()=>!!(S.cur&&S.owner&&!meuCur());
 function atualizarContRev(){if(!S.cur)return;setTimeout(renderGuia,0);const n=Object.values(S.cur.doc.rev||{}).filter(r=>r&&r.t).length;$("#lb-only-rev").hidden=!n&&!modoRevisao();$("#n-rev").textContent=n||"";$("#n-rev").hidden=!n}
-async function salvarRev(){const c=S.cur;try{await S.db.doc(`gerentes/${c.uid}/orc/${c.o}`).set({...payloadFrom(c),rev:c.doc.rev||{}});atualizarContRev();toast("Apontamento salvo")}catch(e){toast("Não foi possível salvar o apontamento.")}}
+async function salvarRev(){const c=S.cur;try{await gravarOrc(c,{...payloadFrom(c),rev:c.doc.rev||{}});atualizarContRev();toast("Apontamento salvo")}catch(e){toast("Não foi possível salvar o apontamento.")}}
 /* faixa de orientação: muda conforme quem está usando e a situação da obra */
 function renderGuia(){const g=$("#guia");if(!S.cur){g.hidden=true;return}const st=S.cur.doc.status;const nRev=Object.values(S.cur.doc.rev||{}).filter(r=>r&&r.t).length;
   let fech=false;try{fech=localStorage.getItem("orc.guia.ok")==="1"}catch(e){}
@@ -1107,7 +1117,7 @@ const obsCurta=(d,l)=>((d.lobs||{})[l.key]||"").trim().length<OBS_MIN;
 function faltandoObs(){const d=S.cur.doc;return S.cur.lines.filter(l=>l.kind==="leaf"&&prodOk(l)&&(!restrito()||l.mine)&&precisaObs(l)&&obsCurta(d,l))}
 function marcaObs(idx){const el=$("#lo-"+idx);if(!el)return;const l=S.cur.lines[idx];const tem=temValor(S.cur.doc,l)||!!((S.cur.doc.lobs||{})[l.key]||"");el.hidden=!tem;el.classList.toggle("need",precisaObs(l)&&obsCurta(S.cur.doc,l))}
 /* várias obras na mesma tabela: Empresa → Obra; a obra aberta mostra os itens para preencher, as outras ficam numa linha (clique para abrir) */
-function montarMulti(corpo,nCols){const conf=S.cur&&S.cur.uid!==S.me;
+function montarMulti(corpo,nCols){const conf=S.cur&&!meuCur();
   /* só as obras da MESMA empresa da obra aberta (respeitando o filtro) — deixa a tela leve */
   const empCur=S.cur&&String(((S.fInfo||{})[S.cur.o]||S.cur.info||{}).emp||"");const ids=(S.navIds||[]).filter(o=>String(((S.fInfo||{})[o]||{}).emp||"")===empCur);
   if(conf||ids.length<2||!S.cur||!ids.includes(S.cur.o))return S.curFechado?"":corpo;
@@ -1118,7 +1128,7 @@ function montarMulti(corpo,nCols){const conf=S.cur&&S.cur.uid!==S.me;
   if(ini>0)out+=`<tr class="m-info"><td colspan="${nCols}" class="muted">… ${ini} obra(s) antes desta parte da lista. Use os filtros para reduzir.</td></tr>`;
   vis.forEach(o=>{const i=info[o]||{};const e=String(i.emp||"");
     if(e!==empAtual){empAtual=e;const n=ids.filter(x=>String((info[x]||{}).emp||"")===e).length;out+=`<tr class="m-emp"><td colspan="${nCols}"><span class="m-sticky">Empresa ${esc(e)}${i.empNome?" – "+esc(i.empNome):""} <span class="muted">· ${n} obra(s)</span></span></td></tr>`}
-    const atual=o===S.cur.o;const oc=(S.myOrc||{})[o];const st=atual?S.cur.doc.status:(oc&&oc.status)||"";const tot=atual?docTotals(S.cur.doc,S.cur.lines)[yy]:(oc&&oc.totais&&oc.totais[yy]);const c=cat(o);
+    const atual=o===S.cur.o;const oc=orcVis(o);const st=atual?S.cur.doc.status:(oc&&oc.status)||"";const tot=atual?docTotals(S.cur.doc,S.cur.lines)[yy]:(oc&&oc.totais&&oc.totais[yy]);const c=cat(o);
     out+=`<tr class="m-obra${atual?" on":""}" data-mob="${esc(o)}"><td class="c-desc"><button class="tg" aria-expanded="${atual&&!S.curFechado}" title="${atual?(S.curFechado?"Mostrar":"Recolher")+" os itens desta obra":"Abrir esta obra para preencher"}">${atual&&!S.curFechado?"▾":"▸"}</button><b>${esc(i.obra||o)}</b> ${esc(i.nome||"")}</td><td colspan="${nCols-1}"><span class="m-sticky">${st?`<span class="pill ${esc(st)}">${esc(ST_NOME[st]||st)}</span> `:'<span class="muted">não iniciada</span> '}${tot?`<span class="muted">· ${yy}: R$ ${f0(tot)}</span>`:""}${c?` <span class="muted">· histórico 2025: R$ ${f0(+c[4]||0)}</span>`:""}${atual?"":` <span class="m-abrir">clique para abrir e preencher</span>`}</span></td></tr>`;
     if(atual&&!S.curFechado)out+=corpo});
   if(ini+MX<ids.length)out+=`<tr class="m-info"><td colspan="${nCols}" class="muted">… mais ${ids.length-ini-MX} obra(s) depois. Use os filtros para reduzir.</td></tr>`;
@@ -1135,7 +1145,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
   const MC=(a,b)=>Array.from({length:b-a},(_,k)=>a+k).filter(showM).map(i=>`<td class="num ref hm" data-r="hm${i}"></td>`).join("");
   const REF=`<td class="num ref fz fz1" data-r="h25"></td><td class="num ref fz fz2" data-r="m25"></td><td class="num ref fz fz3" data-r="n25"></td><td class="num ref fz fz4" data-r="h26"></td><td class="num ref fz fz5" data-r="m26"></td><td class="num ref fz fz6" data-r="n26"></td>${MC(0,12)}${MC(12,21)}`;
   const ci=S.cur.info||{};const nCols=24+(H25?12:0)+(H26?9:0);
-  const ctx=`<tr class="ctx"><th colspan="${nCols}"><div class="ctx-in"><span><span class="ctx-l">Empresa</span> <b>${esc(ci.emp!=null?ci.emp+(ci.empNome?" – "+ci.empNome:""):"—")}</b></span><span><span class="ctx-l">Obra</span> <b>${esc(obraLbl(S.cur.o,ci))}</b></span><span><span class="ctx-l">Base</span> ${esc(ci.tipo||"—")}</span>${S.cur.uid!==S.me?`<span><span class="ctx-l">Gerente</span> <b>${esc(S.cur.quem||"…")}</b></span>`:""}<span><span class="ctx-l">Ano</span> <b>${y}</b></span></div></th></tr>`;
+  const ctx=`<tr class="ctx"><th colspan="${nCols}"><div class="ctx-in"><span><span class="ctx-l">Empresa</span> <b>${esc(ci.emp!=null?ci.emp+(ci.empNome?" – "+ci.empNome:""):"—")}</b></span><span><span class="ctx-l">Obra</span> <b>${esc(obraLbl(S.cur.o,ci))}</b></span><span><span class="ctx-l">Base</span> ${esc(ci.tipo||"—")}</span>${!meuCur()?`<span><span class="ctx-l">Gerente</span> <b>${esc(S.cur.quem||"…")}</b></span>`:S.cur.compart?`<span><span class="ctx-l">Compartilhado com</span> <b>${esc(S.cur.quem||"colega da mesma área")}</b></span>`:""}<span><span class="ctx-l">Ano</span> <b>${y}</b></span></div></th></tr>`;
   let h=`<thead>${ctx}<tr class="band"><th class="c-desc"><span class="hm-tg hm-main" role="group" aria-label="Detalhar meses do histórico">Detalhar meses: <button class="btn sm${H25?" on":""}" data-hm="a25" aria-pressed="${H25}">2025</button><button class="btn sm${H26?" on":""}" data-hm="a26" aria-pressed="${H26}">2026</button><button class="btn sm${H25&&H26?" on":""}" data-hm="ambos" aria-pressed="${H25&&H26}">Ambos</button></span></th><th class="ref fz fzb1" colspan="3">2025 · jan–dez</th><th class="ref fz fzb2" colspan="3">2026 · jan–set</th>${H25?`<th class="ref hmb" colspan="12">2025 · mês a mês</th>`:""}${H26?`<th class="ref hmb" colspan="9">2026 · mês a mês</th>`:""}<th></th><th></th><th colspan="12">${y} · valores mensais (R$)</th><th colspan="2"></th><th class="c-act"></th></tr>
   <tr class="cols"><th class="c-desc">Item da base modelo</th><th class="ref fz fz1">Total</th><th class="ref fz fz2" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz3" title="Meses com gasto (de 12)">Mes.</th><th class="ref fz fz4">Total</th><th class="ref fz fz5" title="Total dividido pela quantidade de meses com gasto">Média</th><th class="ref fz fz6" title="Meses com gasto (de 9)">Mes.</th>${H25?MES.map(m=>`<th class="ref hm">${m}/25</th>`).join(""):""}${H26?MES.slice(0,9).map(m=>`<th class="ref hm">${m}/26</th>`).join(""):""}<th class="c-flag" title="Como preencher os 12 meses deste ano">Como preencher</th><th title="Preço unitário do ano para itens medidos em UN, M ou M2">Preço un.</th>${MES.map(m=>`<th>${m}</th>`).join("")}<th>Total ${y}</th><th>vs 2026</th><th style="text-align:left" title="Campo livre, opcional">Observação e ações</th></tr></thead><tbody>`;
   const iniLinhas=h.length;
@@ -1318,9 +1328,51 @@ $("#obs").addEventListener("input",()=>{S.cur.doc.obs=$("#obs").value;changed()}
 
 /* salvar */
 let saving=null;
+/* ---------- orçamento compartilhado entre gerentes da MESMA área na MESMA obra (ex.: Jurídico) ---------- */
+async function carregarColegas(){S.colByO=new Map();if(S.owner||S.offline||!(window.ORC_HOOKS&&window.ORC_HOOKS.orcColegas))return;
+  try{(await window.ORC_HOOKS.orcColegas()||[]).forEach(c=>{const L=S.colByO.get(c.o)||[];L.push(c);S.colByO.set(c.o,L)})}catch(e){console.warn("colegas",e)}}
+/* dono do documento usado na obra: o mesmo para os dois colegas (menor uid entre os orçamentos já iniciados) */
+function donoDoc(o){if(S.owner)return S.me;const L=(S.colByO&&S.colByO.get(o))||[];if(!L.length)return S.me;
+  const c=L.map(x=>x.uid);if(S.myOrc&&S.myOrc[o])c.push(S.me);return c.sort()[0]}
+const colegaDe=(o,uid)=>((S.colByO&&S.colByO.get(o))||[]).find(x=>x.uid===uid);
+/* resumo (status/totais) do orçamento que vale para a obra */
+function orcVis(o){const d=donoDoc(o);return d===S.me?(S.myOrc||{})[o]:colegaDe(o,d)}
+function guardarVis(cur,p){if(cur.uid===S.me){S.myOrc[cur.o]=p;return}const c=colegaDe(cur.o,cur.uid);if(c){c.status=p.status;c.atualizadoEm=p.atualizadoEm;c.totais=p.totais}}
+const CAMPOS_M=["v","pr","ext","sub","flag","lobs","rev"];
+const cloneJ=x=>JSON.parse(JSON.stringify(x==null?{}:x));
+function marcarBase(cur,raw){cur.base={};CAMPOS_M.forEach(k=>cur.base[k]=cloneJ(raw&&raw[k]));cur.base.obs=(raw&&raw.obs)||"";cur.baseEm=(raw&&raw.atualizadoEm)||null}
+/* gerente com rascunho próprio numa obra que já tinha orçamento do colega: traz os valores dele (sem apagar nada) */
+function juntarMeuRascunho(cur){const meu=(S.myOrc||{})[cur.o];if(!meu||cur.uid===S.me)return;let n=0;
+  CAMPOS_M.filter(k=>k!=="rev").forEach(k=>{const src=meu[k]||{};cur.doc[k]=cur.doc[k]||{};Object.keys(src).forEach(key=>{if(cur.doc[k][key]===undefined){cur.doc[k][key]=cloneJ(src[key]);n++}})});
+  if(n&&cur.editable){cur.dirty=true;setTimeout(()=>{try{changed()}catch(e){}},50);toast("Os valores que você já tinha digitado nesta obra foram juntados ao orçamento compartilhado.")}}
+/* grava sem perder o que outra pessoa salvou no mesmo orçamento enquanto esta tela estava aberta:
+   parte do que está no banco e reaplica só o que ESTA tela mudou desde que abriu (ou salvou por último) */
+async function gravarOrc(cur,p){const path=`gerentes/${cur.uid}/orc/${cur.o}`;let r=null;
+  try{const rs=await S.db.doc(path).get();r=rs.exists?rs.data():null}catch(e){r=null}
+  if(r&&cur.base&&(r.atualizadoEm||null)!==(cur.baseEm||null)){
+    if(travado(r.status)&&!S.owner)throw new Error("travado");
+    const b=cur.base;CAMPOS_M.forEach(k=>{const loc=p[k]||{},bas=b[k]||{},rem=cloneJ(r[k]);
+      new Set([...Object.keys(loc),...Object.keys(bas)]).forEach(key=>{if(JSON.stringify(loc[key])!==JSON.stringify(bas[key])){if(loc[key]===undefined)delete rem[key];else rem[key]=cloneJ(loc[key])}});
+      cur.doc[k]=rem});
+    if((p.obs||"")===(b.obs||""))cur.doc.obs=r.obs||"";else cur.doc.obs=p.obs;
+    const st=p.status;p={...payloadFrom(cur),status:st,atualizadoEm:p.atualizadoEm||nowISO(),enviadoEm:p.enviadoEm||null};
+    if(S.cur===cur){try{if($("#obs"))$("#obs").value=cur.doc.obs||"";renderGrid();renderSummary()}catch(e){}}
+  }
+  await S.db.doc(path).set(p);marcarBase(cur,p);return p}
+/* traz para a tela o que o colega (ou o Regional) salvou, quando não há alteração pendente aqui */
+async function sincronizarCur(){const cur=S.cur;if(!cur||cur.dirty||saving||!(cur.compart||S.voltarPara==="reg"))return;
+  try{const rs=await S.db.doc(`gerentes/${cur.uid}/orc/${cur.o}`).get();if(!rs.exists||S.cur!==cur||cur.dirty)return;const r=rs.data();
+    if((r.atualizadoEm||null)===(cur.baseEm||null))return;
+    CAMPOS_M.forEach(k=>cur.doc[k]=cloneJ(r[k]));cur.doc.obs=r.obs||"";["status","atualizadoEm","enviadoEm","validadoEm","validadoPor","devolucao"].forEach(k=>cur.doc[k]=r[k]===undefined?cur.doc[k]:r[k]);
+    cur.editable=(cur.uid===S.me||cur.compart||S.voltarPara==="reg")&&!travado(cur.doc.status);marcarBase(cur,r);guardarVis(cur,r);
+    if($("#obs")){$("#obs").value=cur.doc.obs||"";$("#obs").disabled=!cur.editable}renderStatus();renderGrid();renderSummary();toast("Atualizado com o que "+(cur.quem||"o colega")+" salvou.")}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sincronizarCur()});
+setInterval(sincronizarCur,60000);
+
 function payload(){
   const {doc,lines}=S.cur;const ext={};
   lines.forEach(l=>{if(l.kind==="leaf"&&l.extra&&(doc.v[l.key]||doc.pr[l.key]||doc.ext[l.key]))ext[l.key]={d:l.desc,un:l.un,item:l.item||""}});
+  {const ks=new Set(lines.map(l=>l.key));Object.keys(doc.ext||{}).forEach(k=>{if(!ext[k]&&!ks.has(k)&&(doc.v[k]||doc.pr[k]))ext[k]=doc.ext[k]})}
   doc.ext=ext;
   return {o:doc.o,tipo:doc.tipo,status:doc.status,v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},obs:doc.obs,lobs:doc.lobs||{},totais:docTotals(doc,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null,rev:doc.rev||{}};
 }
@@ -1329,8 +1381,8 @@ async function save(){
   if(saving){await saving;return save()}
   S.cur.dirty=false;const cur=S.cur;const p=payload();
   $("#save-state").textContent="Salvando…";
-  saving=S.db.doc(`gerentes/${cur.uid}/orc/${cur.o}`).set(p).then(()=>{cur.doc.atualizadoEm=p.atualizadoEm;S.myOrc[cur.o]=p;if(S.cur===cur){$("#save-state").textContent="Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});renderStatus()}})
-   .catch(err=>{cur.dirty=true;$("#save-state").className="save-state err";$("#save-state").textContent=err&&err.code==="invalid_argument"?"Sem permissão para salvar. Peça acesso de Colaborador à Controladoria.":"Não foi possível salvar. Tentaremos de novo na próxima alteração.";})
+  saving=gravarOrc(cur,p).then(pf=>{cur.doc.atualizadoEm=pf.atualizadoEm;guardarVis(cur,pf);if(S.cur===cur){$("#save-state").textContent="Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});renderStatus()}})
+   .catch(err=>{cur.dirty=true;$("#save-state").className="save-state err";$("#save-state").textContent=err&&err.message==="travado"?"Este orçamento já foi enviado por "+(cur.quem||"outra pessoa")+". Recarregue a página.":err&&err.code==="invalid_argument"?"Sem permissão para salvar. Peça acesso de Colaborador à Controladoria.":"Não foi possível salvar. Tentaremos de novo na próxima alteração.";})
    .finally(()=>{saving=null});
   await saving;
 }
@@ -1366,7 +1418,7 @@ async function exportarMeuExcel(op){op=op||{anos:YEARS.slice(),todos:false,obras
   const r2=x=>Math.round((+x||0)*100)/100;
   for(const o of ids){const info=S.perfil.obras[o]||(S.catMap&&S.catMap.get(o)?{...catInfo(S.catMap.get(o)),todas:true}:null);if(!info)continue;
     const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();const hd=hs.exists?hs.data():null;
-    const ds=await S.db.doc(`gerentes/${S.me}/orc/${o}`).get();const raw=ds.exists?ds.data():{};
+    const ds=await S.db.doc(`gerentes/${S.owner?S.me:donoDoc(o)}/orc/${o}`).get();const raw=ds.exists?ds.data():{};
     const doc={v:raw.v||{},pr:raw.pr||{},sub:raw.sub||{},lobs:raw.lobs||{}};const lines=buildLines(info.tipo,hd,extOrf(raw.ext,raw.v));const prods=produtosDaObra(hd,lines,o,info.tipo);
     const cur={uid:S.me,o,info,doc:{sub:JSON.parse(JSON.stringify(doc.sub))},lines,editable:true};applyRules(cur);
     lines.filter(l=>l.kind==="leaf"&&(S.owner||l.mine)&&(!prods||!l.P||l.extra||prods.has(l.P))).forEach(l=>{
@@ -1467,7 +1519,7 @@ function sendFlow(){
   box.innerHTML=`<span class="confirm"><span class="muted">Enviar ${YEARS.map(y=>y+": R$ "+f0(t[y])).join(" · ")}? Depois de enviado, só a Controladoria reabre.</span><button class="btn primary" id="send-ok">Confirmar envio</button><button class="btn" id="send-no">Cancelar</button></span>`;
   $("#send-no").onclick=restoreSend;
   $("#send-ok").onclick=async()=>{$("#send-ok").disabled=true;await flush();const prev=S.cur.doc.status;S.cur.doc.status="enviado";S.cur.doc.enviadoEm=nowISO();S.cur.doc.validadoEm=null;S.cur.doc.validadoPor=null;
-    try{const pl=payload();await S.db.doc(`gerentes/${S.cur.uid}/orc/${S.cur.o}`).set(pl);await saveVersion(S.cur.uid,S.cur.o,pl,"Envio").catch(()=>{});S.cur.dirty=false;restoreSend();toast("Orçamento enviado à Controladoria");if(S.offline)offlineAfterSend();else await loadMine();}
+    try{const pl=await gravarOrc(S.cur,payload());await saveVersion(S.cur.uid,S.cur.o,pl,"Envio").catch(()=>{});S.cur.dirty=false;restoreSend();toast("Orçamento enviado à Controladoria");if(S.offline)offlineAfterSend();else await loadMine();}
     catch(err){S.cur.doc.status=prev;S.cur.doc.enviadoEm=null;restoreSend();toast("Não foi possível enviar. Verifique sua conexão e tente de novo.")}};
 }
 function restoreSend(){$("#send-box").innerHTML=`<button class="btn primary" id="btn-send">Enviar para a Controladoria</button>`;renderStatus()}

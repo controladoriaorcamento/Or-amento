@@ -40,6 +40,7 @@
   /* tabela de acessos (aba "3. Gerentes"), gravada quando a Controladoria carrega a CONFIGURAÇÃO */
   window.ORC_HOOKS={
     /* índice dos orçamentos salvos: obra → [{uid,status,atualizado,t27,t28,t29}] (só admin enxerga todos) */
+    orcColegas:async()=>{const r=await sb.rpc("orc_colegas");if(r.error){console.warn("orc_colegas",r.error);return []}return r.data||[]},
     regionalPainel:async()=>{const r=await sb.rpc("regional_painel");if(r.error){console.warn("regional_painel",r.error);return null}return r.data},
     orcIndex:async()=>{const out=[];let from=0;for(;;){const {data,error}=await sb.from("docs").select("path,status:data->>status,t27:data->totais->>2027,t28:data->totais->>2028,t29:data->totais->>2029,updated_at").like("path","gerentes/%/orc/%").order("path").range(from,from+999);if(error)break;
       data.forEach(r=>{const m=/^gerentes\/([^/]+)\/orc\/([^/]+)$/.exec(r.path);if(m)out.push({uid:m[1],o:m[2],status:r.status,atualizado:r.updated_at,t:{"2027":+r.t27||0,"2028":+r.t28||0,"2029":+r.t29||0}})});if(data.length<1000)break;from+=1000}return out},
