@@ -38,7 +38,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;backgroun
 .brand{display:flex;align-items:baseline;gap:10px;min-width:0}
 .brand h1{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0;letter-spacing:-.01em}
 .brand span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}
+nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
 .tab{border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
 button{font:inherit;cursor:pointer}
@@ -687,8 +687,8 @@ function applyRules(cur){
   const areas=(cur.info.areas||[]);const owner=S.owner&&cur.uid===S.me;
   cur.lines.forEach(l=>{if(l.kind!=="leaf")return;const r=ruleFor(cur.info.tipo,l,cur.o);
     l.area=r&&r[1]||"";l.obrigRegra=!!(r&&r[0]==="Sim");l.obrig=OBRIG_TODOS?!isQty(l):l.obrigRegra;
-    l.mine=owner||(!!l.area&&(!areas.length||areas.includes(l.area)));const alheio=cur.inj&&cur.inj.de&&cur.inj.de[l.key];l.canEdit=cur.editable&&l.mine&&!alheio;
-    l.lockMsg=alheio?"Preenchido por "+alheio+" (somente leitura aqui; para ajustar, abra o orçamento dessa pessoa no Acompanhamento)":!l.area?"Sem regra definida na Bases - Gerais":(l.canEdit?"":"Preenchido pela área "+l.area);
+    l.mine=owner||(!!l.area&&(!areas.length||areas.includes(l.area)));const srcD=cur.inj&&cur.inj.src&&cur.inj.src[l.key];const alheio=srcD&&(srcD.nome||"outra pessoa");const ajusta=!srcD||podeAjustarOutro(srcD);l.canEdit=cur.editable&&l.mine&&ajusta;l.donoNome=alheio||"";
+    l.lockMsg=alheio&&!ajusta?"Preenchido por "+alheio+" — já enviado à Controladoria (somente leitura)":!l.area?"Sem regra definida na Bases - Gerais":(l.canEdit?"":"Preenchido pela área "+l.area);
     if(l.orf){l.mine=true;l.canEdit=cur.editable;l.lockMsg=""}
     if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){{const cs=(S.subR&&S.subR.c&&S.subR.c[`${cur.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>cs[i]?{id:"p"+i,n,c:cs[i]}:{id:"p"+i,n})}}
   });
@@ -725,12 +725,11 @@ async function boot(){
   try{const dp=await db.doc("regras/depara").get();S.dpR=dp.exists?dp.data():null}catch(e){S.dpR=null}
   try{const sb=await db.doc("regras/subitens").get();S.subR=sb.exists?sb.data():null}catch(e){S.subR=null}
   $("#v-fill").hidden=false;
+  /* Gerente Regional: as obras dele entram na tela Preencher (visão completa) e há a aba Regional com o resumo */
+  if(!S.owner&&!S.offline){try{const pr=window.ORC_HOOKS&&window.ORC_HOOKS.regionalPainel?await window.ORC_HOOKS.regionalPainel():null;if(pr&&pr.obras&&pr.obras.length)S.regional=pr}catch(e){console.warn("regional",e)}}
   await loadMine();
   if(S.owner)loadSolic().catch(()=>{});
-  /* Gerente Regional: aba própria */
-  try{const pr=window.ORC_HOOKS&&window.ORC_HOOKS.regionalPainel?await window.ORC_HOOKS.regionalPainel():null;
-    if(pr&&pr.obras&&pr.obras.length){S.regional=pr;$("#tabs").hidden=false;$("#tab-reg").hidden=false;if(!S.owner){$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}
-      if(!$("#fill-empty").hidden){$("#req-card").hidden=true;$("#tab-fill").hidden=true;showTab("reg")}}}catch(e){console.warn("regional",e)}
+  if(S.regional){$("#tabs").hidden=false;$("#tab-reg").hidden=false;$("#tab-fill").hidden=false;if(!S.owner){$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}}
 }
 /* ---------- aba Regional ---------- */
 async function carregarRegional(){const m=$("#rg-res");if(!m)return;m.textContent="Carregando…";
@@ -751,11 +750,12 @@ function desenharRegional(){const q=semAc($("#rg-q").value||"").trim(),st=$("#rg
   const cont=k=>L.filter(r=>(r.oc?r.oc.status||"rascunho":"nao")===k).length;
   $("#rg-res").innerHTML=`<b>${new Set(L.map(r=>r.o)).size}</b> obra(s) · ${L.length} orçamento(s) por área · não começou: ${cont("nao")} · rascunho: ${cont("rascunho")} · devolvido: ${cont("reaberto")} · enviado: ${cont("enviado")} · validado: ${cont("validado")}`;
   $("#rg-tbl").innerHTML=`<thead><tr><th>Regional</th><th>Empresa</th><th>Obra</th><th>Quem planeja</th><th>Gerente</th><th>Situação</th><th class="num">Total 2027</th><th>Atualizado</th><th></th></tr></thead><tbody>${V.slice(0,1500).map(r=>{const s2=r.oc?r.oc.status||"rascunho":"nao";const t27=r.oc&&r.oc.totais?r.oc.totais["2027"]:null;
-    return `<tr><td>${esc(r.reg)}</td><td>${esc(r.i.emp||"")}${r.i.empNome?" – "+esc(r.i.empNome):""}</td><td><span style="font-family:var(--f-mono)">${esc(r.i.obra||r.o)}</span> ${esc(r.i.nome||"")}</td><td>${esc(r.dep||"—")}</td><td>${esc(r.nome||"")}</td><td>${s2==="nao"?'<span class="muted">ainda não começou</span>':`<span class="pill ${esc(s2)}">${esc(ST_NOME[s2]||s2)}</span>`}</td><td class="num">${t27!=null?f0(t27):"—"}</td><td class="muted">${r.oc&&r.oc.atualizadoEm?fmtDate(r.oc.atualizadoEm):"—"}</td><td>${r.oc?`<button class="btn sm" data-rgab="${esc(r.oc.uid)}|${esc(r.o)}">${travado(s2)?"Ver":"Abrir e ajustar"}</button>`:""}</td></tr>`}).join("")||'<tr><td colspan="9" class="muted">Nada encontrado.</td></tr>'}</tbody>`}
+    return `<tr><td>${esc(r.reg)}</td><td>${esc(r.i.emp||"")}${r.i.empNome?" – "+esc(r.i.empNome):""}</td><td><span style="font-family:var(--f-mono)">${esc(r.i.obra||r.o)}</span> ${esc(r.i.nome||"")}</td><td>${esc(r.dep||"—")}</td><td>${esc(r.nome||"")}</td><td>${s2==="nao"?'<span class="muted">ainda não começou</span>':`<span class="pill ${esc(s2)}">${esc(ST_NOME[s2]||s2)}</span>`}</td><td class="num">${t27!=null?f0(t27):"—"}</td><td class="muted">${r.oc&&r.oc.atualizadoEm?fmtDate(r.oc.atualizadoEm):"—"}</td><td><button class="btn sm" data-rgab="${esc(r.oc?r.oc.uid:"")}|${esc(r.o)}">${travado(s2)?"Ver":"Abrir e preencher"}</button></td></tr>`}).join("")||'<tr><td colspan="9" class="muted">Nada encontrado.</td></tr>'}</tbody>`}
 document.addEventListener("input",e=>{if(e.target.id==="rg-q")desenharRegional()});
 document.addEventListener("change",e=>{if(e.target.id==="rg-st")desenharRegional()});
 document.addEventListener("click",async e=>{if(e.target.id==="rg-ref"){carregarRegional();return}
-  const b=e.target.closest("[data-rgab]");if(!b)return;const [uid,o]=b.dataset.rgab.split("|");await flush();S.voltarPara="reg";showTab("fill");$("#tab-fill").hidden=false;$("#fill-empty").hidden=true;$("#fill-main").hidden=false;await openObra(uid,o,true)});
+  const b=e.target.closest("[data-rgab]");if(!b)return;const [uid,o]=b.dataset.rgab.split("|");await flush();S.voltarPara=null;showTab("fill");$("#tab-fill").hidden=false;$("#fill-empty").hidden=true;$("#fill-main").hidden=false;
+  if(S.perfil&&S.perfil.obras&&S.perfil.obras[o]){await irObra(o)}else{S.voltarPara="reg";await openObra(uid,o,true)}});
 $("#tab-reg").addEventListener("click",async()=>{await flush();showTab("reg")});
 /* Sem uma obra definida pelos filtros, a tela não mostra obra nenhuma (evita preencher a obra errada) */
 /* navegação entre as obras do filtro: ◀ anterior · lista · próxima ▶ */
@@ -783,6 +783,9 @@ async function loadMine(){
   if(S.owner){await loadCat();(S.cat.obras||[]).forEach(c=>{if(!S.perfil.obras[c[0]])S.perfil.obras[c[0]]={...catInfo(c),todas:true}})}
   let obras=Object.entries(S.perfil.obras);
   if(!S.owner&&obras.length){const keep=[];for(const [o,i] of obras){try{if(await temItensMeus(o,i))keep.push([o,i])}catch(e){keep.push([o,i])}}obras=keep}
+  /* obras do Gerente Regional: todas as áreas, com a visão completa (o que cada gerente preencheu) */
+  if(!S.owner&&S.regional&&S.regional.obras){const ri=S.regional.info||{};const tem=new Set(obras.map(x=>x[0]));
+    S.regional.obras.forEach(x=>{if(tem.has(x.o))return;const i={...(ri[x.o]||{nome:x.o}),todas:true,reg:true,regNome:x.reg||"",areas:[]};S.perfil.obras[x.o]=i;obras.push([x.o,i]);tem.add(x.o)})}
   if(!obras.length){$("#fill-empty").hidden=false;$("#fill-main").hidden=true;$("#req-card").hidden=!!S.owner||!!S.offline;
     return}
   $("#fill-empty").hidden=true;$("#fill-main").hidden=false;$("#req-card").hidden=true;$("#btn-req").hidden=!!S.owner||!!S.offline;
@@ -977,7 +980,7 @@ async function openObra(uid,o,fromAdm){
   const raw=ds.exists?ds.data():{};
   const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,rev:JSON.parse(JSON.stringify(raw.rev||{})),exists:ds.exists};
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
-  const ov=(!fromAdm&&S.owner&&!S.offline)?await carregarOutros(o,uid):null;const inj=ov?injetarOutros(doc,ov):null;
+  const ov=(!fromAdm&&(S.owner||info.reg)&&!S.offline)?await carregarOutros(o,uid):null;const inj=ov?injetarOutros(doc,ov):null;
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
   const editable= (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,ov,inj,prods:produtosDaObra(hist,lines,o,info.tipo)};applyRules(S.cur);
@@ -994,7 +997,7 @@ async function openObra(uid,o,fromAdm){
     let nmQ="gerente";if(S.voltarPara==="reg"){const oc=((S.regional||{}).orcs||[]).find(x=>x.uid===uid&&x.o===o);nmQ=(oc&&(oc.nome||oc.email))||"gerente"}else{const ps=await S.user.profiles([uid]);nmQ=(ps[uid]&&ps[uid].name)||"gerente"}
     S.cur.quem=nmQ;$("#viewing-as").textContent=(S.voltarPara==="reg"&&S.cur.editable?"Ajustando o orçamento de ":"Visualizando o orçamento de ")+nmQ+" · ";
     const back=document.createElement("button");back.className="btn sm";back.textContent=S.voltarPara==="fill"?"Voltar à minha visão":S.voltarPara==="reg"?"Voltar à aba Regional":"Voltar ao Acompanhamento";back.onclick=async()=>{await flush();if(S.voltarPara==="fill"){S.voltarPara=null;S.cur=null;await loadMine()}else if(S.voltarPara==="reg"){showTab("reg")}else showTab("adm")};$("#viewing-as").append(back);
-  } else {$("#sel-obra").disabled=false;$("#viewing-as").textContent=ov&&ov.length?`Visão completa da obra: inclui o que ${ov.length} pessoa(s) preencheram (${[...new Set(ov.map(x=>x.nome))].slice(0,3).join(", ")}${ov.length>3?"…":""}) — esses itens aparecem só para leitura. · `:compart?"Orçamento compartilhado com "+S.cur.quem+" (mesma área): o que um salva, o outro vê. · ":""}
+  } else {$("#sel-obra").disabled=false;$("#viewing-as").innerHTML=(info.reg?`<span class="pill reg-flag">Gerente Regional${info.regNome?" · "+esc(info.regNome):""}</span> `:"")+(ov&&ov.length?esc(`Visão completa da obra: inclui o que ${ov.length} pessoa(s) preencheram (${[...new Set(ov.map(x=>x.nome))].slice(0,3).join(", ")}${ov.length>3?"…":""}). Itens ainda não enviados podem ser ajustados aqui; os enviados à Controladoria ficam travados. · `):esc(compart?"Orçamento compartilhado com "+S.cur.quem+" (mesma área): o que um salva, o outro vê. · ":""))}
   try{renderNavObra()}catch(e){}
   if(!fromAdm)aplicarFiltroLinhas(true);else{
     /* conferência: limpa todos os filtros para mostrar exatamente o que o gerente preencheu */
@@ -1014,7 +1017,7 @@ function renderStatus(){
   const mot=st==="reaberto"&&d.devolucao&&d.devolucao.motivo?` <span style="font-size:12px;color:var(--bad)"><b>Motivo da devolução:</b> ${esc(d.devolucao.motivo)}</span>`:"";
   $("#obra-status").innerHTML=`<span class="pill ${st}">${lab}</span> <span class="muted" style="font-size:12px">${esc(quando)}</span>${mot}`;
   const mine=meuCur()||(S.voltarPara==="reg"&&S.cur.editable!==undefined&&!S.owner);
-  $("#send-box").hidden=!mine||travado(st);
+  $("#send-box").hidden=!mine||travado(st)||!!(S.cur.info&&S.cur.info.reg&&!S.cur.doc.exists);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
   renderGuia();
@@ -1333,12 +1336,32 @@ let saving=null;
 const CAMPOS_OV=["v","pr","sub","ext","lobs","flag"];
 async function carregarOutros(o,uid){if(!(window.ORC_HOOKS&&window.ORC_HOOKS.orcDaObra))return null;
   try{return (await window.ORC_HOOKS.orcDaObra(o)||[]).filter(x=>x.uid!==uid)}catch(e){console.warn("visão da obra",e);return null}}
-function injetarOutros(doc,ov){const inj={f:{},de:{}};CAMPOS_OV.forEach(f=>{inj.f[f]=new Set();doc[f]=doc[f]||{}});
-  (ov||[]).forEach(d=>CAMPOS_OV.forEach(f=>Object.keys(d[f]||{}).forEach(k=>{if(doc[f][k]!==undefined)return;doc[f][k]=cloneJ(d[f][k]);inj.f[f].add(k);const b=String(k).split("#")[0];if(!inj.de[b])inj.de[b]=d.nome||"outra pessoa"})));
+const baseK=k=>String(k).split("#")[0];
+/* cada item (chave base) tem UM dono: se eu já tenho algo nele, é meu; senão, do orçamento mais recente que tem valor nele */
+function injetarOutros(doc,ov){const inj={f:{},de:{},src:{}};CAMPOS_OV.forEach(f=>{inj.f[f]=new Set();doc[f]=doc[f]||{}});
+  const meus=new Set();CAMPOS_OV.forEach(f=>Object.keys(doc[f]).forEach(k=>meus.add(baseK(k))));
+  (ov||[]).forEach(d=>CAMPOS_OV.forEach(f=>Object.keys(d[f]||{}).forEach(k=>{const b=baseK(k);if(meus.has(b))return;if(inj.src[b]&&inj.src[b].uid!==d.uid)return;
+    inj.src[b]=d;doc[f][k]=cloneJ(d[f][k]);inj.f[f].add(k);if(!inj.de[b])inj.de[b]=d.nome||"outra pessoa"})));
   return inj}
-function tirarOutros(cur){const I=cur.inj&&cur.inj.f;if(!I)return;CAMPOS_OV.forEach(f=>(I[f]||new Set()).forEach(k=>{if(cur.doc[f])delete cur.doc[f][k]}));cur.inj=null}
-function semAlheios(cur,o){const I=cur&&cur.inj&&cur.inj.f;if(!I)return o;const out={...o};
-  CAMPOS_OV.forEach(f=>{if(!I[f]||!I[f].size||!o[f])return;const c={};Object.keys(o[f]).forEach(k=>{if(!I[f].has(k))c[k]=o[f][k]});out[f]=c});return out}
+/* item de outra pessoa pode ser ajustado aqui enquanto o orçamento dela não foi enviado (master e Regional) */
+const podeAjustarOutro=d=>!!d&&!travado(d.status)&&(S.owner||S.voltarPara==="regobra"||(S.cur&&S.cur.info&&S.cur.info.reg));
+function tirarOutros(cur){const I=cur.inj;if(!I)return;CAMPOS_OV.forEach(f=>{if(!cur.doc[f])return;Object.keys(cur.doc[f]).forEach(k=>{if(I.src[baseK(k)])delete cur.doc[f][k]})});cur.inj=null}
+/* o que é de outra pessoa (item com dono = outro orçamento) nunca vai para o MEU orçamento */
+function semAlheios(cur,o){const I=cur&&cur.inj;if(!I||!I.src)return o;const out={...o};
+  CAMPOS_OV.forEach(f=>{if(!o[f])return;const c={};Object.keys(o[f]).forEach(k=>{if(!I.src[baseK(k)])c[k]=o[f][k]});out[f]=c});return out}
+/* grava nos orçamentos dos outros os itens ajustados aqui (só os que mudaram; mescla com o que está no banco) */
+async function gravarOutros(cur){if(!cur.inj||!cur.ov)return;const n0={ok:0,trav:0};
+  for(const d of cur.ov){const bases=Object.keys(cur.inj.src).filter(b=>cur.inj.src[b].uid===d.uid);if(!bases.length)continue;
+    const muda={};let tem=false;
+    CAMPOS_OV.forEach(f=>{const loc={},bas={};Object.keys(cur.doc[f]||{}).forEach(k=>{if(bases.includes(baseK(k)))loc[k]=cur.doc[f][k]});Object.keys(d[f]||{}).forEach(k=>{if(bases.includes(baseK(k)))bas[k]=d[f][k]});
+      new Set([...Object.keys(loc),...Object.keys(bas)]).forEach(k=>{if(JSON.stringify(loc[k])!==JSON.stringify(bas[k])){(muda[f]=muda[f]||{})[k]=loc[k]===undefined?null:loc[k];tem=true}})});
+    if(!tem)continue;
+    const path=`gerentes/${d.uid}/orc/${cur.o}`;const rs=await S.db.doc(path).get();if(!rs.exists)continue;const r=rs.data();
+    if(travado(r.status)){n0.trav++;continue}
+    CAMPOS_OV.forEach(f=>{r[f]=r[f]||{};Object.entries(muda[f]||{}).forEach(([k,v])=>{if(v===null)delete r[f][k];else r[f][k]=cloneJ(v)})});
+    r.totais=docTotals({v:r.v||{},pr:r.pr||{}},cur.lines);r.atualizadoEm=nowISO();
+    await S.db.doc(path).set(r);CAMPOS_OV.forEach(f=>{d[f]=cloneJ(r[f])});d.atualizadoEm=r.atualizadoEm;n0.ok++}
+  if(n0.trav)toast("Algum item não foi salvo: o orçamento dessa pessoa já foi enviado à Controladoria.");return n0}
 async function sincronizarOutros(){const cur=S.cur;if(!cur||!cur.ov||cur.dirty||saving)return;
   const nv=await carregarOutros(cur.o,cur.uid);if(!nv||S.cur!==cur||cur.dirty)return;
   const sig=L=>JSON.stringify(L.map(x=>[x.uid,x.atualizadoEm]));if(sig(nv)===sig(cur.ov))return;
@@ -1402,7 +1425,8 @@ async function save(){
   if(saving){await saving;return save()}
   S.cur.dirty=false;const cur=S.cur;const p=payload();
   $("#save-state").textContent="Salvando…";
-  saving=gravarOrc(cur,p).then(pf=>{cur.doc.atualizadoEm=pf.atualizadoEm;guardarVis(cur,pf);if(S.cur===cur){$("#save-state").textContent="Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});renderStatus()}})
+  const vazioMeu=cur.inj&&!cur.doc.exists&&!Object.keys(p.v||{}).length&&!Object.keys(p.lobs||{}).length&&!Object.keys(p.ext||{}).length&&!(p.obs||"").trim();
+  saving=(vazioMeu?Promise.resolve(p):gravarOrc(cur,p).then(pf=>{cur.doc.exists=true;return pf})).then(async pf=>{await gravarOutros(cur);return pf}).then(pf=>{cur.doc.atualizadoEm=pf.atualizadoEm;guardarVis(cur,pf);if(S.cur===cur){$("#save-state").textContent="Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});renderStatus()}})
    .catch(err=>{cur.dirty=true;$("#save-state").className="save-state err";$("#save-state").textContent=err&&err.message==="travado"?"Este orçamento já foi enviado por "+(cur.quem||"outra pessoa")+". Recarregue a página.":err&&err.code==="invalid_argument"?"Sem permissão para salvar. Peça acesso de Colaborador à Controladoria.":"Não foi possível salvar. Tentaremos de novo na próxima alteração.";})
    .finally(()=>{saving=null});
   await saving;
@@ -1707,17 +1731,19 @@ async function loadAdm(){
   S.acomp=rows;renderAcomp();
 }
 const acKey=r=>r.uid+"|"+r.o;
-const EST=[["rascunho","Em preenchimento"],["enviado","Aguardando validação"],["validado","Validadas"],["reaberto","Devolvidas"],["vazio","Não iniciadas"],["removidas","Removidas"]];
+const EST=[["enviado","Aguardando validação"],["validado","Validadas"],["removidas","Removidas"]];
+/* Acompanhamento mostra só o que já foi ENVIADO à Controladoria (o resto ainda está com os gerentes) */
+const ST_ACOMP=new Set(["enviado","validado"]);
 function renderAcomp(){
   const ocl=(S.acOcultos&&S.acOcultos.k)||{};S.acEst=S.acEst||new Set();S.acSel=S.acSel||new Set();
-  const stOf=r=>r.orc?r.orc.status:"vazio";const cnt0={removidas:0};S.acomp.forEach(r=>{if(ocl[acKey(r)])cnt0.removidas++;else cnt0[stOf(r)]=(cnt0[stOf(r)]||0)+1});
+  const stOf=r=>r.orc?r.orc.status:"vazio";const cnt0={removidas:0};S.acomp.forEach(r=>{if(!ST_ACOMP.has(stOf(r)))return;if(ocl[acKey(r)])cnt0.removidas++;else cnt0[stOf(r)]=(cnt0[stOf(r)]||0)+1});
   $("#est-list").innerHTML=EST.map(([v,lb])=>`<label class="sl-it${S.acEst.has(v)?" on":""}"><input type="checkbox" data-est="${v}" ${S.acEst.has(v)?"checked":""}><span>${lb}</span><span class="muted">${cnt0[v]||0}</span></label>`).join("");
   $("#est-dd .sl-txt").textContent=!S.acEst.size?"Todos os estágios":S.acEst.size===1?EST.find(x=>S.acEst.has(x[0]))[1]:`${S.acEst.size} estágios`;$("#est-dd").classList.toggle("ativo",S.acEst.size>0);
   const qq=semAc(($("#acomp-q")&&$("#acomp-q").value)||"").trim();const verRem=S.acEst.size===1&&S.acEst.has("removidas");
-  const rows=S.acomp.filter(r=>{const rem=!!ocl[acKey(r)];if(S.acEst.size){if(rem){if(!S.acEst.has("removidas"))return false}else if(!S.acEst.has(stOf(r)))return false}else if(rem)return false;
+  const rows=S.acomp.filter(r=>{if(!ST_ACOMP.has(stOf(r)))return false;const rem=!!ocl[acKey(r)];if(S.acEst.size){if(rem){if(!S.acEst.has("removidas"))return false}else if(!S.acEst.has(stOf(r)))return false}else if(rem)return false;
     return !qq||semAc(`${r.nomeG} ${r.email} ${r.info.emp||""} ${r.info.empNome||""} ${r.info.obra||r.o} ${r.info.nome||""}`).includes(qq)});S.acRows=rows;
   if(verRem&&!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra removida do acompanhamento.</td></tr>`;return}
-  if(!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra neste filtro.</td></tr>`;return}
+  if(!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhum orçamento enviado à Controladoria neste filtro. Os que ainda estão em preenchimento aparecem na tela Preencher (visão completa da obra).</td></tr>`;return}
   const nSel=[...S.acSel].length;
   const cnt={enviado:0,validado:0,rascunho:0,reaberto:0,vazio:0};rows.forEach(r=>cnt[r.orc?r.orc.status:"vazio"]=(cnt[r.orc?r.orc.status:"vazio"]||0)+1);
   const tot=YEARS.map(y=>sum(rows.map(r=>(r.orc&&r.orc.totais&&r.orc.totais[y])||0)));
