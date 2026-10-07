@@ -687,8 +687,8 @@ function applyRules(cur){
   const areas=(cur.info.areas||[]);const owner=S.owner&&cur.uid===S.me;
   cur.lines.forEach(l=>{if(l.kind!=="leaf")return;const r=ruleFor(cur.info.tipo,l,cur.o);
     l.area=r&&r[1]||"";l.obrigRegra=!!(r&&r[0]==="Sim");l.obrig=OBRIG_TODOS?!isQty(l):l.obrigRegra;
-    l.mine=owner||(!!l.area&&(!areas.length||areas.includes(l.area)));l.canEdit=cur.editable&&l.mine;
-    l.lockMsg=!l.area?"Sem regra definida na Bases - Gerais":(l.canEdit?"":"Preenchido pela área "+l.area);
+    l.mine=owner||(!!l.area&&(!areas.length||areas.includes(l.area)));const alheio=cur.inj&&cur.inj.de&&cur.inj.de[l.key];l.canEdit=cur.editable&&l.mine&&!alheio;
+    l.lockMsg=alheio?"Preenchido por "+alheio+" (somente leitura aqui; para ajustar, abra o orçamento dessa pessoa no Acompanhamento)":!l.area?"Sem regra definida na Bases - Gerais":(l.canEdit?"":"Preenchido pela área "+l.area);
     if(l.orf){l.mine=true;l.canEdit=cur.editable;l.lockMsg=""}
     if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){{const cs=(S.subR&&S.subR.c&&S.subR.c[`${cur.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>cs[i]?{id:"p"+i,n,c:cs[i]}:{id:"p"+i,n})}}
   });
@@ -977,9 +977,10 @@ async function openObra(uid,o,fromAdm){
   const raw=ds.exists?ds.data():{};
   const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,rev:JSON.parse(JSON.stringify(raw.rev||{})),exists:ds.exists};
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
+  const ov=(!fromAdm&&S.owner&&!S.offline)?await carregarOutros(o,uid):null;const inj=ov?injetarOutros(doc,ov):null;
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
   const editable= (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
-  S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,prods:produtosDaObra(hist,lines,o,info.tipo)};applyRules(S.cur);
+  S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,ov,inj,prods:produtosDaObra(hist,lines,o,info.tipo)};applyRules(S.cur);
   marcarBase(S.cur,raw);
   if(compart){const c=colegaDe(o,uid);S.cur.quem=(c&&c.nome)||"colega da mesma área";juntarMeuRascunho(S.cur)}
   semObra(false);S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}S.year="2027";
@@ -993,7 +994,7 @@ async function openObra(uid,o,fromAdm){
     let nmQ="gerente";if(S.voltarPara==="reg"){const oc=((S.regional||{}).orcs||[]).find(x=>x.uid===uid&&x.o===o);nmQ=(oc&&(oc.nome||oc.email))||"gerente"}else{const ps=await S.user.profiles([uid]);nmQ=(ps[uid]&&ps[uid].name)||"gerente"}
     S.cur.quem=nmQ;$("#viewing-as").textContent=(S.voltarPara==="reg"&&S.cur.editable?"Ajustando o orçamento de ":"Visualizando o orçamento de ")+nmQ+" · ";
     const back=document.createElement("button");back.className="btn sm";back.textContent=S.voltarPara==="fill"?"Voltar à minha visão":S.voltarPara==="reg"?"Voltar à aba Regional":"Voltar ao Acompanhamento";back.onclick=async()=>{await flush();if(S.voltarPara==="fill"){S.voltarPara=null;S.cur=null;await loadMine()}else if(S.voltarPara==="reg"){showTab("reg")}else showTab("adm")};$("#viewing-as").append(back);
-  } else {$("#sel-obra").disabled=false;$("#viewing-as").textContent=compart?"Orçamento compartilhado com "+S.cur.quem+" (mesma área): o que um salva, o outro vê. · ":""}
+  } else {$("#sel-obra").disabled=false;$("#viewing-as").textContent=ov&&ov.length?`Visão completa da obra: inclui o que ${ov.length} pessoa(s) preencheram (${[...new Set(ov.map(x=>x.nome))].slice(0,3).join(", ")}${ov.length>3?"…":""}) — esses itens aparecem só para leitura. · `:compart?"Orçamento compartilhado com "+S.cur.quem+" (mesma área): o que um salva, o outro vê. · ":""}
   try{renderNavObra()}catch(e){}
   if(!fromAdm)aplicarFiltroLinhas(true);else{
     /* conferência: limpa todos os filtros para mostrar exatamente o que o gerente preencheu */
@@ -1328,6 +1329,24 @@ $("#obs").addEventListener("input",()=>{S.cur.doc.obs=$("#obs").value;changed()}
 
 /* salvar */
 let saving=null;
+/* ---------- visão completa da obra (masters na tela Preencher): mostra, só para leitura, o que os outros preencheram ---------- */
+const CAMPOS_OV=["v","pr","sub","ext","lobs","flag"];
+async function carregarOutros(o,uid){if(!(window.ORC_HOOKS&&window.ORC_HOOKS.orcDaObra))return null;
+  try{return (await window.ORC_HOOKS.orcDaObra(o)||[]).filter(x=>x.uid!==uid)}catch(e){console.warn("visão da obra",e);return null}}
+function injetarOutros(doc,ov){const inj={f:{},de:{}};CAMPOS_OV.forEach(f=>{inj.f[f]=new Set();doc[f]=doc[f]||{}});
+  (ov||[]).forEach(d=>CAMPOS_OV.forEach(f=>Object.keys(d[f]||{}).forEach(k=>{if(doc[f][k]!==undefined)return;doc[f][k]=cloneJ(d[f][k]);inj.f[f].add(k);const b=String(k).split("#")[0];if(!inj.de[b])inj.de[b]=d.nome||"outra pessoa"})));
+  return inj}
+function tirarOutros(cur){const I=cur.inj&&cur.inj.f;if(!I)return;CAMPOS_OV.forEach(f=>(I[f]||new Set()).forEach(k=>{if(cur.doc[f])delete cur.doc[f][k]}));cur.inj=null}
+function semAlheios(cur,o){const I=cur&&cur.inj&&cur.inj.f;if(!I)return o;const out={...o};
+  CAMPOS_OV.forEach(f=>{if(!I[f]||!I[f].size||!o[f])return;const c={};Object.keys(o[f]).forEach(k=>{if(!I[f].has(k))c[k]=o[f][k]});out[f]=c});return out}
+async function sincronizarOutros(){const cur=S.cur;if(!cur||!cur.ov||cur.dirty||saving)return;
+  const nv=await carregarOutros(cur.o,cur.uid);if(!nv||S.cur!==cur||cur.dirty)return;
+  const sig=L=>JSON.stringify(L.map(x=>[x.uid,x.atualizadoEm]));if(sig(nv)===sig(cur.ov))return;
+  tirarOutros(cur);cur.ov=nv;cur.inj=injetarOutros(cur.doc,nv);cur.lines=buildLines(cur.info.tipo,cur.hist,extOrf(cur.doc.ext,cur.doc.v));applyRules(cur);
+  renderGrid();renderSummary();toast("Valores da obra atualizados com o que os gerentes salvaram.")}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sincronizarOutros()});
+setInterval(sincronizarOutros,60000);
+
 /* ---------- orçamento compartilhado entre gerentes da MESMA área na MESMA obra (ex.: Jurídico) ---------- */
 async function carregarColegas(){S.colByO=new Map();if(S.owner||S.offline||!(window.ORC_HOOKS&&window.ORC_HOOKS.orcColegas))return;
   try{(await window.ORC_HOOKS.orcColegas()||[]).forEach(c=>{const L=S.colByO.get(c.o)||[];L.push(c);S.colByO.set(c.o,L)})}catch(e){console.warn("colegas",e)}}
@@ -1355,6 +1374,7 @@ async function gravarOrc(cur,p){const path=`gerentes/${cur.uid}/orc/${cur.o}`;le
       new Set([...Object.keys(loc),...Object.keys(bas)]).forEach(key=>{if(JSON.stringify(loc[key])!==JSON.stringify(bas[key])){if(loc[key]===undefined)delete rem[key];else rem[key]=cloneJ(loc[key])}});
       cur.doc[k]=rem});
     if((p.obs||"")===(b.obs||""))cur.doc.obs=r.obs||"";else cur.doc.obs=p.obs;
+    if(cur.ov)cur.inj=injetarOutros(cur.doc,cur.ov);
     const st=p.status;p={...payloadFrom(cur),status:st,atualizadoEm:p.atualizadoEm||nowISO(),enviadoEm:p.enviadoEm||null};
     if(S.cur===cur){try{if($("#obs"))$("#obs").value=cur.doc.obs||"";renderGrid();renderSummary()}catch(e){}}
   }
@@ -1374,7 +1394,8 @@ function payload(){
   lines.forEach(l=>{if(l.kind==="leaf"&&l.extra&&(doc.v[l.key]||doc.pr[l.key]||doc.ext[l.key]))ext[l.key]={d:l.desc,un:l.un,item:l.item||""}});
   {const ks=new Set(lines.map(l=>l.key));Object.keys(doc.ext||{}).forEach(k=>{if(!ext[k]&&!ks.has(k)&&(doc.v[k]||doc.pr[k]))ext[k]=doc.ext[k]})}
   doc.ext=ext;
-  return {o:doc.o,tipo:doc.tipo,status:doc.status,v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},obs:doc.obs,lobs:doc.lobs||{},totais:docTotals(doc,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null,rev:doc.rev||{}};
+  const pu=semAlheios(S.cur,{v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},lobs:doc.lobs||{}});
+  return {o:doc.o,tipo:doc.tipo,status:doc.status,v:pu.v,pr:pu.pr,ext:pu.ext,sub:pu.sub,flag:pu.flag,obs:doc.obs,lobs:pu.lobs,totais:docTotals(pu,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null,rev:doc.rev||{}};
 }
 async function save(){
   if(!S.cur||!S.cur.editable||!S.cur.dirty)return;
@@ -1594,7 +1615,7 @@ $("#ver-box").addEventListener("click",async e=>{const b=e.target.closest("butto
     Object.assign(c.doc,{v:JSON.parse(JSON.stringify(v.v||{})),pr:JSON.parse(JSON.stringify(v.pr||{})),sub:JSON.parse(JSON.stringify(v.sub||{})),flag:JSON.parse(JSON.stringify(v.flag||{})),ext:JSON.parse(JSON.stringify(v.ext||{})),obs:v.obs||"",lobs:JSON.parse(JSON.stringify(v.lobs||{}))});
     c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v));applyRules(c);$("#obs").value=c.doc.obs;renderGrid();c.dirty=true;changed();toast("Versão restaurada. A versão anterior também foi guardada.");renderVersoes()}
 });
-function payloadFrom(c){const d=c.doc;return {o:d.o,tipo:d.tipo,status:d.status,v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},obs:d.obs,lobs:d.lobs||{},totais:docTotals(d,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm,validadoEm:d.validadoEm||null,validadoPor:d.validadoPor||null,devolucao:d.devolucao||null,rev:d.rev||{}}}
+function payloadFrom(c){const d=c.doc;const pu=semAlheios(c,{v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},lobs:d.lobs||{}});return {o:d.o,tipo:d.tipo,status:d.status,v:pu.v,pr:pu.pr,ext:pu.ext,sub:pu.sub,flag:pu.flag,obs:d.obs,lobs:pu.lobs,totais:docTotals(pu,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm,validadoEm:d.validadoEm||null,validadoPor:d.validadoPor||null,devolucao:d.devolucao||null,rev:d.rev||{}}}
 
 /* ---------- Controladoria ---------- */
 /* Controladoria: cada quadro pode ser recolhido (fica só o título); "Recolher tudo / Abrir tudo" no topo */
