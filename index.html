@@ -2246,8 +2246,16 @@ function montarAcessos(rows){
   const h=rows[0].map(c=>String(c).trim());const ix=n=>h.indexOf(n);
   const iD=ix("Departamento (quem planeja)"),iE=ix("Empresa"),iO=ix("Obra"),iN=ix("Nome do gerente"),iM=ix("E-mail"),iC=ix("Cargo da pessoa"),iX=ix("Observação");
   if([iD,iE,iO,iM].some(x=>x<0))throw new Error("cols");
-  const cats=S.cat.obras||[];const pess=new Map();let semEmail=0;
-  rows.slice(1).forEach(r=>{const dep=String(r[iD]||"").trim();const email=String(r[iM]||"").trim().toLowerCase();if(!dep)return;
+  /* Gerente Regional: colunas "Regional", "Nome do gerente - Regional" e o "E-mail" logo depois dela */
+  const iR=ix("Regional"),iRN=ix("Nome do gerente - Regional");const iRM=iRN<0?-1:h.findIndex((c,i)=>i>iRN&&c==="E-mail");
+  const cats=S.cat.obras||[];const pess=new Map();let semEmail=0;const regs=new Map();const regObra={};const temReg=iRM>=0;
+  rows.slice(1).forEach(r=>{const dep=String(r[iD]||"").trim();
+    if(dep&&iR>=0&&r[iR]&&!/^n[aã]o tem$/i.test(String(r[iR]).trim())){const e0=String(r[iE]==null?"":r[iE]).trim(),o0=String(r[iO]==null?"":r[iO]).trim();if(e0&&o0&&!/^todas$/i.test(e0)&&!/^todas$/i.test(o0)&&!regObra[e0+"-"+o0])regObra[e0+"-"+o0]=String(r[iR]).trim()}
+    if(dep&&temReg&&!/master/i.test(dep)){const er=String(r[iRM]||"").trim().toLowerCase().replace(/,/g,".").replace(/>$/,"");
+      if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(er)){const e1=String(r[iE]==null?"":r[iE]).trim(),o1=String(r[iO]==null?"":r[iO]).trim();
+        if(e1&&o1&&!/^todas$/i.test(e1)){const ids=/^todas$/i.test(o1)?cats.filter(c=>String(c[6])===e1).map(c=>c[0]):(S.catMap.has(e1+"-"+o1)?[e1+"-"+o1]:[]);
+          ids.forEach(id=>{if(!regs.has(er+"|"+id))regs.set(er+"|"+id,{email:er,obra_id:id,regional:(iR>=0&&r[iR]?String(r[iR]).trim():""),nome:String(r[iRN]||"").trim()||null})})}}}
+    const email=String(r[iM]||"").trim().toLowerCase();if(!dep)return;
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){semEmail++;return}
     const e=String(r[iE]==null?"":r[iE]).trim(),o=String(r[iO]==null?"":r[iO]).trim();
     const todas=/^todas$/i.test(e)||/^todas$/i.test(o);const AO=S.areasObra;
@@ -2257,18 +2265,23 @@ function montarAcessos(rows){
     if(!p.nome)p.nome=String(r[iN]||"").trim();
     ids.forEach(id=>{const a=p.acc[id]||(p.acc[id]=[]);if(!a.includes(dep))a.push(dep)})});
   const lista=[...pess.values()].map(p=>{const ids=Object.keys(p.acc);const deps=[...new Set(Object.values(p.acc).flat())];return {...p,ids,area:deps.length===1?deps[0]:deps.join(" / ")}}).filter(p=>p.ids.length);
-  return {lista,semEmail};
+  return {lista,semEmail,regs:[...regs.values()],regObra,temReg};
 }
 async function carregarAcessos(rows,arquivo){
   if(!S.areasObra){try{const d=await S.db.doc("restrito/areasobra").get();S.areasObra=d.exists?d.data().m:null}catch(e){S.areasObra=null}}
-  const {lista,semEmail}=montarAcessos(rows);
+  const {lista,semEmail,regs,regObra,temReg}=montarAcessos(rows);
   await S.db.doc("restrito/pessoas").set({lista,arquivo,aba:"3. Gerentes",atualizadoEm:nowISO()});S.pessoas=lista;
   const novas=[];lista.forEach(p=>Object.entries(p.acc).forEach(([id,deps])=>deps.forEach(d=>novas.push([p.email,id,"",d]))));
   const emails=new Set(lista.map(p=>p.email));const old=(S.dp||[]).filter(l=>!emails.has(String(l[0]).toLowerCase()));
   S.dp=old.concat(novas);await S.db.doc("restrito/depara").set({linhas:S.dp,atualizadoEm:nowISO(),arquivo});
   if(window.ORC_HOOKS&&window.ORC_HOOKS.acessos){try{await window.ORC_HOOKS.acessos(lista)}catch(e){toast("Acessos salvos no painel, mas a tabela de acessos do servidor não foi atualizada: "+(e.message||e))}}
+  /* Gerentes Regionais (colunas do Regional na aba 3). Sem nenhum e-mail de Regional na planilha, a lista atual é mantida. */
+  let msgReg="";
+  if(temReg&&regs.length&&window.ORC_HOOKS&&window.ORC_HOOKS.regionais){try{await window.ORC_HOOKS.regionais(regs);msgReg=` · ${new Set(regs.map(x=>x.email)).size} Gerente(s) Regional(is) em ${new Set(regs.map(x=>x.obra_id)).size} obra(s)`}catch(e){msgReg=" · ATENÇÃO: Regionais não atualizados ("+(e.message||e)+")"}}
+  else if(temReg)msgReg=" · nenhum e-mail de Regional na planilha (lista de Regionais mantida)";
+  if(Object.keys(regObra).length){try{const rd=await S.db.doc("regras/regional_obra").get();const m={...((rd.exists&&rd.data().m)||{}),...regObra};await S.db.doc("regras/regional_obra").set({m,arquivo,atualizadoEm:nowISO()});S.regObra=m}catch(e){}}
   renderPessoas();await loadDepara();
-  $("#pl-msg").textContent=`Controle de acesso carregado: ${lista.length} pessoa(s) com e-mail · ${lista.reduce((a,p)=>a+p.ids.length,0)} orçamento(s) empresa/obra liberado(s)${semEmail?` · ${semEmail} linha(s) da aba 3 ainda sem e-mail`:""}.`;
+  $("#pl-msg").textContent=`Controle de acesso carregado: ${lista.length} pessoa(s) com e-mail · ${lista.reduce((a,p)=>a+p.ids.length,0)} orçamento(s) empresa/obra liberado(s)${semEmail?` · ${semEmail} linha(s) da aba 3 ainda sem e-mail`:""}${msgReg}.`;
 }
 function pesFiltrados(){const L=S.pessoas||[];const q=semAc(($("#pes-q")&&$("#pes-q").value)||"").trim(),dep=$("#pes-dep")?$("#pes-dep").value:"",emp=$("#pes-emp")?$("#pes-emp").value:"";
   return L.filter(p=>(!q||semAc(p.nome+" "+p.email).includes(q))&&(!dep||Object.values(p.acc||{}).some(d=>d.includes(dep)))&&(!emp||(p.ids||[]).some(id=>String(id).split("-")[0]===emp)))}
