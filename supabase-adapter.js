@@ -44,6 +44,13 @@
     regionais:async rows=>{if(!rows||!rows.length)return;let r=await sb.from("regionais").delete().neq("email","");err(r.error,"limpar regionais");
       for(let i=0;i<rows.length;i+=500){r=await sb.from("regionais").insert(rows.slice(i,i+500));err(r.error,"gravar regionais")}},
     orcDaObra:async o=>{const r=await sb.rpc("orc_da_obra",{p_obra:o});if(r.error){console.warn("orc_da_obra",r.error);return []}return r.data||[]},
+    /* espelho (valores já planejados): leitura por obra (RPC com checagem de acesso) e carga pela Controladoria */
+    espelhoDaObra:async o=>{const r=await sb.rpc("espelho_da_obra",{p_obra:o});if(r.error){console.warn("espelho_da_obra",r.error);return null}return r.data||null},
+    salvarEspelho:async(D,meta)=>{const obras=Object.keys(D);
+      for(let i=0;i<obras.length;i+=100){const rows=obras.slice(i,i+100).map(o=>({path:"restrito/esp/"+o,data:{o,h:D[o],...meta}}));const r=await sb.from("docs").upsert(rows,{onConflict:"path"});err(r.error,"gravar espelho")}
+      const keep=new Set(obras.map(o=>"restrito/esp/"+o));const ex=[];let from=0;for(;;){const {data,error}=await sb.from("docs").select("path").like("path","restrito/esp/%").order("path").range(from,from+999);err(error,"listar espelho");ex.push(...data.map(x=>x.path));if(data.length<1000)break;from+=1000}
+      const del=ex.filter(p=>!keep.has(p));for(let i=0;i<del.length;i+=100){const r=await sb.from("docs").delete().in("path",del.slice(i,i+100));err(r.error,"limpar espelho")}
+      return {gravados:obras.length,removidos:del.length}},
     orcColegas:async()=>{const r=await sb.rpc("orc_colegas");if(r.error){console.warn("orc_colegas",r.error);return []}return r.data||[]},
     regionalPainel:async()=>{const r=await sb.rpc("regional_painel");if(r.error){console.warn("regional_painel",r.error);return null}return r.data},
     orcIndex:async()=>{const out=[];let from=0;for(;;){const {data,error}=await sb.from("docs").select("path,status:data->>status,t27:data->totais->>2027,t28:data->totais->>2028,t29:data->totais->>2029,updated_at").like("path","gerentes/%/orc/%").order("path").range(from,from+999);if(error)break;

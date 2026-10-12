@@ -38,7 +38,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;backgroun
 .brand{display:flex;align-items:baseline;gap:10px;min-width:0}
 .brand h1{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0;letter-spacing:-.01em}
 .brand span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
+nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}#grid tr.esp-row td{background:#F4F1FA;color:#5B4A86;font-style:italic;font-size:12px}#grid tr.esp-row .esp-tag{font-weight:600}.pill.esp-ok{background:#E3DCF5;color:#3E2F6B}table.comp{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}table.comp th,table.comp td{padding:5px 8px;border-bottom:1px solid var(--line)}table.comp tr.comp-y{cursor:pointer}table.comp tr.comp-m td{font-size:12px;color:var(--muted)}.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
 .tab{border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
 button{font:inherit;cursor:pointer}
@@ -357,11 +357,15 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <label class="row" style="gap:6px" id="lb-only-rev" hidden><input type="checkbox" id="only-rev"> Só itens com apontamento <span class="pill reaberto" id="n-rev"></span></label>
         <button class="btn sm" id="btn-copy-prev" hidden>Copiar ano anterior</button>
         <span class="hm-tg niv-tg" id="niv-tg" role="group" aria-label="Recolher ou abrir a estrutura">Estrutura: <button class="btn sm" data-nstep="-1" title="Fecha só o nível mais aberto (primeiro os subitens, depois os insumos, e assim por diante)">− Recolher 1 nível</button><button class="btn sm" data-nstep="1" title="Abre mais um nível">+ Abrir 1 nível</button><span id="niv-bts" class="niv-txt"></span></span>
+        <button class="btn sm" id="btn-comp" aria-pressed="false" title="Preenchido × ano anterior × espelho, por ano e por mês">Comparativo</button>
+        <button class="btn sm" id="btn-esp-lote" hidden title="Copia o espelho para todos os itens que ainda não têm valor (cada um pede justificativa)">Manter espelho nos itens sem valor</button>
         <button class="btn sm" id="btn-add">Adicionar item</button>
         <button class="btn sm" id="btn-savever" title="Guarda uma cópia do orçamento como está agora">Salvar versão</button>
         <button class="btn sm" id="btn-exp-me" title="Baixa em Excel o que você orçou nas suas obras">Baixar meu Excel</button>
         <span class="save-state" id="save-state"></span>
       </div>
+      <div id="esp-confirm" class="card" style="margin-bottom:12px;border-color:var(--warn)" hidden></div>
+      <div id="comp-box" class="card" style="margin-bottom:12px" hidden></div>
       <div id="add-box" class="card" style="margin-bottom:12px" hidden>
         <label class="lbl" for="add-q">Adicionar item da base modelo a esta obra</label>
         <input type="search" id="add-q" placeholder="Digite parte da descrição, serviço (S…) ou insumo (I…)" style="width:100%">
@@ -483,6 +487,16 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
       </div>
       <div class="card">
         <div class="row" style="justify-content:space-between">
+          <div><h2>Espelho e estrutura</h2><p class="desc"><b>Espelho</b>: planilha com os valores já planejados (colunas empresa, obra, produto, servico, insumo, PlMes_si, Projetado). Aparece na tela Preencher só como referência e só entra no orçamento quando o gerente clica em “Manter espelho” (com justificativa). Nada do que já foi digitado é alterado. <b>Estrutura</b>: planilha Base - Planejamento (CodEmpresa, CodObra…) – só confere se falta alguma empresa/obra no site e baixa a lista em Excel.</p></div>
+          <div class="row">
+            <label class="btn" for="esp-file" style="display:inline-block">Carregar ESPELHO</label><input type="file" id="esp-file" accept=".xlsx" hidden>
+            <label class="btn" for="estr-file" style="display:inline-block">Conferir ESTRUTURA</label><input type="file" id="estr-file" accept=".xlsx" hidden>
+          </div>
+        </div>
+        <p class="muted" id="esp-msg" style="margin:0"></p>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
           <div><h2>Controle de acesso e de-para</h2><p class="desc">Carregue a <b>CONFIGURACAO_ORCAMENTO_2027_2029</b> (aba <b>3. Gerentes</b>). Cada e-mail recebe exatamente as empresas/obras e os departamentos da planilha: “Todas” vale para todas as empresas/obras. A pessoa só vê e só preenche os orçamentos liberados para ela, e só os insumos do seu departamento. Quem tiver “com Claude” na Observação acessa pelo link; os demais recebem o formulário offline.</p></div>
           <div class="row">
             <label class="btn" for="pl-file" style="display:inline-block">Carregar CONFIGURAÇÃO</label><input type="file" id="pl-file" accept=".xlsx" hidden>
@@ -571,7 +585,7 @@ const fmtDate=s=>s?new Date(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-di
 /* valores digitados em itens que saíram da estrutura (modelo/regras mudaram) não somem: viram linhas "fora da estrutura atual" */
 function extOrf(ext,v){if(!S.insDesc){S.insDesc={};Object.values((T&&T.tipos)||{}).forEach(tp=>(tp.rows||[]).forEach(r=>{if(r[3]&&!S.insDesc[r[3]])S.insDesc[r[3]]=r[4]}))}const out={...(ext||{})};Object.keys(v||{}).forEach(k=>{if(k.includes("#")||out[k])return;const a=v[k];if(!a||!Object.values(a).some(arr=>(arr||[]).some(x=>+x)))return;
   const [P,Sv,I]=k.split("|");out[k]={d:"⚠ Fora da estrutura atual: "+((S.insDesc&&S.insDesc[I])||I||Sv||k),orf:true}});return out}
-function buildLines(tipo,hist,ext){
+function buildLines(tipo,hist,ext,esp){
   const H=(hist&&hist.h)||{}, nM=(T.meses||[]).length;
   const lines=[]; const leaves=[];
   const tp=T.tipos[tipo];
@@ -595,6 +609,13 @@ function buildLines(tipo,hist,ext){
     let l=byKey.get(k)||bySI.get(Sv+"|"+I)||(I&&byI.get(I))||byS.get(Sv);
     if(!l){ l=extras.get(k); if(!l){l={kind:"leaf",key:k,P,item:"",S:Sv,I,desc:d||(I||Sv||"Sem insumo"),un:"VB",lvl:3,preco:0,extra:true,h:new Array(nM).fill(0),ch:[]};extras.set(k,l)} }
     arr.forEach((v,j)=>l.h[j]+=v);
+  });
+  /* espelho (valores já planejados 10/2026–12/2029): mesmo casamento do histórico; o que não casa vira item extra */
+  Object.entries((esp&&esp.h)||{}).forEach(([k,[d,ys]])=>{
+    const [P,Sv,I]=k.split("|");
+    let l=byKey.get(k)||bySI.get(Sv+"|"+I)||(I&&byI.get(I))||byS.get(Sv)||extras.get(k);
+    if(!l){l={kind:"leaf",key:k,P,item:"",S:Sv,I,desc:d||(I||Sv||"Sem insumo"),un:"VB",lvl:3,preco:0,extra:true,h:new Array(nM).fill(0),ch:[]};extras.set(k,l)}
+    l.esp=l.esp||{};Object.entries(ys||{}).forEach(([y,a])=>{const t=l.esp[y]||(l.esp[y]=new Array(12).fill(0));(a||[]).forEach((v,m)=>t[m]=Math.round((t[m]+(+v||0))*100)/100)});
   });
   // itens adicionados manualmente / salvos fora do modelo
   Object.entries(ext||{}).forEach(([k,e])=>{ if(!byKey.has(k)&&!extras.has(k)){const [P,Sv,I]=k.split("|");extras.set(k,{kind:"leaf",key:k,P,item:e.item||"",S:Sv,I,desc:e.d,un:e.un||"VB",lvl:3,preco:0,extra:true,orf:!!e.orf,h:new Array(nM).fill(0),ch:[]})}});
@@ -782,6 +803,8 @@ async function loadMine(){
   if(!S.owner&&!S.offline)fillReqForm();
   if(S.owner){await loadCat();(S.cat.obras||[]).forEach(c=>{if(!S.perfil.obras[c[0]])S.perfil.obras[c[0]]={...catInfo(c),todas:true}})}
   let obras=Object.entries(S.perfil.obras);
+  /* desempenho: traz o histórico de todas as obras do gerente numa única consulta (antes era uma por obra) */
+  if(!S.owner&&obras.length>3){try{const q=await S.db.collection("gerentes/"+S.me+"/hist").get();S.histPre={};obras.forEach(([o])=>S.histPre[o]=null);q.docs.forEach(d=>S.histPre[d.id]=d.data())}catch(e){S.histPre=null}}
   if(!S.owner&&obras.length){const keep=[];for(const [o,i] of obras){try{if(await temItensMeus(o,i))keep.push([o,i])}catch(e){keep.push([o,i])}}obras=keep}
   /* obras do Gerente Regional: todas as áreas, com a visão completa (o que cada gerente preencheu) */
   if(!S.owner&&S.regional&&S.regional.obras){const ri=S.regional.info||{};const tem=new Set(obras.map(x=>x[0]));
@@ -957,8 +980,7 @@ $("#busca-obra").addEventListener("keydown",async e=>{if(e.key!=="Enter")return;
 $("#sel-obra").addEventListener("change",async e=>{if(!e.target.value)return;if(S.cur&&!meuCur()){S.voltarPara=null}else await flush();try{localStorage.setItem("orc.last",e.target.value)}catch(_){}await openObra(S.me,e.target.value,false)});
 
 async function temItensMeus(o,info){
-  const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();
-  const hd=hs.exists?hs.data():null;const lines=buildLines(info.tipo,hd,{});const prods=produtosDaObra(hd,lines,o,info.tipo);
+  let hd;if(!info.todas&&S.histPre&&(o in S.histPre))hd=S.histPre[o];else{const hs=await S.db.doc(info.todas?`restrito/hist/eo/${o}`:`gerentes/${S.me}/hist/${o}`).get();hd=hs.exists?hs.data():null}const lines=buildLines(info.tipo,hd,{});const prods=produtosDaObra(hd,lines,o,info.tipo);
   const cur={uid:S.me,o,info,doc:{sub:{}},lines,editable:false};applyRules(cur);
   return cur.lines.some(l=>l.kind==="leaf"&&l.mine&&(!prods||!l.P||l.extra||prods.has(l.P)));
 }
@@ -979,11 +1001,12 @@ async function openObra(uid,o,fromAdm){
   const hist=hs.exists?hs.data():null;
   const raw=ds.exists?ds.data():{};
   const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,rev:JSON.parse(JSON.stringify(raw.rev||{})),exists:ds.exists};
-  doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));
+  doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));doc.espM=JSON.parse(JSON.stringify(raw.espM||{}));
+  const esp=S.offline?null:await carregarEspelho(o);
   const ov=(!fromAdm&&(S.owner||info.reg)&&!S.offline)?await carregarOutros(o,uid):null;const inj=ov?injetarOutros(doc,ov):null;
-  const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v));
+  const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v),esp);
   const editable= (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
-  S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,ov,inj,prods:produtosDaObra(hist,lines,o,info.tipo)};applyRules(S.cur);
+  S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,ov,inj,esp,prods:produtosDaObra(hist,lines,o,info.tipo)};applyRules(S.cur);
   marcarBase(S.cur,raw);
   if(compart){const c=colegaDe(o,uid);S.cur.quem=(c&&c.nome)||"colega da mesma área";juntarMeuRascunho(S.cur)}
   semObra(false);S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}S.year="2027";
@@ -1035,7 +1058,7 @@ function nomeProd(P,tipo,hist){const tp=T&&T.tipos&&T.tipos[tipo];return (tp&&tp
    mesmo sem histórico; os insumos seguem a aba 1 (aparece para preenchimento / quem planeja). */
 function obraComVendas(o){const m=/^(\d+)-(\d+)/.exec(String(o||""));return !!m&&m[1]!=="3"&&m[2].startsWith("6")}
 function prodsVendas(tipo){const tp=T.tipos[tipo];if(!tp)return[];return Object.keys(tp.prods).filter(P=>/^DESPESAS COM VENDAS/i.test(tp.prods[P]))}
-function produtosDaObra(hist,lines,o,tipo){const pd=Object.keys((hist&&hist.pd)||{});const s=new Set(pd);lines.forEach(l=>{if(l.kind==="leaf"&&l.P&&sum(l.h))s.add(l.P)});
+function produtosDaObra(hist,lines,o,tipo){const pd=Object.keys((hist&&hist.pd)||{});const s=new Set(pd);lines.forEach(l=>{if(l.kind==="leaf"&&l.P&&(sum(l.h)||temEsp(l)))s.add(l.P)});
   if(s.size&&o&&obraComVendas(o))prodsVendas(tipo).forEach(P=>s.add(P));return s.size?s:null}
 const oculto=l=>{const oc=S.regras&&S.regras.ocSet;return !!(oc&&oc.has(`${(S.cur&&S.cur.info&&S.cur.info.tipo)||""}|${l.P}|${l.S}|${l.I}`))};
 const prodOk=l=>!(S.cur&&S.cur.prods&&l.P&&l.key!=="P:extra"&&!String(l.key).startsWith("GX:")&&!l.extra&&!S.cur.prods.has(l.P));
@@ -1112,7 +1135,7 @@ function renderGuia(){const g=$("#guia");if(!S.cur){g.hidden=true;return}const s
   g.className="guia";g.innerHTML=`<b>Como preencher</b><ol><li>Escolha a <b>obra</b> no quadro verde.</li><li>Em cada insumo, preencha os <b>subitens</b>: troque “Detalhe 1” pelo nome do gasto (ex.: Aluguel da sede) e digite os valores dos meses. Use <b>Como preencher</b> para repetir o valor ou aplicar reajuste. O histórico 2025/2026 fica à esquerda como referência.</li><li>Confira os anos <b>2027, 2028 e 2029</b> e clique em <b>Enviar para a Controladoria</b>. Tudo é salvo sozinho enquanto você digita.</li></ol><button class="btn sm" id="guia-ok">Entendi, esconder</button>`;g.hidden=false}
 document.addEventListener("click",e=>{if(e.target.id==="guia-ok"){try{localStorage.setItem("orc.guia.ok","1")}catch(_){}$("#guia").hidden=true}
   if(e.target.id==="guia-rev"){S.onlyRev=true;$("#only-rev").checked=true;renderGrid()}});
-function precisaObs(l){return false /* observação opcional desde 05/10/2026: o detalhe é feito nos subitens */}
+function precisaObs(l){return !!(S.cur&&S.cur.doc&&S.cur.doc.espM&&S.cur.doc.espM[l.key]) /* opcional desde 05/10/2026; obrigatória quando o gerente mantém o espelho */}
 const nomeGenerico=n=>/^\s*detalhe\s*\d*\s*$/i.test(n||"");
 function subsSemNome(){const d=S.cur.doc,out=[];S.cur.lines.forEach((l,idx)=>{if(l.kind!=="leaf"||!prodOk(l)||(restrito()&&!l.mine)||!l.canEdit)return;
   subsOf(l).forEach(sb=>{if(nomeGenerico(sb.n)&&YEARS.some(y=>((d.v[subKey(l,sb)]||{})[y]||[]).some(v=>+v)))out.push([idx,sb])})});return out}
@@ -1178,6 +1201,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
     <td class="cell">${q?`<input id="pr-${idx}" data-pr="${idx}" value="${f2(+pr)}" ${l.canEdit?"":"disabled"} aria-label="Preço unitário ${esc(l.desc)}" inputmode="decimal">`:`<span class="empty-cell" style="padding:0 8px">—</span>`}</td>
     ${MES.map((_,m)=>`<td class="cell ${q?"qtd":""}"><input id="c-${idx}-${m}" data-k="${idx}" data-m="${m}" value="${f2(+a[m]||0)}" class="${a[m]?"has":""}" ${dis} inputmode="decimal" aria-label="${esc(l.desc)} ${MES[m]} ${y}"></td>`).join("")}
     <td class="num tot" data-r="t"></td><td class="num" data-r="d"></td><td class="acts"><input class="lobs${precisaObs(l)&&obsCurta(doc,l)?" need":""}" id="lo-${idx}" data-lobs="${idx}" value="${esc((doc.lobs||{})[l.key]||"")}" ${ce?"":"disabled"} ${temValor(doc,l)||(doc.lobs||{})[l.key]?"":"hidden"} aria-label="O que está considerando neste insumo: ${esc(l.desc)}" title="${esc((doc.lobs||{})[l.key]||"O que está considerando neste insumo? (mínimo "+OBS_MIN+" caracteres)")}">${acts}</td></tr>`;
+    if(temEsp(l,y))h+=linhaEspelho(l,idx,y,pad,REF,ce);
     (S.hideSubs?[]:subs).forEach(sb=>{
       const sa=(doc.v[subKey(l,sb)]&&doc.v[subKey(l,sb)][y])||[];const sf=flagOf(subKey(l,sb),y);const sd=l.canEdit&&!flagAuto(sf)?"":"disabled";
       h+=`<tr class="sub" data-i="${idx}" data-s="${esc(sb.id)}"><td class="c-desc" style="padding-left:${pad+18}px"><span class="sub-mark">↳</span><textarea rows="1" class="sname${nomeGenerico(sb.n)?(YEARS.some(yy=>((doc.v[subKey(l,sb)]||{})[yy]||[]).some(v=>+v))?" need":" gen"):""}" id="sn-${idx}-${esc(sb.id)}" data-sn="${idx}" data-sid="${esc(sb.id)}" ${l.canEdit?"":"disabled"} aria-label="Nome do subitem" title="${nomeGenerico(sb.n)?"Troque “Detalhe” pelo nome do gasto (ex.: Aluguel da sede)":esc(sb.n)}" placeholder="Nome do gasto">${esc(sb.n)}</textarea></td>
@@ -1219,7 +1243,7 @@ function updateTotals(){
   const tf=document.querySelector("#grid tfoot tr");if(tf)paint(tf,aggr(lines.filter(l=>l.kind==="leaf")),"data-f");
   renderSummary();
 }
-function renderSummary(){if(!S.cur)return;
+function renderSummary(){if(!S.cur)return;try{renderBtnEsp();renderComp()}catch(e){}
   const {lines,doc}=S.cur;const leaves=lines.filter(l=>l.kind==="leaf"&&prodOk(l)&&(!restrito()||l.mine));
   const hm=new Array((T.meses||[]).length).fill(0);leaves.forEach(l=>l.h.forEach((v,i)=>hm[i]+=v));const st=histStats(hm);
   const t=docTotals(doc,restrito()?leaves:lines);const p26=st.h26/9*12;
@@ -1330,10 +1354,57 @@ function refreshAllInputs(){document.querySelectorAll("#grid tbody tr").forEach(
 function changed(){if(S.cur.doc.flag&&Object.values(S.cur.doc.flag).some(o=>Object.values(o).some(f=>flagAuto(f)))){recalcFlags();refreshAllInputs()}updateTotals();if(!S.cur.editable)return;S.cur.dirty=true;$("#save-state").className="save-state";$("#save-state").textContent="Alterações não salvas…";clearTimeout(changed.t);changed.t=setTimeout(save,1200)}
 $("#obs").addEventListener("input",()=>{S.cur.doc.obs=$("#obs").value;changed()});
 
+
+/* ===================== ESPELHO (valores já planejados – Planejamento.xlsx) =====================
+   Só referência: não entra em total nenhum. Vira orçamento quando o gerente clica "Manter espelho"
+   (copia só nos anos em que o item ainda não tem valor; nunca altera o que já foi digitado) e exige justificativa. */
+const ANOS_ESP=["2027","2028","2029"];
+const temEsp=(l,y)=>!!(l&&l.esp&&(y?(l.esp[y]||[]).some(v=>+v):Object.values(l.esp).some(a=>(a||[]).some(v=>+v))));
+async function carregarEspelho(o){S.espCache=S.espCache||{};if(o in S.espCache)return S.espCache[o];
+  let d=null;try{if(window.ORC_HOOKS&&window.ORC_HOOKS.espelhoDaObra)d=await window.ORC_HOOKS.espelhoDaObra(o)}catch(e){d=null}S.espCache[o]=d;return d}
+function anoTemValor(l,y){const d=S.cur.doc;if(((d.v[l.key]||{})[y]||[]).some(v=>+v))return true;return subsOf(l).some(sb=>((d.v[subKey(l,sb)]||{})[y]||[]).some(v=>+v))}
+function linhaEspelho(l,idx,y,pad,REF,ce){const a=l.esp[y]||[];const mant=S.cur.doc.espM&&S.cur.doc.espM[l.key];const pode=ce&&ANOS_ESP.some(yy=>temEsp(l,yy)&&!anoTemValor(l,yy));
+  const bt=mant?`<span class="pill esp-ok" title="Mantido em ${esc(fmtDate(mant.em||""))}">✓ espelho mantido</span>`:pode?`<button class="btn sm" data-esp-manter="${idx}" title="Copia o espelho para os anos em que este item ainda não tem valor (2027–2029) e pede a justificativa">Manter espelho</button>`:"";
+  return `<tr class="esp-row" data-esp="${idx}"><td class="c-desc" style="padding-left:${pad+18}px"><span class="sub-mark">↳</span><span class="esp-tag">Espelho (já planejado)</span></td>${REF.replace(/data-r="[^"]*"/g,"")}<td class="c-flag">${bt}</td><td></td>${MES.map((_,m)=>`<td class="num esp-v">${a[m]?f0(a[m]):""}</td>`).join("")}<td class="num esp-v">${f0(sum(a))}</td><td></td><td class="acts muted" style="font-size:11px">não entra no total${mant?"":" até manter"}</td></tr>`}
+function manterEspelho(l,silencioso){if(!l.canEdit||!temEsp(l))return 0;const d=S.cur.doc;let n=0;const yAnt=S.year;
+  ANOS_ESP.forEach(y=>{const a=l.esp[y];if(!a||!a.some(v=>+v)||anoTemValor(l,y))return;S.year=y;
+    const subs=subsOf(l);
+    if(subs.length){let sb=subs.find(x=>!YEARS.some(yy=>((d.v[subKey(l,x)]||{})[yy]||[]).some(v=>+v)))||subs[0];if(nomeGenerico(sb.n))sb.n="Planejado (espelho)";a.forEach((v,m)=>setValKey(subKey(l,sb),m,Math.round((+v||0)*100)/100));syncLeaf(l)}
+    else a.forEach((v,m)=>setValKey(l.key,m,Math.round((+v||0)*100)/100));
+    n++});
+  S.year=yAnt;if(n){d.espM=d.espM||{};d.espM[l.key]={em:nowISO(),anos:ANOS_ESP.filter(y=>temEsp(l,y))};if(!silencioso){changed();renderGrid();const i=S.cur.lines.indexOf(l);const el=$("#lo-"+i);if(el){el.hidden=false;el.focus()}toast("Espelho mantido. Escreva a justificativa deste item (mínimo "+OBS_MIN+" caracteres).")}}
+  return n}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-esp-manter]");if(!b||!S.cur)return;const l=S.cur.lines[+b.dataset.espManter];if(l)manterEspelho(l)});
+function itensEspLote(){if(!S.cur||!S.cur.editable)return[];return S.cur.lines.filter(l=>l.kind==="leaf"&&l.canEdit&&prodOk(l)&&(!restrito()||l.mine)&&temEsp(l)&&!(S.cur.doc.espM||{})[l.key]&&ANOS_ESP.some(y=>temEsp(l,y)&&!anoTemValor(l,y)))}
+function renderBtnEsp(){const b=$("#btn-esp-lote");if(!b)return;const n=itensEspLote().length;b.hidden=!n;b.textContent=`Manter espelho nos itens sem valor (${n})`}
+document.addEventListener("click",e=>{if(e.target.id!=="btn-esp-lote")return;const L=itensEspLote();if(!L.length)return;const box=$("#esp-confirm");
+  box.hidden=false;box.innerHTML=`<b>Manter o espelho em ${L.length} item(ns)?</b> Só nos anos em que o item ainda não tem valor; o que já foi digitado não muda. Cada item vai pedir justificativa antes do envio. <button class="btn sm primary" id="esp-lote-ok">Manter</button> <button class="btn sm" id="esp-lote-no">Cancelar</button>`});
+document.addEventListener("click",e=>{if(e.target.id==="esp-lote-no"){$("#esp-confirm").hidden=true;return}if(e.target.id!=="esp-lote-ok")return;
+  let n=0;itensEspLote().forEach(l=>{if(manterEspelho(l,true))n++});$("#esp-confirm").hidden=true;changed();renderGrid();toast(`Espelho mantido em ${n} item(ns). Justifique cada um (campos em vermelho) antes de enviar.`)});
+
+/* ===================== COMPARATIVO: preenchido × ano anterior × espelho (obra aberta, ano e meses) ===================== */
+function compDados(){const c=S.cur;const L=c.lines.filter(l=>l.kind==="leaf"&&prodOk(l)&&(!restrito()||l.mine));const d=c.doc;
+  const pre={},esp={};["2026",...YEARS].forEach(y=>{pre[y]=new Array(12).fill(0);esp[y]=new Array(12).fill(0)});
+  const real26=new Array(12).fill(0);
+  L.forEach(l=>{YEARS.forEach(y=>{for(let m=0;m<12;m++)pre[y][m]+=lineMonth(d,l,y,m)});Object.entries(l.esp||{}).forEach(([y,a])=>{if(esp[y])a.forEach((v,m)=>esp[y][m]+=+v||0)});for(let m=0;m<9;m++)real26[m]+=l.h[12+m]||0});
+  const ant={"2027":real26.map((v,m)=>m<9?v:esp["2026"][m])};YEARS.slice(1).forEach(y=>ant[y]=pre[String(+y-1)]);
+  return {pre,esp,ant}}
+function renderComp(){const box=$("#comp-box");if(!box||box.hidden||!S.cur)return;const {pre,esp,ant}=compDados();S.compAb=S.compAb||new Set();
+  const pc=(a,b)=>!b?(a?'<span class="delta up">novo</span>':"—"):deltaHtml(a,b);
+  const md=a=>{const n=a.filter(v=>Math.abs(v)>0.004).length;return n?sum(a)/n:0};
+  let h=`<div class="row" style="justify-content:space-between;align-items:baseline"><h2 style="margin:0">Comparativo da obra</h2><span class="muted" style="font-size:12px">${restrito()?"Só os itens que você preenche · ":""}Ano anterior de 2027 = 2026 realizado jan–set + espelho out–dez. Média = total ÷ meses com valor. Clique no ano para abrir os meses.</span></div>
+  <table class="comp"><thead><tr><th>Ano</th><th class="num">Preenchido</th><th class="num">Média/mês</th><th class="num">Ano anterior</th><th class="num">Média/mês</th><th class="num">Var. vs ano ant.</th><th class="num">Espelho</th><th class="num">Média/mês</th><th class="num">Var. vs espelho</th></tr></thead><tbody>`;
+  YEARS.forEach(y=>{const P=sum(pre[y]),A=sum(ant[y]),E=sum(esp[y]);const ab=S.compAb.has(y);
+    h+=`<tr class="comp-y" data-comp-y="${y}"><td><button class="tg" aria-expanded="${ab}">${ab?"▾":"▸"}</button> <b>${y}</b></td><td class="num"><b>${f0(P)}</b></td><td class="num">${f0(md(pre[y]))}</td><td class="num">${f0(A)}</td><td class="num">${f0(md(ant[y]))}</td><td class="num">${pc(P,A)}</td><td class="num">${f0(E)}</td><td class="num">${f0(md(esp[y]))}</td><td class="num">${pc(P,E)}</td></tr>`;
+    if(ab)MES.forEach((mn,m)=>{h+=`<tr class="comp-m"><td style="padding-left:28px">${mn}/${y.slice(2)}</td><td class="num">${f0(pre[y][m])}</td><td></td><td class="num">${f0(ant[y][m])}</td><td></td><td class="num">${pc(pre[y][m],ant[y][m])}</td><td class="num">${f0(esp[y][m])}</td><td></td><td class="num">${pc(pre[y][m],esp[y][m])}</td></tr>`})});
+  box.innerHTML=h+`</tbody></table>`}
+document.addEventListener("click",e=>{if(e.target.id==="btn-comp"){const b=$("#comp-box");b.hidden=!b.hidden;e.target.setAttribute("aria-pressed",String(!b.hidden));renderComp();return}
+  const r=e.target.closest("[data-comp-y]");if(!r)return;S.compAb=S.compAb||new Set();const y=r.dataset.compY;if(S.compAb.has(y))S.compAb.delete(y);else S.compAb.add(y);renderComp()});
+
 /* salvar */
 let saving=null;
 /* ---------- visão completa da obra (masters na tela Preencher): mostra, só para leitura, o que os outros preencheram ---------- */
-const CAMPOS_OV=["v","pr","sub","ext","lobs","flag"];
+const CAMPOS_OV=["v","pr","sub","ext","lobs","flag","espM"];
 async function carregarOutros(o,uid){if(!(window.ORC_HOOKS&&window.ORC_HOOKS.orcDaObra))return null;
   try{return (await window.ORC_HOOKS.orcDaObra(o)||[]).filter(x=>x.uid!==uid)}catch(e){console.warn("visão da obra",e);return null}}
 const baseK=k=>String(k).split("#")[0];
@@ -1365,7 +1436,7 @@ async function gravarOutros(cur){if(!cur.inj||!cur.ov)return;const n0={ok:0,trav
 async function sincronizarOutros(){const cur=S.cur;if(!cur||!cur.ov||cur.dirty||saving)return;
   const nv=await carregarOutros(cur.o,cur.uid);if(!nv||S.cur!==cur||cur.dirty)return;
   const sig=L=>JSON.stringify(L.map(x=>[x.uid,x.atualizadoEm]));if(sig(nv)===sig(cur.ov))return;
-  tirarOutros(cur);cur.ov=nv;cur.inj=injetarOutros(cur.doc,nv);cur.lines=buildLines(cur.info.tipo,cur.hist,extOrf(cur.doc.ext,cur.doc.v));applyRules(cur);
+  tirarOutros(cur);cur.ov=nv;cur.inj=injetarOutros(cur.doc,nv);cur.lines=buildLines(cur.info.tipo,cur.hist,extOrf(cur.doc.ext,cur.doc.v),cur.esp);applyRules(cur);
   renderGrid();renderSummary();toast("Valores da obra atualizados com o que os gerentes salvaram.")}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sincronizarOutros()});
 setInterval(sincronizarOutros,60000);
@@ -1380,7 +1451,7 @@ const colegaDe=(o,uid)=>((S.colByO&&S.colByO.get(o))||[]).find(x=>x.uid===uid);
 /* resumo (status/totais) do orçamento que vale para a obra */
 function orcVis(o){const d=donoDoc(o);return d===S.me?(S.myOrc||{})[o]:colegaDe(o,d)}
 function guardarVis(cur,p){if(cur.uid===S.me){S.myOrc[cur.o]=p;return}const c=colegaDe(cur.o,cur.uid);if(c){c.status=p.status;c.atualizadoEm=p.atualizadoEm;c.totais=p.totais}}
-const CAMPOS_M=["v","pr","ext","sub","flag","lobs","rev"];
+const CAMPOS_M=["v","pr","ext","sub","flag","lobs","rev","espM"];
 const cloneJ=x=>JSON.parse(JSON.stringify(x==null?{}:x));
 function marcarBase(cur,raw){cur.base={};CAMPOS_M.forEach(k=>cur.base[k]=cloneJ(raw&&raw[k]));cur.base.obs=(raw&&raw.obs)||"";cur.baseEm=(raw&&raw.atualizadoEm)||null}
 /* gerente com rascunho próprio numa obra que já tinha orçamento do colega: traz os valores dele (sem apagar nada) */
@@ -1417,8 +1488,8 @@ function payload(){
   lines.forEach(l=>{if(l.kind==="leaf"&&l.extra&&(doc.v[l.key]||doc.pr[l.key]||doc.ext[l.key]))ext[l.key]={d:l.desc,un:l.un,item:l.item||""}});
   {const ks=new Set(lines.map(l=>l.key));Object.keys(doc.ext||{}).forEach(k=>{if(!ext[k]&&!ks.has(k)&&(doc.v[k]||doc.pr[k]))ext[k]=doc.ext[k]})}
   doc.ext=ext;
-  const pu=semAlheios(S.cur,{v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},lobs:doc.lobs||{}});
-  return {o:doc.o,tipo:doc.tipo,status:doc.status,v:pu.v,pr:pu.pr,ext:pu.ext,sub:pu.sub,flag:pu.flag,obs:doc.obs,lobs:pu.lobs,totais:docTotals(pu,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null,rev:doc.rev||{}};
+  const pu=semAlheios(S.cur,{v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},lobs:doc.lobs||{},espM:doc.espM||{}});
+  return {o:doc.o,tipo:doc.tipo,status:doc.status,v:pu.v,pr:pu.pr,ext:pu.ext,sub:pu.sub,flag:pu.flag,obs:doc.obs,lobs:pu.lobs,espM:pu.espM||{},totais:docTotals(pu,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null,rev:doc.rev||{}};
 }
 async function save(){
   if(!S.cur||!S.cur.editable||!S.cur.dirty)return;
@@ -1548,7 +1619,7 @@ function renderAdd(){const q=$("#add-q").value.trim().toLowerCase();const have=n
   const r=allLeaves().filter(x=>!have.has(x.k)&&(!q||(x.d+" "+x.S+" "+x.I+" "+x.pn).toLowerCase().includes(q))).slice(0,60);
   $("#add-list").innerHTML=r.length?r.map(x=>`<button data-k="${esc(x.k)}">${esc(x.d)} <span class="muted">· ${esc(x.S)} ${esc(x.I)} · ${esc(x.P)} ${esc(x.pn)}</span></button>`).join(""):`<div class="muted" style="padding:10px">Nenhum item encontrado.</div>`}
 $("#add-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const x=allLeaves().find(z=>z.k===b.dataset.k);
-  S.cur.doc.ext[x.k]={d:x.d,un:x.un,item:x.item};S.cur.lines=buildLines(S.cur.info.tipo,S.cur.hist,extOrf(S.cur.doc.ext,S.cur.doc.v));applyRules(S.cur);
+  S.cur.doc.ext[x.k]={d:x.d,un:x.un,item:x.item};S.cur.lines=buildLines(S.cur.info.tipo,S.cur.hist,extOrf(S.cur.doc.ext,S.cur.doc.v),S.cur.esp);applyRules(S.cur);
   const l=S.cur.lines.find(z=>z.key===x.k);l.desc=x.d;renderGrid();S.cur.dirty=true;changed();$("#add-box").hidden=true;syncAddBtn();toast("Item adicionado em Outros itens");});
 
 /* envio */
@@ -1560,7 +1631,7 @@ function sendFlow(){
     toast(`Dê um nome aos ${semNome.length} subitem(ns) “Detalhe” que têm valor (ex.: Aluguel da sede, Energia, Vale-alimentação). Eles estão em vermelho.`);return}
   const falta=faltandoObs();
   if(falta.length){renderGrid();const l=falta[0];const idx=S.cur.lines.indexOf(l);const el=$("#lo-"+idx);if(el){el.scrollIntoView({block:"center",inline:"nearest"});el.focus()}
-    toast(`Explique o que está considerando em ${falta.length} insumo(s) com valor (mínimo ${OBS_MIN} caracteres; campos em vermelho na coluna “O que está considerando”).`);return}const t=docTotals(S.cur.doc,S.cur.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));
+    toast(`Justifique ${falta.length} insumo(s) em que você manteve o espelho (mínimo ${OBS_MIN} caracteres; campos em vermelho na coluna “Observação e ações”).`);return}const t=docTotals(S.cur.doc,S.cur.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));
   box.innerHTML=`<span class="confirm"><span class="muted">Enviar ${YEARS.map(y=>y+": R$ "+f0(t[y])).join(" · ")}? Depois de enviado, só a Controladoria reabre.</span><button class="btn primary" id="send-ok">Confirmar envio</button><button class="btn" id="send-no">Cancelar</button></span>`;
   $("#send-no").onclick=restoreSend;
   $("#send-ok").onclick=async()=>{$("#send-ok").disabled=true;await flush();const prev=S.cur.doc.status;S.cur.doc.status="enviado";S.cur.doc.enviadoEm=nowISO();S.cur.doc.validadoEm=null;S.cur.doc.validadoPor=null;
@@ -1630,16 +1701,16 @@ $("#ver-box").addEventListener("click",async e=>{const b=e.target.closest("butto
   if(b.dataset.vview!==undefined){const v=S.versoes[+b.dataset.vview].d;const c=S.cur;
     c.saved=c.saved||{doc:c.doc,editable:c.editable};c.doc={...c.saved.doc,v:v.v||{},pr:v.pr||{},sub:v.sub||{},flag:v.flag||{},ext:v.ext||{},obs:v.obs||"",lobs:v.lobs||{}};c.editable=false;c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v));applyRules(c);
     $("#ver-banner").innerHTML=`<div class="row" style="justify-content:space-between"><span><b>Visualizando a versão de ${fmtDate(v.em)}</b> (${esc(v.motivo||"")}). Nada pode ser alterado nesta visualização.</span><button class="btn sm primary" id="ver-back">Voltar à versão atual</button></div>`;$("#ver-banner").hidden=false;
-    $("#ver-back").onclick=()=>{c.doc=c.saved.doc;c.editable=c.saved.editable;c.saved=null;c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v));applyRules(c);$("#ver-banner").hidden=true;renderGrid();renderStatus()};
+    $("#ver-back").onclick=()=>{c.doc=c.saved.doc;c.editable=c.saved.editable;c.saved=null;c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v),c.esp);applyRules(c);$("#ver-banner").hidden=true;renderGrid();renderStatus()};
     renderGrid();renderStatus();return}
   if(b.dataset.vrest!==undefined){const v=S.versoes[+b.dataset.vrest].d;
     if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar restauração";setTimeout(()=>{delete b.dataset.arm;b.textContent="Restaurar"},5000);return}
     const c=S.cur;if(c.saved){c.doc=c.saved.doc;c.editable=c.saved.editable;c.saved=null;$("#ver-banner").hidden=true}
     await saveVersion(c.uid,c.o,payloadFrom(c),"Antes de restaurar").catch(()=>{});
     Object.assign(c.doc,{v:JSON.parse(JSON.stringify(v.v||{})),pr:JSON.parse(JSON.stringify(v.pr||{})),sub:JSON.parse(JSON.stringify(v.sub||{})),flag:JSON.parse(JSON.stringify(v.flag||{})),ext:JSON.parse(JSON.stringify(v.ext||{})),obs:v.obs||"",lobs:JSON.parse(JSON.stringify(v.lobs||{}))});
-    c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v));applyRules(c);$("#obs").value=c.doc.obs;renderGrid();c.dirty=true;changed();toast("Versão restaurada. A versão anterior também foi guardada.");renderVersoes()}
+    c.lines=buildLines(c.info.tipo,c.hist,extOrf(c.doc.ext,c.doc.v),c.esp);applyRules(c);$("#obs").value=c.doc.obs;renderGrid();c.dirty=true;changed();toast("Versão restaurada. A versão anterior também foi guardada.");renderVersoes()}
 });
-function payloadFrom(c){const d=c.doc;const pu=semAlheios(c,{v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},lobs:d.lobs||{}});return {o:d.o,tipo:d.tipo,status:d.status,v:pu.v,pr:pu.pr,ext:pu.ext,sub:pu.sub,flag:pu.flag,obs:d.obs,lobs:pu.lobs,totais:docTotals(pu,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm,validadoEm:d.validadoEm||null,validadoPor:d.validadoPor||null,devolucao:d.devolucao||null,rev:d.rev||{}}}
+function payloadFrom(c){const d=c.doc;const pu=semAlheios(c,{v:d.v,pr:d.pr,ext:d.ext,sub:d.sub||{},flag:d.flag||{},lobs:d.lobs||{},espM:d.espM||{}});return {o:d.o,tipo:d.tipo,status:d.status,v:pu.v,pr:pu.pr,ext:pu.ext,sub:pu.sub,flag:pu.flag,obs:d.obs,lobs:pu.lobs,espM:pu.espM||{},totais:docTotals(pu,c.lines),atualizadoEm:d.atualizadoEm,enviadoEm:d.enviadoEm,validadoEm:d.validadoEm||null,validadoPor:d.validadoPor||null,devolucao:d.devolucao||null,rev:d.rev||{}}}
 
 /* ---------- Controladoria ---------- */
 /* Controladoria: cada quadro pode ser recolhido (fica só o título); "Recolher tudo / Abrir tudo" no topo */
@@ -2231,7 +2302,10 @@ $("#pl-file").addEventListener("change",async e=>{const f=e.target.files[0];e.ta
   try{
     const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
     const rows=n=>wb.Sheets[n]?XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:""}):null;
-    if(wb.Sheets["3. Gerentes"]){await carregarAcessos(rows("3. Gerentes"),f.name);return}
+    if(wb.Sheets["3. Gerentes"]){
+      /* aba 2 (Quem planeja por obra) primeiro: define quem planeja cada item e as áreas de cada obra (usadas pelo "Todas" da aba 3) */
+      let m2="";if(wb.Sheets["2. Quem planeja"]){$("#pl-msg").textContent="Lendo a aba 2 (quem planeja)…";const r2=await carregarQuemPlaneja(rows("2. Quem planeja"),f.name);if(r2)m2=r2}
+      $("#pl-msg").textContent="Lendo a aba 3 (gerentes)…";await carregarAcessos(rows("3. Gerentes"),f.name);if(m2)$("#pl-msg").textContent+=" "+m2;return}
     const dp=rows("De-para"),ga=rows("Gerentes Administrativos"),go=rows("Gerentes por Obra");
     if(!dp||!ga)throw new Error("abas");
     const h=dp[0].map(c=>String(c));const ix=n=>h.indexOf(n);const iE=ix("Empresa"),iO=ix("Obra"),iT=ix("Base modelo"),iP=ix("Produto"),iS=ix("Serviço"),iI=ix("Insumo"),iC=ix("Quem planeja");
@@ -2288,6 +2362,76 @@ $("#sb-file").addEventListener("change",async e=>{const f=e.target.files[0];e.ta
     const doc={r:R,c:C,q:Q,arquivo:f.name,aba:nm,atualizadoEm:nowISO()};await S.db.doc("regras/subitens").set(doc);S.subR=doc;renderBases();
     $("#bs-msg").textContent=`Subitens carregados: ${Object.keys(R).length} insumos, ${Object.values(R).reduce((a,v)=>a+v.length,0)} subitens. Valem para obras ainda sem subitens; quem já começou mantém os dele.`;
   }catch(err){$("#bs-msg").textContent=err&&err.message==="aba"?"Não encontrei a aba Subitens.":"Não consegui ler a planilha de subitens."}});
+
+/* ===================== carga do ESPELHO e conferência da ESTRUTURA (Controladoria) ===================== */
+const xlsRows=(wb,n)=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:"",raw:true});
+const hIdx=h=>n=>h.findIndex(x=>String(x).trim().toLowerCase()===n.toLowerCase());
+function mesDe(v){if(typeof v==="number"){const d=XLSX.SSF.parse_date_code(v);return d?[d.y,d.m]:null}const t=String(v||"").trim();let m=/^(\d{4})-(\d{1,2})/.exec(t);if(m)return[+m[1],+m[2]];m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(t);if(m)return[+m[3],+m[2]];return null}
+async function lerEspelho(f){const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+  for(const sn of wb.SheetNames){const rows=xlsRows(wb,sn);if(!rows.length)continue;const ix=hIdx(rows[0]);
+    const c={E:ix("empresa"),O:ix("obra"),P:ix("produto"),S:ix("servico"),I:ix("insumo"),M:ix("PlMes_si"),V:ix("Projetado"),D:ix("DescricaoInsumo"),EN:ix("DescricaoEmpresa"),ON:ix("DescricaoObra")};
+    if([c.E,c.O,c.P,c.S,c.I,c.M,c.V].some(x=>x<0))continue;
+    const D={},nomes={};let n=0,tot=0,fora=0;
+    rows.slice(1).forEach(r=>{const v=+r[c.V]||0;if(!v||r[c.E]==="")return;const ym=mesDe(r[c.M]);if(!ym){fora++;return}const [y,m]=ym;if(y<2026||y>2029){fora++;return}
+      const o=`${String(r[c.E]).trim()}-${String(r[c.O]).trim()}`;const k=`${String(r[c.P]).trim()}|${String(r[c.S]).trim()}|${String(r[c.I]).trim()}`;
+      const it=((D[o]=D[o]||{})[k]=D[o][k]||[String(c.D>=0?r[c.D]:"").trim(),{}]);const a=it[1][y]||(it[1][y]=new Array(12).fill(0));a[m-1]=Math.round((a[m-1]+v)*100)/100;n++;tot+=v;
+      if(!nomes[o])nomes[o]=[String(c.EN>=0?r[c.EN]:""),String(c.ON>=0?r[c.ON]:"")]});
+    return {D,nomes,n,tot,fora,aba:sn}}
+  throw new Error("colunas")}
+$("#esp-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("#esp-msg");
+  if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
+  msg.textContent="Lendo a planilha do espelho… (pode levar alguns segundos)";
+  try{const {D,nomes,n,tot,fora}=await lerEspelho(f);const obras=Object.keys(D);if(obras.length<10)throw new Error("poucas");
+    msg.textContent=`Gravando o espelho de ${obras.length} obras…`;
+    const r=await window.ORC_HOOKS.salvarEspelho(D,{arquivo:f.name,atualizadoEm:nowISO()});S.espCache={};
+    await loadCat();const AO=S.areasObra||(await S.db.doc("restrito/areasobra").get()).data()?.m||{};
+    const semForm=obras.filter(o=>!S.catMap.has(o)||!(AO[o]||[]).length);
+    await S.db.doc("restrito/esp_idx").set({arquivo:f.name,atualizadoEm:nowISO(),linhas:n,total:Math.round(tot*100)/100,obras:Object.fromEntries(obras.map(o=>[o,Math.round(Object.values(D[o]).reduce((a,[,ys])=>a+Object.values(ys).reduce((b,arr)=>b+sum(arr),0),0)*100)/100])),semFormulario:semForm});
+    msg.innerHTML=`Espelho carregado: <b>${obras.length}</b> obras · ${n} lançamentos mensais · R$ ${f0(tot)}${fora?` · ${fora} linha(s) fora de 2026–2029 ignoradas`:""}${r&&r.removidos?` · ${r.removidos} obra(s) que saíram da planilha foram retiradas do espelho`:""}. ${semForm.length?`<b>${semForm.length} obra(s) do espelho ainda sem formulário</b> (fora do catálogo ou sem “quem planeja” na aba 2): <button class="btn sm" id="esp-baixar-falta">Baixar lista</button>`:"Todas as obras do espelho têm formulário."}`;
+    S.espFalta=semForm.map(o=>[o.split("-")[0],(nomes[o]||[])[0]||"",o.split("-").slice(1).join("-"),(nomes[o]||[])[1]||"",S.catMap.has(o)?"Sem quem planeja (aba 2)":"Fora do catálogo"]);
+  }
+  catch(err){msg.textContent=err&&err.message==="colunas"?"Não encontrei as colunas empresa, obra, produto, servico, insumo, PlMes_si e Projetado.":err&&err.message==="poucas"?"A planilha tem poucas obras; o espelho NÃO foi alterado.":"Não foi possível carregar o espelho: "+(err&&err.message||err)}});
+document.addEventListener("click",async e=>{if(e.target.id!=="esp-baixar-falta"||!S.espFalta)return;const ws=XLSX.utils.aoa_to_sheet([["Empresa","Nome da empresa","Obra","Descrição da obra","Situação"],...S.espFalta]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Espelho sem formulário");
+  await S.dl.save({filename:"ESPELHO_OBRAS_SEM_FORMULARIO.xlsx",data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))})});
+$("#estr-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("#esp-msg");
+  if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}msg.textContent="Lendo a estrutura…";
+  try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const E=new Map();
+    wb.SheetNames.forEach(n=>{const rows=xlsRows(wb,n);if(!rows.length)return;const ix=hIdx(rows[0]);const iE=ix("CodEmpresa"),iO=ix("CodObra"),iEN=ix("Empresa"),iON=ix("Obra"),iG=ix("GrupoEmpresa");if(iE<0||iO<0)return;
+      rows.slice(1).forEach(r=>{if(r[iE]==="")return;const o=`${String(r[iE]).trim()}-${String(r[iO]).trim()}`;if(!E.has(o))E.set(o,[String(r[iE]).trim(),String(iEN>=0?r[iEN]:""),String(r[iO]).trim(),String(iON>=0?r[iON]:""),String(iG>=0?r[iG]:"")])})});
+    if(!E.size)throw new Error("colunas");
+    await loadCat();const AO=S.areasObra||(await S.db.doc("restrito/areasobra").get()).data()?.m||{};let idx=null;try{const d=await S.db.doc("restrito/esp_idx").get();idx=d.exists?d.data():null}catch(_){}
+    const falta=[...E.entries()].filter(([o])=>!S.catMap.has(o)||!(AO[o]||[]).length).map(([o,v])=>[...v,S.catMap.has(o)?"Sem quem planeja (aba 2)":"Fora do catálogo",idx&&idx.obras&&idx.obras[o]?idx.obras[o]:0]);
+    const soSite=(S.cat.obras||[]).filter(c=>!E.has(c[0])&&(AO[c[0]]||[]).length).map(c=>[c[6],c[7],c[1],c[2],"Está no site e não está na estrutura",idx&&idx.obras&&idx.obras[c[0]]?idx.obras[c[0]]:0]);
+    const espSem=idx&&idx.obras?Object.keys(idx.obras).filter(o=>!E.has(o)&&(!S.catMap.has(o)||!(AO[o]||[]).length)).map(o=>[o.split("-")[0],"",o.split("-").slice(1).join("-"),"","No espelho, fora da estrutura e sem formulário",idx.obras[o]]):[];
+    const out=XLSX.utils.book_new();const H=["Empresa","Nome da empresa","Obra","Descrição da obra","Regional/Grupo","Situação","Espelho (R$)"];
+    XLSX.utils.book_append_sheet(out,XLSX.utils.aoa_to_sheet([H,...falta]),"Faltam no site");XLSX.utils.book_append_sheet(out,XLSX.utils.aoa_to_sheet([H.filter((_,i)=>i!==4),...soSite]),"Só no site");if(espSem.length)XLSX.utils.book_append_sheet(out,XLSX.utils.aoa_to_sheet([H.filter((_,i)=>i!==4),...espSem]),"Espelho sem formulário");
+    await S.dl.save({filename:`CONFERENCIA_ESTRUTURA_${new Date().toISOString().slice(0,10)}.xlsx`,data:new Uint8Array(XLSX.write(out,{type:"array",bookType:"xlsx"}))});
+    msg.innerHTML=`Estrutura conferida: ${E.size} empresa/obra. <b>${falta.length}</b> faltam no site (sem formulário) · ${soSite.length} estão no site e não estão na estrutura${espSem.length?` · ${espSem.length} do espelho fora da estrutura`:""}. A lista foi baixada em Excel. Para incluir, use a CONFIGURAÇÃO (aba 2 e 3) e clique em Carregar CONFIGURAÇÃO.`}
+  catch(err){msg.textContent=err&&err.message==="colunas"?"Não encontrei as colunas CodEmpresa e CodObra.":"Não foi possível conferir a estrutura: "+(err&&err.message||err)}});
+/* aba "2. Quem planeja": regra por base modelo (mais comum) + exceções por obra, sempre em relação à regra que o site
+   realmente usa (aba 1 primeiro); e as áreas que têm item em cada obra. O que já foi digitado nos orçamentos não muda. */
+async function carregarQuemPlaneja(rows,arquivo){
+  if(!rows||rows.length<2)return null;const h=rows[0].map(c=>String(c==null?"":c).trim());const ix=n=>h.indexOf(n);
+  const iE=ix("Empresa"),iO=ix("Obra"),iB=ix("Base modelo"),iP=ix("Produto"),iS=ix("Serviço"),iI=ix("Insumo"),iQ=ix("Quem planeja");
+  if([iE,iO,iB,iP,iS,iI,iQ].some(x=>x<0))return null;
+  const L=[];rows.slice(1).forEach(r=>{if(r[iE]===""||r[iE]==null||!String(r[iQ]||"").trim())return;L.push([`${r[iE]}-${r[iO]}`,String(r[iB]==null?"":r[iB]).trim(),`${r[iP]}|${r[iS]}|${r[iI]}`,String(r[iQ]).trim()])});
+  if(L.length<1000){toast("Aba 2 com poucas linhas: regras de quem planeja NÃO foram alteradas.");return null}
+  const cnt={};L.forEach(([o,b,k,q])=>{const c=((cnt[b]=cnt[b]||{})[k]=cnt[b][k]||{});c[q]=(c[q]||0)+1});
+  const R={};Object.entries(cnt).forEach(([b,m])=>{R[b]={};Object.entries(m).forEach(([k,c])=>{R[b][k]=Object.entries(c).sort((x,y)=>y[1]-x[1]||(x[0]<y[0]?-1:x[0]>y[0]?1:0))[0][0]})});
+  const RB=(S.regras&&S.regras.r)||{};const O={},M={};
+  L.forEach(([o,b,k,q])=>{(M[o]=M[o]||new Set()).add(q);const bb=RB[`${b}|${k}`];const base=(bb&&bb[1])||(R[b]||{})[k];if(q!==base)(O[o]=O[o]||{})[k]=q});
+  const m={};Object.entries(M).forEach(([o,st])=>m[o]=[...st].sort());
+  /* obra da aba 2 que ainda não existe no catálogo do site: entra no catálogo (sem histórico) para ter formulário */
+  let novasCat=0;try{await loadCat();const iEn=ix("Nome da empresa"),iOn=ix("Descrição da obra");const vistos=new Set();const add=[];
+    rows.slice(1).forEach(r=>{if(r[iE]===""||r[iE]==null)return;const id=`${r[iE]}-${r[iO]}`;if(vistos.has(id)||S.catMap.has(id))return;vistos.add(id);
+      add.push([id,String(r[iO]),String(iOn>=0?r[iOn]||"":""),String(r[iB]==null?"":r[iB]).trim(),0,0,String(r[iE]),String(iEn>=0?r[iEn]||"":"")])});
+    if(add.length){const cat={...S.cat,obras:[...(S.cat.obras||[]),...add],atualizadoEm:nowISO()};await S.db.doc("restrito/catalogo").set(cat);S.cat=cat;S.catMap=new Map(cat.obras.map(c=>[c[0],c]));novasCat=add.length}}catch(e){console.warn("catálogo",e)}
+  const dpDoc={...(S.dpR||{}),r:R,o:O,t:{},aba:"2. Quem planeja",arquivo,atualizadoEm:nowISO()};
+  await S.db.doc("regras/depara").set(dpDoc);S.dpR=dpDoc;
+  await S.db.doc("restrito/areasobra").set({m,aba:"2. Quem planeja",arquivo,atualizadoEm:nowISO()});S.areasObra=m;
+  try{renderBases()}catch(e){}if(S.cur){applyRules(S.cur);renderGrid()}
+  const nO=Object.values(O).reduce((a,x)=>a+Object.keys(x).length,0);
+  return `Quem planeja (aba 2): ${L.length} linhas · ${nO} exceções em ${Object.keys(O).length} obras · ${Object.keys(m).length} obras com áreas${novasCat?` · ${novasCat} obra(s) nova(s) incluída(s) no catálogo`:""}.`}
 /* controle de acesso: aba "3. Gerentes" da CONFIGURACAO_ORCAMENTO (departamento × empresa × obra × e-mail) */
 function montarAcessos(rows){
   const h=rows[0].map(c=>String(c).trim());const ix=n=>h.indexOf(n);
