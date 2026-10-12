@@ -121,7 +121,8 @@
     const w=document.createElement("div");w.style.cssText="position:fixed;left:12px;bottom:12px;z-index:50;font:12px 'IBM Plex Sans',sans-serif;background:#fff;border:1px solid #D7DED9;border-radius:6px;padding:6px 8px";
     w.innerHTML=`<label style="cursor:pointer">⤓ Carga de dados (admin) <input id="carga-f" type="file" multiple accept=".jsonl,.json" hidden></label> <span id="carga-m" style="color:#5A6862"></span>`;
     document.body.appendChild(w);
-    w.querySelector("#carga-f").addEventListener("change",async e=>{const m=w.querySelector("#carga-m");const fs=[...e.target.files];e.target.value="";
+    w.querySelector("#carga-f").addEventListener("change",async e=>{const m=w.querySelector("#carga-m");const fs=[...e.target.files];e.target.value="";if(!fs.length)return;
+      const av=(ok,ti,tx)=>{try{window.ORC_AVISO&&window.ORC_AVISO(ok,ti,tx)}catch(_){}};av(null,"Carregando "+fs.length+" arquivo(s)…","Aguarde, não feche nem atualize a página.");
       try{for(const f of fs){const txt=await f.text();
         if(/\.jsonl$/i.test(f.name)){const docs=txt.split("\n").filter(Boolean).map(l=>JSON.parse(l));let lote=[],tam=0,n=0;
           const envia=async()=>{if(!lote.length)return;const {error}=await sb.from("docs").upsert(lote,{onConflict:"path"});err(error,"carga docs");n+=lote.length;m.textContent=`${n}/${docs.length} documentos…`;lote=[];tam=0};
@@ -130,7 +131,7 @@
           for(let i=0;i<rows.length;i+=500){r=await sb.from("regionais").insert(rows.slice(i,i+500));err(r.error,"gravar regionais")}m.textContent+=` · ${rows.length} regionais`}
         else if(/acessos/i.test(f.name)){const rows=JSON.parse(txt);let r=await sb.from("acessos").delete().neq("email","");err(r.error,"limpar acessos");
           for(let i=0;i<rows.length;i+=500){r=await sb.from("acessos").insert(rows.slice(i,i+500));err(r.error,"gravar acessos")}m.textContent+=` · ${rows.length} acessos`}}
-        m.textContent+=" · concluído. Recarregue a página.";}catch(x){m.textContent="Erro: "+x.message}});
+        m.textContent+=" · concluído. Recarregue a página.";av(true,"Carga de dados concluída com sucesso",m.textContent);}catch(x){m.textContent="Erro: "+x.message;av(false,"A carga de dados NÃO foi concluída",m.textContent)}});
   }
   window.ORC_PRE=async()=>{
     const {data}=await sb.auth.getSession();sess=data.session;

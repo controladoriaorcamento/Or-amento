@@ -38,7 +38,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;backgroun
 .brand{display:flex;align-items:baseline;gap:10px;min-width:0}
 .brand h1{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0;letter-spacing:-.01em}
 .brand span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}#grid tr.esp-row td{background:#F4F1FA;color:#5B4A86;font-style:italic;font-size:12px}#grid tr.esp-row .esp-tag{font-weight:600}.pill.esp-ok{background:#E3DCF5;color:#3E2F6B}table.comp{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}table.comp th,table.comp td{padding:5px 8px;border-bottom:1px solid var(--line)}table.comp tr.comp-y{cursor:pointer}table.comp tr.comp-m td{font-size:12px;color:var(--muted)}.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
+nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}.carga-aviso{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(20,30,25,.35)}.carga-aviso[hidden]{display:none}.carga-aviso .ca-box{display:flex;gap:14px;max-width:560px;background:var(--surface,#fff);border-radius:10px;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25);border-top:6px solid #8a8f8c}.carga-aviso.ok .ca-box{border-top-color:#1F7A4A}.carga-aviso.erro .ca-box{border-top-color:#B3261E}.carga-aviso .ca-ic{font-size:28px;line-height:1}.carga-aviso.ok .ca-ic{color:#1F7A4A}.carga-aviso.erro .ca-ic{color:#B3261E}.carga-aviso .ca-tx p{margin:6px 0 12px;white-space:pre-wrap;font-size:13px}#grid tr.esp-row td{background:#F4F1FA;color:#5B4A86;font-style:italic;font-size:12px}#grid tr.esp-row .esp-tag{font-weight:600}.pill.esp-ok{background:#E3DCF5;color:#3E2F6B}table.comp{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}table.comp th,table.comp td{padding:5px 8px;border-bottom:1px solid var(--line)}table.comp tr.comp-y{cursor:pointer}table.comp tr.comp-m td{font-size:12px;color:var(--muted)}.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
 .tab{border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
 button{font:inherit;cursor:pointer}
@@ -575,7 +575,7 @@ function parseNum(s){s=String(s??"").trim().replace(/[R$\s]/g,"");if(!s)return 0
   if(s.includes(",")) s=s.replace(/\./g,"").replace(",",".");
   else if(/^\-?\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,"");
   const n=Number(s);return isFinite(n)?Math.round(n*100)/100:NaN}
-function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,3200)}
+function toast(m){try{if(S.cargaAtiva)(S.cargaLog=S.cargaLog||[]).push(m)}catch(_){}const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,3200)}
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 const sum=a=>a.reduce((x,y)=>x+(+y||0),0);
 const nowISO=()=>new Date().toISOString();
@@ -1912,16 +1912,35 @@ $("#f-email").addEventListener("submit",async e=>{e.preventDefault();const em=$(
 function renderRegrasMsg(){const R=(S.regras&&S.regras.r)||{};const vals=Object.values(R);const tot=Object.values(T.tipos).reduce((a,tp)=>a+tp.rows.filter(r=>r[6]).length,0);
   const cnt={};vals.forEach(v=>{if(v[1])cnt[v[1]]=(cnt[v[1]]||0)+1});
   $("#rg-msg").textContent=vals.length?`${vals.filter(v=>v[1]).length} de ${tot} insumos do modelo com área definida (${Object.entries(cnt).map(([a,n])=>a+": "+n).join(" · ")}) · ${vals.filter(v=>v[0]==="Sim").length} com detalhamento obrigatório · arquivo: ${S.regras.arquivo||"—"} · ${S.regras.atualizadoEm?fmtDate(S.regras.atualizadoEm):""}`:"Nenhuma regra carregada: todos os insumos ficam bloqueados para os gerentes."}
-$("#rg-file").addEventListener("change",async e=>{
+/* ===== aviso de carga de planilha/arquivo: mostra "Carregando…" e, ao terminar, diz se deu certo ou não ===== */
+const CARGA_FALHA=/^(não|nenhum|erro)|atenção|não foi possível|não consegui|não encontrei|não carregou|não foram|não foi alterad|sem permissão|nada foi/i;
+function avisoCarga(estado,titulo,texto){let b=document.getElementById("carga-aviso");if(!b){b=document.createElement("div");b.id="carga-aviso";document.body.appendChild(b)}
+  b.className="carga-aviso "+estado;b.hidden=false;
+  b.innerHTML=`<div class="ca-box" role="alertdialog" aria-live="assertive"><div class="ca-ic">${estado==="ok"?"✓":estado==="erro"?"✕":"⏳"}</div><div class="ca-tx"><b>${esc(titulo)}</b><p>${esc(texto||"")}</p>${estado==="and"?"":'<button class="btn primary sm" id="ca-ok">OK</button>'}</div></div>`;
+  const ok=document.getElementById("ca-ok");if(ok){ok.onclick=()=>{b.hidden=true};setTimeout(()=>ok.focus(),50)}}
+window.ORC_AVISO=(ok,titulo,texto)=>avisoCarga(ok===null?"and":ok?"ok":"erro",titulo,texto);
+async function comCarga(el,fn,e){const fs=[...((e.target&&e.target.files)||[])];if(!fs.length)return fn(e);
+  const nome=fs.length>1?`${fs.length} arquivos`:fs[0].name;const card=(el&&el.closest(".card"))||document.body;const msgs=[...card.querySelectorAll('[id$="-msg"]')];
+  const antes=msgs.map(m=>m.textContent);S.cargaLog=[];S.cargaErro=null;S.cargaAtiva=true;const t0=Date.now();
+  avisoCarga("and",`Carregando ${nome}…`,"Aguarde, não feche nem atualize a página.");
+  let exc=null;try{await fn(e)}catch(x){exc=x}
+  await new Promise(r=>setTimeout(r,250));S.cargaAtiva=false;
+  const mudou=msgs.filter((m,i)=>m.textContent!==antes[i]).map(m=>m.innerText.trim()).filter(Boolean);
+  const texto=(exc?"Erro: "+(exc.message||exc):"")||S.cargaErro||mudou.slice(-1)[0]||(S.cargaLog||[]).slice(-1)[0]||"";
+  const falhou=!!exc||!!S.cargaErro||CARGA_FALHA.test(texto.trim());const seg=Math.round((Date.now()-t0)/1000);
+  avisoCarga(falhou?"erro":"ok",falhou?`A carga de ${nome} NÃO foi concluída`:`Carga de ${nome} concluída com sucesso`,(texto||"Arquivo processado.")+(seg>=2?` (${seg} s)`:""))}
+function onCarga(sel,fn){const el=document.querySelector(sel);if(el)el.addEventListener("change",e=>comCarga(el,fn,e))}
+
+onCarga("#rg-file",async e=>{
   const f=e.target.files[0];e.target.value="";if(!f)return;
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
   try{
     const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
-    const nm=wb.SheetNames.find(n=>n.toLowerCase().replace(/\s/g,"").includes("bases-gerais"))||wb.SheetNames.find(n=>{const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1})[0]||[];return r.some(c=>String(c).toLowerCase().includes("planeja"))});
+    const nm=wb.SheetNames.find(n=>n.toLowerCase().replace(/\s/g,"").includes("bases-gerais"))||wb.SheetNames.find(n=>{const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1})[0]||[];return r.some(c=>String(c).toLowerCase().includes("quem planeja"))});
     if(!nm)throw new Error("aba");
     const rows=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:""});const h=rows[0].map(c=>String(c).toLowerCase());
     const ci=k=>h.findIndex(c=>c.includes(k));
-    const iO=ci("obra"),iP=ci("produto"),iS=ci("servi"),iI=ci("insumo"),iA=ci("planeja");let iB=ci("obragatoriedade");if(iB<0)iB=ci("obrigatoriedade");
+    const iO=ci("obra"),iP=ci("produto"),iS=ci("servi"),iI=ci("insumo");let iA=ci("quem planeja");if(iA<0&&nm.toLowerCase().replace(/\s/g,"").includes("bases-gerais"))iA=ci("planeja");let iB=ci("obragatoriedade");if(iB<0)iB=ci("obrigatoriedade");
     if([iO,iP,iS,iI,iA].some(x=>x<0))throw new Error("cols");
     const R={};rows.slice(1).forEach(r=>{const tipo=String(r[iO]).trim();if(!tipo)return;const P=String(r[iP]).trim().split(" ")[0];let Sv=String(r[iS]).trim();if(Sv==="-1")Sv="";const I=String(r[iI]).trim();
       const obr=iB>=0?String(r[iB]).trim().toLowerCase():"";const ob=obr==="sim"?"Sim":(obr.startsWith("n")?"Não":"");const ar=String(r[iA]).trim();if(ob||ar)R[`${tipo}|${P}|${Sv}|${I}`]=[ob,ar]});
@@ -1985,7 +2004,7 @@ $("#btn-dp-modelo").addEventListener("click",async()=>{
   const bm=XLSX.utils.aoa_to_sheet([["Base modelo","Descrição"],...Object.entries(TIPO_NOME).filter(([k])=>k).map(([k,v])=>[k,v])]);XLSX.utils.book_append_sheet(wb,bm,"Bases modelo");
   try{await S.dl.save({filename:"DE_PARA_GERENTES_OBRAS.xlsx",data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))})}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
 });
-$("#dp-file").addEventListener("change",async e=>{
+onCarga("#dp-file",async e=>{
   const f=e.target.files[0];e.target.value="";if(!f)return;
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
   try{
@@ -2118,7 +2137,7 @@ async function baixarExcel(comPadrao){
 
 /* ---------- validação contra a estrutura real do sistema (Base - Planejamento.xlsx) ---------- */
 const cod=v=>String(v==null?"":v).trim().replace(/\.0+$/,"");
-$("#es-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+onCarga("#es-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
   $("#es-msg").textContent="Lendo a estrutura… (arquivo grande, pode levar até 1 minuto)";await new Promise(r=>setTimeout(r,30));
   try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array",dense:true});
@@ -2222,7 +2241,7 @@ function confirmaRecebimento(url,k){return new Promise(res=>{const cb="orcok"+Ma
   sc.src=url+(url.includes("?")?"&":"?")+"k="+encodeURIComponent(k)+"&cb="+cb;document.head.appendChild(sc)})}
 function offlineAfterSend(){$("#off-card").scrollIntoView({block:"start"});renderStatus();offlineEnviarControladoria().catch(()=>toast("Não foi possível enviar. Use Salvar cópia e mande por e-mail."))}
 $("#off-export").addEventListener("click",()=>offlineExport().catch(()=>toast("Não foi possível gerar o arquivo.")));
-$("#off-import").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+onCarga("#off-import",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   try{const r=JSON.parse(await f.text());if(r.kind!=="orcamento-offline-retorno")throw 0;if(r.fid!==window.OFFLINE.fid&&!confirmFid(r))return;
     const A=S.offApi;Object.entries(r.orc||{}).forEach(([id,v])=>A.set("gerentes/off/orc/"+id,v));Object.entries(r.versoes||{}).forEach(([id,vs])=>Object.entries(vs).forEach(([vid,v])=>A.set(`gerentes/off/orc/${id}/versoes/${vid}`,v)));A.persist();
     toast("Arquivo carregado");await loadMine()}catch(err){toast("Este não é um arquivo de orçamento válido.")}});
@@ -2296,7 +2315,7 @@ $("#og-gerar").addEventListener("click",async()=>{
 });
 
 /* planilha de cargos e gerentes: importação, liberação automática e disparo */
-$("#pl-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+onCarga("#pl-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
   $("#pl-msg").textContent="Lendo planilha…";
   try{
@@ -2334,7 +2353,7 @@ $("#pl-file").addEventListener("change",async e=>{const f=e.target.files[0];e.ta
 });
 function renderBases(){const f=d=>d&&d.atualizadoEm?`${fmtDate(d.atualizadoEm)}${d.arquivo?" · "+d.arquivo:""}`:"—";
   $("#bs-modelo").textContent=f(S.regras);$("#bs-depara").textContent=f(S.dpR);$("#bs-rev").textContent=S.dpR&&S.dpR.rvEm?`${fmtDate(S.dpR.rvEm)} · ${(S.dpR.rv||[]).length} itens`:"—";$("#bs-sub").textContent=S.subR?f(S.subR)+` · ${Object.keys(S.subR.r||{}).length} insumos`:"—"}
-$("#rv-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+onCarga("#rv-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
   try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const ws=wb.Sheets["Revisão"];if(!ws)throw new Error("aba");
     const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});const h=rows[0].map(c=>String(c).trim());const ix=n=>h.indexOf(n);
@@ -2347,7 +2366,7 @@ $("#rv-file").addEventListener("change",async e=>{const f=e.target.files[0];e.ta
     const dpDoc={...(S.dpR||{r:{},o:{}}),t:T,rv,rvArquivo:f.name,rvEm:nowISO()};await S.db.doc("regras/depara").set(dpDoc);S.dpR=dpDoc;renderBases();if(S.cur){applyRules(S.cur);renderGrid()}
     $("#bs-msg").textContent=`Revisão carregada: ${rv.length} item(ns) com cargo corrigido${noModelo?` · ${noModelo} ignorado(s) porque já estão no MODELO (vale a Bases - Gerais)`:""}. Para o formulário offline, gere o disparo de novo.`;
   }catch(err){$("#bs-msg").textContent=err&&err.message==="aba"?"Não encontrei a aba Revisão.":"Não consegui ler a planilha de revisão."}});
-$("#sb-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+onCarga("#sb-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
   try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
     /* aceita a aba "5. Subitens" da CONFIGURAÇÃO (código, descrição e orientação) e o formato antigo (aba "Subitens") */
@@ -2378,7 +2397,7 @@ async function lerEspelho(f){const wb=XLSX.read(await f.arrayBuffer(),{type:"arr
       if(!nomes[o])nomes[o]=[String(c.EN>=0?r[c.EN]:""),String(c.ON>=0?r[c.ON]:"")]});
     return {D,nomes,n,tot,fora,aba:sn}}
   throw new Error("colunas")}
-$("#esp-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("#esp-msg");
+onCarga("#esp-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("#esp-msg");
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
   msg.textContent="Lendo a planilha do espelho… (pode levar alguns segundos)";
   try{const {D,nomes,n,tot,fora}=await lerEspelho(f);const obras=Object.keys(D);if(obras.length<10)throw new Error("poucas");
@@ -2393,7 +2412,7 @@ $("#esp-file").addEventListener("change",async e=>{const f=e.target.files[0];e.t
   catch(err){msg.textContent=err&&err.message==="colunas"?"Não encontrei as colunas empresa, obra, produto, servico, insumo, PlMes_si e Projetado.":err&&err.message==="poucas"?"A planilha tem poucas obras; o espelho NÃO foi alterado.":"Não foi possível carregar o espelho: "+(err&&err.message||err)}});
 document.addEventListener("click",async e=>{if(e.target.id!=="esp-baixar-falta"||!S.espFalta)return;const ws=XLSX.utils.aoa_to_sheet([["Empresa","Nome da empresa","Obra","Descrição da obra","Situação"],...S.espFalta]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Espelho sem formulário");
   await S.dl.save({filename:"ESPELHO_OBRAS_SEM_FORMULARIO.xlsx",data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))})});
-$("#estr-file").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("#esp-msg");
+onCarga("#estr-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("#esp-msg");
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}msg.textContent="Lendo a estrutura…";
   try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const E=new Map();
     wb.SheetNames.forEach(n=>{const rows=xlsRows(wb,n);if(!rows.length)return;const ix=hIdx(rows[0]);const iE=ix("CodEmpresa"),iO=ix("CodObra"),iEN=ix("Empresa"),iON=ix("Obra"),iG=ix("GrupoEmpresa");if(iE<0||iO<0)return;
@@ -2567,7 +2586,7 @@ async function importarRetorno(f){
     const h=await S.db.doc("restrito/hist/eo/"+id).get();if(h.exists)await S.db.doc(`gerentes/${uid}/hist/${id}`).set(h.data());n++}
   return [R.nome||"gerente",n];
 }
-$("#og-retorno").addEventListener("change",async e=>{const fs=[...e.target.files];e.target.value="";if(!fs.length)return;
+onCarga("#og-retorno",async e=>{const fs=[...e.target.files];e.target.value="";if(!fs.length)return;
   const ok=[],bad=[];for(const [i,f] of fs.entries()){$("#og-msg").textContent=`Importando ${i+1}/${fs.length}…`;try{const [nm,n]=await importarRetorno(f);ok.push(`${nm} (${n} obra${n===1?"":"s"})`)}catch(err){bad.push(f.name)}}
   $("#og-msg").textContent=(ok.length?`Importado: ${ok.join(" · ")}. Confira no Acompanhamento.`:"")+(bad.length?` Não importados (arquivo inválido): ${bad.join(", ")}.`:"");loadAdm();});
 
