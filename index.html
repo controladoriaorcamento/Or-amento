@@ -1215,7 +1215,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
   {const corpo=h.slice(iniLinhas);h=h.slice(0,iniLinhas)+montarMulti(corpo,nCols)}
   h+=`</tbody><tfoot><tr><td class="c-desc" style="padding-left:8px">Total da obra</td>${REF.replace(/data-r=/g,"data-f=")}<td class="c-flag"></td><td></td>${MES.map((_,m)=>`<td class="num" data-f="m${m}"></td>`).join("")}<td class="num tot" data-f="t"></td><td class="num" data-f="d"></td><td></td></tr></tfoot>`;
   $("#grid").innerHTML=h;
-  document.querySelectorAll("#grid textarea.sname").forEach(t=>{t.style.height="auto";t.style.height=t.scrollHeight+"px"});
+  {const tas=[...document.querySelectorAll("#grid textarea.sname")];tas.forEach(t=>t.style.height="auto");const hs=tas.map(t=>t.scrollHeight);tas.forEach((t,i)=>t.style.height=hs[i]+"px")}/* ajuste em lote: 1 recálculo de layout em vez de 1 por subitem (antes ~6 s com 175 subitens) */
   try{marcarNivel()}catch(e){}{const bt=$("#grid thead tr.band"),ct=$("#grid thead tr.ctx");if(ct)$("#grid").style.setProperty("--ctxH",ct.getBoundingClientRect().height+"px");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
   updateTotals();
 }
