@@ -38,7 +38,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;backgroun
 .brand{display:flex;align-items:baseline;gap:10px;min-width:0}
 .brand h1{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0;letter-spacing:-.01em}
 .brand span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}.carga-aviso{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(20,30,25,.35)}.carga-aviso[hidden]{display:none}.carga-aviso .ca-box{display:flex;gap:14px;max-width:560px;background:var(--surface,#fff);border-radius:10px;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25);border-top:6px solid #8a8f8c}.carga-aviso.ok .ca-box{border-top-color:#1F7A4A}.carga-aviso.erro .ca-box{border-top-color:#B3261E}.carga-aviso .ca-ic{font-size:28px;line-height:1}.carga-aviso.ok .ca-ic{color:#1F7A4A}.carga-aviso.erro .ca-ic{color:#B3261E}.carga-aviso .ca-tx p{margin:6px 0 12px;white-space:pre-wrap;font-size:13px}#grid tr.esp-row td{background:#F4F1FA;color:#5B4A86;font-style:italic;font-size:12px}#grid tr.esp-row .esp-tag{font-weight:600}.pill.esp-ok{background:#E3DCF5;color:#3E2F6B}table.comp{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}table.comp th,table.comp td{padding:5px 8px;border-bottom:1px solid var(--line)}table.comp tr.comp-y{cursor:pointer}table.comp tr.comp-m td{font-size:12px;color:var(--muted)}.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
+nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}.carga-aviso{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(20,30,25,.35)}.carga-aviso[hidden]{display:none}.carga-aviso .ca-box{display:flex;gap:14px;max-width:560px;background:var(--surface,#fff);border-radius:10px;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25);border-top:6px solid #8a8f8c}.carga-aviso.ok .ca-box{border-top-color:#1F7A4A}.carga-aviso.erro .ca-box{border-top-color:#B3261E}.carga-aviso .ca-ic{font-size:28px;line-height:1}.carga-aviso.ok .ca-ic{color:#1F7A4A}.carga-aviso.erro .ca-ic{color:#B3261E}.carga-aviso .ca-tx p{margin:6px 0 12px;white-space:pre-wrap;font-size:13px}#grid tr.esp-row td{background:#F4F1FA;color:#5B4A86;font-style:italic;font-size:12px}#grid tr.esp-row .esp-tag{font-weight:600}.pill.esp-ok{background:#E3DCF5;color:#3E2F6B}table.comp{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}table.comp th,table.comp td{padding:5px 8px;border-bottom:1px solid var(--line)}table.comp tr.comp-y{cursor:pointer}table.comp tr.comp-m td{font-size:12px;color:var(--muted)}#grid .al{display:inline-block;margin-left:6px;padding:0 6px;border-radius:9px;font-size:10.5px;font-style:normal;font-weight:600;line-height:16px;white-space:nowrap}#grid .al-novo,.al-novo{background:#E1ECF7;color:#1B4F80}#grid .al-up,.al-up{background:#FBE3DF;color:#9A2A1A}#grid .al-dn,.al-dn{background:#E2F2E7;color:#1F6B3A}.al{border-radius:9px;padding:0 6px;font-size:11px;font-weight:600}#al-box table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}#al-box th,#al-box td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:left}#al-box td.num,#al-box th.num{text-align:right}.esp-div-it{display:flex;gap:10px;align-items:center;padding:4px 0}.esp-div-it input[type=number]{width:80px}.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
 .tab{border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
 button{font:inherit;cursor:pointer}
@@ -366,6 +366,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
       </div>
       <div id="esp-confirm" class="card" style="margin-bottom:12px;border-color:var(--warn)" hidden></div>
       <div id="comp-box" class="card" style="margin-bottom:12px" hidden></div>
+      <div id="al-box" class="card" style="margin-bottom:12px" hidden></div>
       <div id="add-box" class="card" style="margin-bottom:12px" hidden>
         <label class="lbl" for="add-q">Adicionar item da base modelo a esta obra</label>
         <input type="search" id="add-q" placeholder="Digite parte da descrição, serviço (S…) ou insumo (I…)" style="width:100%">
@@ -1195,7 +1196,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
       else acts=`<button data-act="rep" data-i="${idx}" title="Repete o primeiro valor preenchido em todos os meses">Repetir</button>${q?"":`<button data-act="avg" data-i="${idx}" title="Preenche os 12 meses com a média de 2026 (total ÷ meses com gasto)">Média 26</button><button data-act="det" data-i="${idx}" title="Abre subitens só para preenchimento (ex.: IRRF, 13º, VA, VT). O Excel recebe apenas o total do item">Detalhar</button>`}<button data-act="clr" data-i="${idx}" title="Limpa os 12 meses deste ano">Limpar</button>`;
     }
     if(modoRevisao())acts+=`<button data-act="rev" data-i="${idx}" class="${revDe(l)?"rev-on":""}" title="Escrever o que está errado neste insumo (o gerente vê ao reabrir)">${revDe(l)?"✎ Apontamento":"⚠ Apontar"}</button>`;
-    h+=`<tr data-i="${idx}" class="${hs?"has-sub":""}${revDe(l)?" has-rev":""}"><td class="c-desc" style="padding-left:${pad}px" title="${esc(l.desc)} ${esc(l.S)} ${esc(l.I)}"><button class="ldr" data-ldr="${idx}" title="Abrir os meses de 2025 e 2026 deste insumo" aria-expanded="${!!(S.lineOpen&&S.lineOpen.has(l.key))}">${S.lineOpen&&S.lineOpen.has(l.key)?"▾":"▸"}</button><button class="dlink" data-det="${idx}">${esc(l.desc)}</button>${q?`<span class="un">${esc(l.un)}</span>`:""}${hs?`<span class="un" title="Soma dos subitens">detalhado</span>`:""}${l.area&&!restrito()?`<span class="area" title="Quem planeja: ${esc(l.area)}">${esc(AREA_CURTA[l.area]||l.area)}</span>`:""}${l.obrigRegra&&!OBRIG_TODOS?`<span class="un" title="Obrigatório preencher pelos subitens">obrigatório detalhar</span>`:""}${orientacao(l)?`<span class="un orient" title="${esc(orientacao(l))}">ⓘ ${esc(orientacao(l))}</span>`:""}${!l.canEdit&&editable?`<span class="lock" title="${esc(l.lockMsg)}">${l.area?"bloqueado":"sem regra"}</span>`:""}${revDe(l)?`<div class="rev-note" title="${esc(revDe(l).t)}">⚠ Controladoria: ${esc(revDe(l).t)}</div>`:""}</td>
+    h+=`<tr data-i="${idx}" class="${hs?"has-sub":""}${revDe(l)?" has-rev":""}"><td class="c-desc" style="padding-left:${pad}px" title="${esc(l.desc)} ${esc(l.S)} ${esc(l.I)}"><button class="ldr" data-ldr="${idx}" title="Abrir os meses de 2025 e 2026 deste insumo" aria-expanded="${!!(S.lineOpen&&S.lineOpen.has(l.key))}">${S.lineOpen&&S.lineOpen.has(l.key)?"▾":"▸"}</button><button class="dlink" data-det="${idx}">${esc(l.desc)}</button>${q?`<span class="un">${esc(l.un)}</span>`:""}${hs?`<span class="un" title="Soma dos subitens">detalhado</span>`:""}${l.area&&!restrito()?`<span class="area" title="Quem planeja: ${esc(l.area)}">${esc(AREA_CURTA[l.area]||l.area)}</span>`:""}${l.obrigRegra&&!OBRIG_TODOS?`<span class="un" title="Obrigatório preencher pelos subitens">obrigatório detalhar</span>`:""}${orientacao(l)?`<span class="un orient" title="${esc(orientacao(l))}">ⓘ ${esc(orientacao(l))}</span>`:""}${alertasHtml(l)}${!l.canEdit&&editable?`<span class="lock" title="${esc(l.lockMsg)}">${l.area?"bloqueado":"sem regra"}</span>`:""}${revDe(l)?`<div class="rev-note" title="${esc(revDe(l).t)}">⚠ Controladoria: ${esc(revDe(l).t)}</div>`:""}</td>
     ${REF}
     <td class="c-flag">${ce&&!hs?flagSel(l.key,y,idx,undefined,y!=="2027"||!q):hs?`<span class="muted" style="font-size:11px">${S.hideSubs?`${subs.length} subitem(ns) recolhido(s)`:"nos subitens ↓"}</span>`:""}</td>
     <td class="cell">${q?`<input id="pr-${idx}" data-pr="${idx}" value="${f2(+pr)}" ${l.canEdit?"":"disabled"} aria-label="Preço unitário ${esc(l.desc)}" inputmode="decimal">`:`<span class="empty-cell" style="padding:0 8px">—</span>`}</td>
@@ -1217,7 +1218,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
   $("#grid").innerHTML=h;
   {const tas=[...document.querySelectorAll("#grid textarea.sname")];tas.forEach(t=>t.style.height="auto");const hs=tas.map(t=>t.scrollHeight);tas.forEach((t,i)=>t.style.height=hs[i]+"px")}/* ajuste em lote: 1 recálculo de layout em vez de 1 por subitem (antes ~6 s com 175 subitens) */
   try{marcarNivel()}catch(e){}{const bt=$("#grid thead tr.band"),ct=$("#grid thead tr.ctx");if(ct)$("#grid").style.setProperty("--ctxH",ct.getBoundingClientRect().height+"px");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
-  updateTotals();
+  updateTotals();try{renderAlertas()}catch(e){}
 }
 function deltaHtml(t,p26){if(!t)return"";if(!p26)return`<span class="delta up">novo</span>`;const d=(t/p26-1)*100;const c=Math.abs(d)<2?"eq":d>0?"up":"dn";return`<span class="delta ${c}">${d>0?"+":""}${nf0.format(d)}%</span>`}
 function histStats(hm){const a=hm.slice(0,12),b=hm.slice(12);const h25=sum(a),h26=sum(b),n25=a.filter(v=>Math.abs(v)>0.004).length,n26=b.filter(v=>Math.abs(v)>0.004).length;
@@ -1364,16 +1365,54 @@ async function carregarEspelho(o){S.espCache=S.espCache||{};if(o in S.espCache)r
   let d=null;try{if(window.ORC_HOOKS&&window.ORC_HOOKS.espelhoDaObra)d=await window.ORC_HOOKS.espelhoDaObra(o)}catch(e){d=null}S.espCache[o]=d;return d}
 function anoTemValor(l,y){const d=S.cur.doc;if(((d.v[l.key]||{})[y]||[]).some(v=>+v))return true;return subsOf(l).some(sb=>((d.v[subKey(l,sb)]||{})[y]||[]).some(v=>+v))}
 function linhaEspelho(l,idx,y,pad,REF,ce){const a=l.esp[y]||[];const mant=S.cur.doc.espM&&S.cur.doc.espM[l.key];const pode=ce&&ANOS_ESP.some(yy=>temEsp(l,yy)&&!anoTemValor(l,yy));
-  const bt=mant?`<span class="pill esp-ok" title="Mantido em ${esc(fmtDate(mant.em||""))}">✓ espelho mantido</span>`:pode?`<button class="btn sm" data-esp-manter="${idx}" title="Copia o espelho para os anos em que este item ainda não tem valor (2027–2029) e pede a justificativa">Manter espelho</button>`:"";
+  const bt=mant?`<span class="pill esp-ok" title="Mantido em ${esc(fmtDate(mant.em||""))}">✓ espelho mantido</span>${ce?` <button class="btn sm" data-esp-desf="${idx}" title="Tira os valores que vieram do espelho (só os que não foram alterados depois)">Desfazer</button>`:""}`:pode?`<button class="btn sm" data-esp-manter="${idx}" title="Copia o espelho para os anos em que este item ainda não tem valor (2027–2029) e pede a justificativa">Manter espelho</button>`:"";
   return `<tr class="esp-row" data-esp="${idx}"><td class="c-desc" style="padding-left:${pad+18}px"><span class="sub-mark">↳</span><span class="esp-tag">Espelho (já planejado)</span></td>${REF.replace(/data-r="[^"]*"/g,"")}<td class="c-flag">${bt}</td><td></td>${MES.map((_,m)=>`<td class="num esp-v">${a[m]?f0(a[m]):""}</td>`).join("")}<td class="num esp-v">${f0(sum(a))}</td><td></td><td class="acts muted" style="font-size:11px">não entra no total${mant?"":" até manter"}</td></tr>`}
-function manterEspelho(l,silencioso){if(!l.canEdit||!temEsp(l))return 0;const d=S.cur.doc;let n=0;const yAnt=S.year;
-  ANOS_ESP.forEach(y=>{const a=l.esp[y];if(!a||!a.some(v=>+v)||anoTemValor(l,y))return;S.year=y;
-    const subs=subsOf(l);
-    if(subs.length){let sb=subs.find(x=>!YEARS.some(yy=>((d.v[subKey(l,x)]||{})[yy]||[]).some(v=>+v)))||subs[0];if(nomeGenerico(sb.n))sb.n="Planejado (espelho)";a.forEach((v,m)=>setValKey(subKey(l,sb),m,Math.round((+v||0)*100)/100));syncLeaf(l)}
-    else a.forEach((v,m)=>setValKey(l.key,m,Math.round((+v||0)*100)/100));
-    n++});
-  S.year=yAnt;if(n){d.espM=d.espM||{};d.espM[l.key]={em:nowISO(),anos:ANOS_ESP.filter(y=>temEsp(l,y))};if(!silencioso){changed();renderGrid();const i=S.cur.lines.indexOf(l);const el=$("#lo-"+i);if(el){el.hidden=false;el.focus()}toast("Espelho mantido. Escreva a justificativa deste item (mínimo "+OBS_MIN+" caracteres).")}}
-  return n}
+function alvosPadrao(l){const d=S.cur.doc;const subs=subsOf(l);if(!subs.length)return[{k:l.key,p:100}];
+  const sb=subs.find(x=>!YEARS.some(yy=>((d.v[subKey(l,x)]||{})[yy]||[]).some(v=>+v)))||subs[0];if(nomeGenerico(sb.n))sb.n="Planejado (espelho)";return[{k:subKey(l,sb),p:100}]}
+/* copia o espelho para os alvos (item ou subitens, com % de cada), só nos anos sem valor; guarda o que copiou em espM.f para poder desfazer */
+function aplicarEspelho(l,alvos){const d=S.cur.doc;alvos=alvos.filter(x=>+x.p>0);const tp=sum(alvos.map(x=>+x.p));if(!tp)return 0;let n=0;const yAnt=S.year;const f={};
+  ANOS_ESP.forEach(y=>{const a=l.esp[y];if(!a||!a.some(v=>+v)||anoTemValor(l,y))return;S.year=y;const fy={};alvos.forEach(x=>fy[x.k]=new Array(12).fill(0));
+    a.forEach((v0,m)=>{const v=Math.round((+v0||0)*100)/100;let resto=v;alvos.forEach((x,i)=>{const q=i===alvos.length-1?resto:Math.round(v*(+x.p)/tp*100)/100;resto=Math.round((resto-q)*100)/100;fy[x.k][m]=q})});
+    Object.entries(fy).forEach(([k,arr])=>arr.forEach((q,m)=>setValKey(k,m,q)));f[y]=fy;n++});
+  S.year=yAnt;syncLeaf(l);if(n){d.espM=d.espM||{};d.espM[l.key]={em:nowISO(),anos:Object.keys(f),f}}return n}
+function posManter(l){changed();renderGrid();const i=S.cur.lines.indexOf(l);const el=$("#lo-"+i);if(el){el.hidden=false;el.focus()}toast("Espelho mantido. Escreva a justificativa deste item (mínimo "+OBS_MIN+" caracteres).")}
+function manterEspelho(l,silencioso){if(!l.canEdit||!temEsp(l))return 0;
+  if(!silencioso&&subsOf(l).length>1){abrirDivEsp(l);return 0}
+  const n=aplicarEspelho(l,alvosPadrao(l));if(n&&!silencioso)posManter(l);return n}
+/* janela para dividir o espelho entre 1 ou mais subitens */
+function abrirDivEsp(l){const idx=S.cur.lines.indexOf(l);const subs=subsOf(l);const box=$("#esp-confirm");S.espDiv={idx};
+  const anos=ANOS_ESP.filter(y=>temEsp(l,y)&&!anoTemValor(l,y));const pe=subs.length?Math.round(10000/subs.length)/100:0;
+  box.hidden=false;box.innerHTML=`<b>Manter o espelho em “${esc(l.desc)}”</b> <span class="muted">— escolha em quais subitens o valor entra e quanto (%) vai para cada um. Anos: ${anos.map(y=>`${y} (${f0(sum(l.esp[y]))})`).join(" · ")}. O total continua igual ao espelho.</span>
+   <div style="margin-top:8px">${subs.map((sb,i)=>`<label class="esp-div-it"><input type="checkbox" data-edc="${esc(sb.id)}" checked> <span style="min-width:260px">${esc(sb.n)}</span> <input type="number" min="0" max="100" step="0.01" data-edp="${esc(sb.id)}" value="${i===subs.length-1?Math.round((100-pe*(subs.length-1))*100)/100:pe}"> %</label>`).join("")}
+   <label class="esp-div-it"><input type="checkbox" data-edc="__novo"> <span style="min-width:260px">Novo subitem “Planejado (espelho)”</span> <input type="number" min="0" max="100" step="0.01" data-edp="__novo" value="0"> %</label></div>
+   <div class="row" style="gap:8px;margin-top:8px"><button class="btn sm" id="esp-div-igual">Dividir igual</button><span id="esp-div-soma" class="muted"></span><span style="flex:1"></span><button class="btn sm primary" id="esp-div-ok">Manter espelho</button><button class="btn sm" id="esp-div-no">Cancelar</button></div>`;
+  somaDivEsp();box.scrollIntoView({block:"nearest"})}
+function lerDivEsp(){const box=$("#esp-confirm");const r=[];box.querySelectorAll("[data-edc]").forEach(c=>{const p=box.querySelector(`[data-edp="${CSS.escape(c.dataset.edc)}"]`);r.push({id:c.dataset.edc,on:c.checked,p:c.checked?(+String(p.value).replace(",",".")||0):0})});return r}
+function somaDivEsp(){const r=lerDivEsp();const t=Math.round(sum(r.map(x=>x.p))*100)/100;const ok=Math.abs(t-100)<0.011&&r.some(x=>x.on&&x.p>0);const el=$("#esp-div-soma");if(el){el.textContent=`Soma: ${t.toLocaleString("pt-BR")}%`+(ok?"":" — precisa dar 100%");el.style.color=ok?"":"var(--danger,#B3261E)"}const b=$("#esp-div-ok");if(b)b.disabled=!ok;return ok}
+document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#esp-confirm")&&S.espDiv)somaDivEsp()});
+document.addEventListener("change",e=>{const c=e.target;if(!S.espDiv||!c.dataset||c.dataset.edc===undefined)return;const p=$("#esp-confirm").querySelector(`[data-edp="${CSS.escape(c.dataset.edc)}"]`);if(!c.checked)p.value=0;somaDivEsp()});
+document.addEventListener("click",e=>{if(!S.espDiv)return;const id=e.target.id;
+  if(id==="esp-div-no"){$("#esp-confirm").hidden=true;S.espDiv=null;return}
+  if(id==="esp-div-igual"){const box=$("#esp-confirm");const on=[...box.querySelectorAll("[data-edc]")].filter(c=>c.checked);if(!on.length)return;const pe=Math.floor(10000/on.length)/100;
+    box.querySelectorAll("[data-edp]").forEach(p=>p.value=0);on.forEach((c,i)=>{box.querySelector(`[data-edp="${CSS.escape(c.dataset.edc)}"]`).value=i===on.length-1?Math.round((100-pe*(on.length-1))*100)/100:pe});somaDivEsp();return}
+  if(id!=="esp-div-ok"||!somaDivEsp())return;
+  const l=S.cur.lines[S.espDiv.idx];const d=S.cur.doc;const alvos=[];
+  lerDivEsp().filter(x=>x.on&&x.p>0).forEach(x=>{if(x.id==="__novo"){d.sub=d.sub||{};const arr=subsOf(l).slice();const nv={id:"s"+Date.now().toString(36),n:"Planejado (espelho)"};arr.push(nv);d.sub[l.key]=arr;alvos.push({k:subKey(l,nv),p:x.p})}else alvos.push({k:l.key+"#"+x.id,p:x.p})});
+  $("#esp-confirm").hidden=true;S.espDiv=null;const n=aplicarEspelho(l,alvos);if(n)posManter(l);else toast("Nada foi copiado: os anos com espelho já têm valor.")});
+/* desfazer o "Manter espelho": tira só o que veio do espelho e não foi alterado depois */
+function desfazerEspelho(l){const d=S.cur.doc;const m0=(d.espM||{})[l.key];if(!m0)return;const yAnt=S.year;let lim=0,mant=0;
+  const eq=(a,b)=>{for(let m=0;m<12;m++)if(Math.abs((+a[m]||0)-(+b[m]||0))>0.006)return false;return true};const zera=k=>{for(let m=0;m<12;m++)setValKey(k,m,0)};
+  if(m0.f){Object.entries(m0.f).forEach(([y,fy])=>{S.year=y;Object.entries(fy).forEach(([k,arr])=>{const cur=(d.v[k]||{})[y]||[];if(!cur.some(v=>+v))return;if(eq(cur,arr)){zera(k);lim++}else mant++})})}
+  else (m0.anos||ANOS_ESP).forEach(y=>{S.year=y;const esp=(l.esp&&l.esp[y]||[]).map(v=>Math.round((+v||0)*100)/100);const subs=subsOf(l);const ks=subs.length?subs.map(sb=>subKey(l,sb)):[l.key];
+    const tot=new Array(12).fill(0);ks.forEach(k=>((d.v[k]||{})[y]||[]).forEach((v,m)=>tot[m]+=+v||0));if(!tot.some(v=>Math.abs(v)>0.004))return;
+    if(esp.length&&eq(tot,esp)){ks.forEach(zera);lim++}else mant++});
+  S.year=yAnt;syncLeaf(l);
+  subsOf(l).forEach((sb,i)=>{if(sb.n==="Planejado (espelho)"&&!YEARS.some(yy=>((d.v[subKey(l,sb)]||{})[yy]||[]).some(v=>+v)))sb.n="Detalhe "+(i+1)});
+  delete d.espM[l.key];changed();renderGrid();
+  toast(mant?`Espelho desfeito. ${mant} parte(s) foram mantidas porque já tinham sido alteradas depois de manter o espelho.`:"Espelho desfeito: os valores que vieram do espelho foram tirados.")}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-esp-desf]");if(!b||!S.cur)return;const l=S.cur.lines[+b.dataset.espDesf];if(!l)return;
+  if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar desfazer";b.classList.add("danger");setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent="Desfazer";b.classList.remove("danger")}},5000);return}
+  desfazerEspelho(l)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-esp-manter]");if(!b||!S.cur)return;const l=S.cur.lines[+b.dataset.espManter];if(l)manterEspelho(l)});
 function itensEspLote(){if(!S.cur||!S.cur.editable)return[];return S.cur.lines.filter(l=>l.kind==="leaf"&&l.canEdit&&prodOk(l)&&(!restrito()||l.mine)&&temEsp(l)&&!(S.cur.doc.espM||{})[l.key]&&ANOS_ESP.some(y=>temEsp(l,y)&&!anoTemValor(l,y)))}
 function renderBtnEsp(){const b=$("#btn-esp-lote");if(!b)return;const n=itensEspLote().length;b.hidden=!n;b.textContent=`Manter espelho nos itens sem valor (${n})`}
@@ -1400,6 +1439,37 @@ function renderComp(){const box=$("#comp-box");if(!box||box.hidden||!S.cur)retur
   box.innerHTML=h+`</tbody></table>`}
 document.addEventListener("click",e=>{if(e.target.id==="btn-comp"){const b=$("#comp-box");b.hidden=!b.hidden;e.target.setAttribute("aria-pressed",String(!b.hidden));renderComp();return}
   const r=e.target.closest("[data-comp-y]");if(!r)return;S.compAb=S.compAb||new Set();const y=r.dataset.compY;if(S.compAb.has(y))S.compAb.delete(y);else S.compAb.add(y);renderComp()});
+
+/* ===================== ALERTAS DA ANÁLISE (só master): novo, aumento e redução ≥ 10% vs ano anterior e vs espelho ===================== */
+const ALERTA_PCT=0.10;
+function anteriorLinha(doc,l,y){if(y==="2027"){const real=sum((l.h||[]).slice(12,21));const e26=l.esp&&l.esp["2026"];if(e26&&e26.some(v=>+v))return real+sum(e26.slice(9));return real/9*12}return lineTotal(doc,l,String(+y-1))}
+function alertasLinha(doc,l,y){if(l.kind!=="leaf")return[];const P=lineTotal(doc,l,y),A=anteriorLinha(doc,l,y),E=sum((l.esp&&l.esp[y])||[]);const out=[];
+  const pc=(a,b)=>nf0.format(Math.abs(a/b-1)*100)+"%";const big=(a,b)=>b>0.5&&Math.abs(a/b-1)>=ALERTA_PCT;const ya=y==="2027"?"2026":String(+y-1);
+  if(P>0.5&&A<=0.5&&E<=0.5)out.push({t:"novo",txt:"Novo",tip:`Novo: sem valor em ${ya} e sem espelho. Orçado ${y}: ${f0(P)}`,P,A,E});
+  else if(P<=0.5&&(A>0.5||E>0.5))out.push({t:"dn",z:1,txt:"Zerado",tip:`Sem valor em ${y}. ${ya}: ${f0(A)} · espelho ${y}: ${f0(E)}`,P,A,E});
+  else{if(big(P,A))out.push({t:P>A?"up":"dn",txt:`${P>A?"▲":"▼"} ${pc(P,A)} vs ${ya}`,tip:`Orçado ${y}: ${f0(P)} × ${ya}${y==="2027"?" (real jan–set + espelho/projeção out–dez)":""}: ${f0(A)}`,P,A,E});
+    if(big(P,E))out.push({t:P>E?"up":"dn",txt:`${P>E?"▲":"▼"} ${pc(P,E)} vs espelho`,tip:`Orçado ${y}: ${f0(P)} × espelho ${y}: ${f0(E)}`,P,A,E})}
+  return out}
+const verAlertas=()=>!!(S.owner&&S.cur&&S.cur.doc);
+function alertasHtml(l){if(!verAlertas())return"";return alertasLinha(S.cur.doc,l,S.year).map(a=>`<span class="al al-${a.t}" title="${esc(a.tip)}">${esc(a.txt)}</span>`).join("")}
+function contarAlertas(doc,lines,anos){const c={novo:0,up:0,dn:0,vNovo:0};lines.forEach(l=>{if(l.kind!=="leaf")return;(anos||YEARS).forEach(y=>{const al=alertasLinha(doc,l,y);if(al.some(a=>a.t==="novo")){c.novo++;c.vNovo+=al[0].P}if(al.some(a=>a.t==="up"))c.up++;if(al.some(a=>a.t==="dn"))c.dn++})});return c}
+function renderAlertas(){const box=$("#al-box");if(!box)return;if(!verAlertas()||!S.cur.lines){box.hidden=true;return}const y=S.year;const d=S.cur.doc;
+  const L=S.cur.lines.map((l,i)=>({l,i})).filter(x=>x.l.kind==="leaf"&&prodOk(x.l)).map(x=>({...x,al:alertasLinha(d,x.l,y)})).filter(x=>x.al.length);
+  const n=t=>L.filter(x=>x.al.some(a=>a.t===t)).length;const vn=sum(L.filter(x=>x.al.some(a=>a.t==="novo")).map(x=>x.al[0].P));
+  box.hidden=false;const ab=!!S.alAberto;
+  box.innerHTML=`<div class="row" style="gap:10px;align-items:baseline;flex-wrap:wrap"><b>Alertas da análise · ${y}</b><span class="al al-novo">${n("novo")} novo(s)${vn?" · "+f0(vn):""}</span><span class="al al-up">${n("up")} aumento(s)</span><span class="al al-dn">${n("dn")} redução(ões)${L.filter(x=>x.al.some(a=>a.z)).length?` · ${L.filter(x=>x.al.some(a=>a.z)).length} zerado(s)`:""}</span><span class="muted" style="font-size:12px">variação de ${Math.round(ALERTA_PCT*100)}% ou mais vs ano anterior ou vs espelho · só masters veem</span><span style="flex:1"></span>${L.length?`<button class="btn sm" id="al-tg" aria-expanded="${ab}">${ab?"Fechar lista":"Ver lista"}</button>`:""}</div>
+  ${ab&&L.length?`<table><thead><tr><th>Insumo</th><th>Alerta</th><th class="num">Orçado ${y}</th><th class="num">Ano anterior</th><th class="num">Espelho</th><th></th></tr></thead><tbody>${L.map(x=>`<tr><td>${esc(x.l.desc)} <span class="muted" style="font-size:11px">${esc(x.l.I||"")}</span></td><td>${x.al.map(a=>`<span class="al al-${a.t}" title="${esc(a.tip)}">${esc(a.txt)}</span>`).join(" ")}</td><td class="num">${f0(x.al[0].P)}</td><td class="num">${f0(x.al[0].A)}</td><td class="num">${f0(x.al[0].E)}</td><td><button class="btn sm" data-al-ir="${x.i}">Ir</button></td></tr>`).join("")}</tbody></table>`:""}`}
+document.addEventListener("click",e=>{if(e.target.id==="al-tg"){S.alAberto=!S.alAberto;renderAlertas();return}
+  const b=e.target.closest("[data-al-ir]");if(!b)return;const tr=document.querySelector(`#grid tbody tr[data-i="${b.dataset.alIr}"]:not(.sub):not(.esp-row)`);
+  if(!tr){toast("O item está escondido por um filtro ou grupo recolhido. Limpe os filtros ou abra a estrutura.");return}tr.scrollIntoView({block:"center"});tr.style.outline="2px solid var(--accent)";setTimeout(()=>tr.style.outline="",2500)});
+/* Acompanhamento: conta os alertas de cada orçamento (lido sob demanda, guardado em memória) */
+async function alertasDoOrc(r){S.alCache=S.alCache||{};const ck=acKey(r)+"|"+((r.orc&&r.orc.atualizadoEm)||"");if(ck in S.alCache)return S.alCache[ck];
+  const hs=await S.db.doc("restrito/hist/eo/"+r.o).get();const hist=hs.exists?hs.data():null;const esp=await carregarEspelho(r.o);
+  const lines=buildLines(r.info.tipo,hist,extOrf(r.orc.ext,r.orc.v),esp);const c=contarAlertas({v:r.orc.v||{},pr:r.orc.pr||{}},lines);S.alCache[ck]=c;return c}
+const alTxt=c=>!c?"…":(!c.novo&&!c.up&&!c.dn)?`<span class="muted">nenhum</span>`:[c.novo?`<span class="al al-novo" title="Insumos novos (sem ano anterior e sem espelho), somando os 3 anos">${c.novo} novo(s)</span>`:"",c.up?`<span class="al al-up" title="Insumo×ano com aumento ≥ ${Math.round(ALERTA_PCT*100)}%">${c.up} ▲</span>`:"",c.dn?`<span class="al al-dn" title="Insumo×ano com redução ≥ ${Math.round(ALERTA_PCT*100)}%">${c.dn} ▼</span>`:""].filter(Boolean).join(" ");
+async function preencherAlertasAcomp(){const rows=(S.acRows||[]).slice();const tk=S.alTk=(S.alTk||0)+1;
+  for(const r of rows){if(S.alTk!==tk)return;if(!r.orc)continue;let c=null;try{c=await alertasDoOrc(r)}catch(e){c=null}
+    const el=document.querySelector(`[data-alac="${CSS.escape(acKey(r))}"]`);if(el)el.innerHTML=c?alTxt(c):`<span class="muted">—</span>`}}
 
 /* salvar */
 let saving=null;
@@ -1819,12 +1889,13 @@ function renderAcomp(){
   const cnt={enviado:0,validado:0,rascunho:0,reaberto:0,vazio:0};rows.forEach(r=>cnt[r.orc?r.orc.status:"vazio"]=(cnt[r.orc?r.orc.status:"vazio"]||0)+1);
   const tot=YEARS.map(y=>sum(rows.map(r=>(r.orc&&r.orc.totais&&r.orc.totais[y])||0)));
   $("#tbl-acomp").innerHTML=`<caption style="text-align:left;padding:4px 0 10px" class="muted">${nSel?`<b style="color:var(--accent)">${nSel} marcada(s) para exportar</b> <button class="btn sm" id="ac-sel-clr">Desmarcar</button> · `:""}${rows.length} obras · <b>${cnt.enviado} aguardando validação</b> · ${cnt.validado} validadas · ${cnt.rascunho+cnt.reaberto} em preenchimento (${cnt.reaberto} devolvidas) · ${cnt.vazio} não iniciadas</caption>
-  <thead><tr><th style="width:30px"><input type="checkbox" id="ac-all" title="Marcar todas as obras visíveis para exportar" ${rows.length&&rows.every(r=>S.acSel.has(acKey(r)))?"checked":""}></th><th>Gerente</th><th>Obra</th><th>Base modelo</th><th>Status</th><th>Atualizado</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th></th></tr></thead><tbody>
+  <thead><tr><th style="width:30px"><input type="checkbox" id="ac-all" title="Marcar todas as obras visíveis para exportar" ${rows.length&&rows.every(r=>S.acSel.has(acKey(r)))?"checked":""}></th><th>Gerente</th><th>Obra</th><th>Base modelo</th><th>Status</th><th>Atualizado</th><th title="Novos, aumentos e reduções ≥ 10% vs ano anterior ou espelho (3 anos)">Alertas</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th></th></tr></thead><tbody>
   ${rows.map((r,i)=>{const st=r.orc?r.orc.status:"vazio";return`<tr class="${S.acSel.has(acKey(r))?"ac-on":""}"><td><input type="checkbox" data-acs="${i}" aria-label="Marcar para exportar" ${S.acSel.has(acKey(r))?"checked":""}></td><td>${esc(r.nomeG)}${r.email?`<div class="muted" style="font-size:11px">${esc(r.email)}</div>`:""}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(r.info.obra||r.o)}</span> ${esc(r.info.nome)}<div class="muted" style="font-size:11px">Empresa ${esc(r.info.emp||"—")}${r.info.empNome?" · "+esc(r.info.empNome):""}</div></td><td class="muted">${esc(r.info.tipo||"—")}</td>
-  <td><span class="pill ${st}">${{vazio:"Não iniciado",rascunho:"Rascunho",enviado:"Aguardando validação",validado:"Validado",reaberto:"Devolvido"}[st]}</span></td><td class="muted">${fmtDate(r.orc&&r.orc.atualizadoEm)}</td>
+  <td><span class="pill ${st}">${{vazio:"Não iniciado",rascunho:"Rascunho",enviado:"Aguardando validação",validado:"Validado",reaberto:"Devolvido"}[st]}</span></td><td class="muted">${fmtDate(r.orc&&r.orc.atualizadoEm)}</td><td data-alac="${esc(acKey(r))}" style="white-space:nowrap">${alTxt((S.alCache||{})[acKey(r)+"|"+((r.orc&&r.orc.atualizadoEm)||"")])}</td>
   ${YEARS.map(y=>`<td class="num">${f0(r.orc&&r.orc.totais&&r.orc.totais[y])}</td>`).join("")}
   <td style="white-space:nowrap"><button class="btn sm" data-open="${i}">Abrir</button> <span data-rmbox="${i}">${verRem?`<button class="btn sm" data-rest="${i}">Restaurar</button> <button class="btn sm danger" data-del="${i}">Excluir de vez</button>`:`<button class="btn sm danger" data-rm="${i}">Remover</button>`}</span></td></tr>`}).join("")}
-  </tbody><tfoot><tr><td colspan="6"><b>Total</b></td>${tot.map(t=>`<td class="num"><b>${f0(t)}</b></td>`).join("")}<td></td></tr></tfoot>`;
+  </tbody><tfoot><tr><td colspan="7"><b>Total</b></td>${tot.map(t=>`<td class="num"><b>${f0(t)}</b></td>`).join("")}<td></td></tr></tfoot>`;
+  preencherAlertasAcomp();
 }
 $("#tbl-acomp").addEventListener("click",async e=>{
   const b=e.target.closest("button");if(!b)return;
@@ -2104,18 +2175,18 @@ function resumoAoa(rows){
   return out;
 }
 async function insumosAoa(rows,progress){
-  const out=[["Responsáveis","Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição do insumo","Unid","Quem planeja","Obrigatório detalhar","Total 2025","Média 2025","Qtd. meses 2025","Total 2026 jan–set","Média 2026","Qtd. meses 2026",...YEARS.map(y=>"Meses orçados "+y),...YEARS.map(y=>"Orçado "+y),"Observação do gerente"]];
+  const out=[["Responsáveis","Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição do insumo","Unid","Quem planeja","Obrigatório detalhar","Total 2025","Média 2025","Qtd. meses 2025","Total 2026 jan–set","Média 2026","Qtd. meses 2026",...YEARS.map(y=>"Meses orçados "+y),...YEARS.map(y=>"Orçado "+y),"Observação do gerente",...YEARS.flatMap(y=>["Ano anterior "+y,"Espelho "+y,"Alerta "+y])]];
   let i=0;
   for(const r of rows){i++;progress&&progress(`Lendo histórico ${i}/${rows.length}…`);
     const hs=await S.db.doc("restrito/hist/eo/"+r.o).get();const hist=hs.exists?hs.data():null;
-    const doc={v:r.orc.v||{},pr:r.orc.pr||{}};
-    buildLines(r.info.tipo,hist,extOrf(r.orc.ext,r.orc.v)).forEach(l=>{
+    const doc={v:r.orc.v||{},pr:r.orc.pr||{}};let esp=null;try{esp=await carregarEspelho(r.o)}catch(e){esp=null}
+    buildLines(r.info.tipo,hist,extOrf(r.orc.ext,r.orc.v),esp).forEach(l=>{
       if(l.kind!=="leaf")return;
       const orc=YEARS.map(y=>lineTotal(doc,l,y));const h=l.h;
-      if(!sum(h)&&!sum(orc))return;
+      if(!sum(h)&&!sum(orc)&&!temEsp(l))return;
       const st=histStats(h);
       const mo=YEARS.map(y=>{const a=lineYearVals(doc,l,y);return a?a.filter(v=>v).length:0});
-      const rule=ruleFor(r.info.tipo,l);out.push([r.nomeG,numOr(r.info.emp||""),numOr(r.info.obra||r.o),r.info.nome,l.P||"",l.S||"",l.I||"",l.desc,l.un||"VB",rule&&rule[1]||"Sem regra",rule&&rule[0]==="Sim"?"Sim":"Não",r2(st.h25),r2(st.m25),st.n25,r2(st.h26),r2(st.m26),st.n26,...mo,...orc.map(r2),(r.orc.lobs||{})[l.key]||""]);
+      const rule=ruleFor(r.info.tipo,l);out.push([r.nomeG,numOr(r.info.emp||""),numOr(r.info.obra||r.o),r.info.nome,l.P||"",l.S||"",l.I||"",l.desc,l.un||"VB",rule&&rule[1]||"Sem regra",rule&&rule[0]==="Sim"?"Sim":"Não",r2(st.h25),r2(st.m25),st.n25,r2(st.h26),r2(st.m26),st.n26,...mo,...orc.map(r2),(r.orc.lobs||{})[l.key]||"",...YEARS.flatMap(y=>[r2(anteriorLinha(doc,l,y)),r2(sum((l.esp&&l.esp[y])||[])),alertasLinha(doc,l,y).map(a=>a.txt).join(" · ")])]);
     });
   }
   return out;
@@ -2128,7 +2199,7 @@ async function baixarExcel(comPadrao){
   const mrg=mergeObras(rows);
   let val=null;let pa=comPadrao?padraoAoa(mrg):null;if(comPadrao&&S.estr&&$("#es-corrigir").checked){val=validarEstrutura(pa,true);pa=val.aoa}
   if(comPadrao){const ws=XLSX.utils.aoa_to_sheet(pa);ws["!freeze"]={xSplit:8,ySplit:1};ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:40},{wch:12},{wch:9},{wch:9},{wch:44},{wch:5},{wch:8},{wch:9}];XLSX.utils.book_append_sheet(wb,ws,"Padrão")}
-  const wi=XLSX.utils.aoa_to_sheet(await insumosAoa(mrg,m=>toast(m)));wi["!cols"]=[{wch:24},{wch:8},{wch:8},{wch:36},{wch:8},{wch:9},{wch:9},{wch:44},{wch:5},{wch:16},{wch:10},...Array(15).fill({wch:13})];wi["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(22)+"1"};
+  const wi=XLSX.utils.aoa_to_sheet(await insumosAoa(mrg,m=>toast(m)));wi["!cols"]=[{wch:24},{wch:8},{wch:8},{wch:36},{wch:8},{wch:9},{wch:9},{wch:44},{wch:5},{wch:16},{wch:10},...Array(15).fill({wch:13}),{wch:30},...Array(9).fill({wch:14})];wi["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(32)+"1"};
   const wr=XLSX.utils.aoa_to_sheet(resumoAoa(rows));wr["!cols"]=[{wch:26},{wch:28},{wch:8},{wch:30},{wch:8},{wch:44},{wch:10},{wch:10},{wch:18},{wch:14},{wch:14},{wch:14},{wch:60}];XLSX.utils.book_append_sheet(wb,wr,"Resumo");XLSX.utils.book_append_sheet(wb,wi,"Resumo por insumo");if(val)abasValidacao(wb,val);
   const data=XLSX.write(wb,{type:"array",bookType:"xlsx"});
   const nome=comPadrao?"ORCAMENTO_2027_2029_PADRAO.xlsx":"ORCAMENTO_2027_2029_RESUMO.xlsx";
