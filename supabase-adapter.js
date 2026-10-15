@@ -159,9 +159,9 @@
   const fmtDt=d=>d?new Date(d).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
   const esc2=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   function abaAcessos(){
-    const tabs=document.getElementById("tabs");if(!tabs||document.getElementById("tab-log"))return;
-    const bt=document.createElement("button");bt.className="tab";bt.id="tab-log";bt.setAttribute("aria-selected","false");bt.textContent="Acessos";tabs.appendChild(bt);
-    const sec=document.createElement("section");sec.id="v-log";sec.hidden=true;
+    if(document.getElementById("v-log"))return;
+    /* 15/10/2026: sem aba própria; aparece dentro de "Gerenciar acesso" (window.ORC_HOOKS.mostrarLog) */
+    const sec=document.createElement("section");sec.id="v-log";sec.hidden=true;sec.style.marginTop="14px";
     sec.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Acessos ao site</h2><p class="desc" style="margin:4px 0 0">Quem entrou, quando e quanto tempo ficou com o site aberto (tempo com a aba visível). Visível só para você.</p></div>
       <div class="row" style="gap:8px"><select id="log-dias" class="btn"><option value="1">Hoje</option><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="365">12 meses</option></select><button class="btn" id="log-ref">Atualizar</button><button class="btn" id="log-xlsx">Baixar Excel</button></div></div>
       <p class="muted" id="log-res" style="margin:12px 0 8px"></p><h3 style="font-size:14px;margin:8px 0">Por pessoa</h3><div class="tbl-box"><table class="list" id="log-pess"></table></div>
@@ -169,9 +169,9 @@
       <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Usuários e senhas</h2><p class="desc" style="margin:4px 0 0">Ninguém vê as senhas. "Gerar nova senha" invalida a senha atual e encerra as sessões da pessoa; no próximo acesso ela digita o e-mail e cria uma senha nova (vale por 7 dias).</p></div>
       <div class="row" style="gap:8px"><input id="us-q" type="search" placeholder="Pesquisar e-mail…" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px"><button class="btn" id="us-ref">Atualizar</button></div></div>
       <p class="muted" id="us-res" style="margin:10px 0 8px"></p><div class="tbl-box"><table class="list" id="us-tbl"></table></div></div>`;
-    document.querySelector("main.wrap").appendChild(sec);
-    const views=["v-fill","v-adm","v-sg"];
-    bt.onclick=()=>{views.forEach(v=>{const e=document.getElementById(v);if(e)e.hidden=true});document.querySelectorAll("#tabs .tab").forEach(t=>t.setAttribute("aria-selected",t===bt));sec.hidden=false;carregar();usuarios()};
+    const adm=document.getElementById("v-adm");if(adm&&adm.parentNode)adm.parentNode.insertBefore(sec,adm.nextSibling);else document.querySelector("main.wrap").appendChild(sec);
+    window.ORC_HOOKS=window.ORC_HOOKS||{};window.ORC_HOOKS.mostrarLog=on=>{sec.hidden=!on;if(on&&!sec.dataset.ok){sec.dataset.ok="1";carregar();usuarios()}};
+    {const ta=document.getElementById("tab-adm");if(ta&&ta.getAttribute("aria-selected")==="true")window.ORC_HOOKS.mostrarLog(true)}
     let US=[];
     async function usuarios(){const m=document.getElementById("us-res");m.textContent="Carregando…";
       const r=await sb.rpc("admin_usuarios");if(r.error){m.textContent=/admin_usuarios|function/i.test(r.error.message)?"Controle de senhas ainda não ativado no banco (falta aplicar o script 05_redefinir_senha.sql).":"Erro: "+r.error.message;US=[];desenhaUs();return}
@@ -184,7 +184,6 @@
       b.disabled=true;b.textContent="Gerando…";const r=await sb.rpc("admin_gerar_nova_senha",{p:em2});
       if(r.error){b.disabled=false;b.textContent="Erro: tente de novo";return}
       document.getElementById("us-res").textContent=`Nova senha liberada para ${em2}. Avise a pessoa: no próximo acesso ela digita o e-mail e cria a senha nova.`;usuarios()});
-    document.querySelectorAll("#tabs .tab").forEach(t=>{if(t!==bt)t.addEventListener("click",()=>{sec.hidden=true;bt.setAttribute("aria-selected","false")})});
     let dados=null;
     async function carregar(){const m=document.getElementById("log-res");m.textContent="Carregando…";
       const r=await sb.rpc("relatorio_acessos",{p_dias:+document.getElementById("log-dias").value});if(r.error){m.textContent="Erro: "+r.error.message;return}dados=r.data;
