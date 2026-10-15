@@ -41,13 +41,32 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;backgroun
 nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hidden]{display:none}.carga-aviso{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(20,30,25,.35)}.carga-aviso[hidden]{display:none}.carga-aviso .ca-box{display:flex;gap:14px;max-width:560px;background:var(--surface,#fff);border-radius:10px;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25);border-top:6px solid #8a8f8c}.carga-aviso.ok .ca-box{border-top-color:#1F7A4A}.carga-aviso.erro .ca-box{border-top-color:#B3261E}.carga-aviso .ca-ic{font-size:28px;line-height:1}.carga-aviso.ok .ca-ic{color:#1F7A4A}.carga-aviso.erro .ca-ic{color:#B3261E}.carga-aviso .ca-tx p{margin:6px 0 12px;white-space:pre-wrap;font-size:13px}#grid tr.esp-row td{background:#F4F1FA;color:#5B4A86;font-style:italic;font-size:12px}#grid tr.esp-row .esp-tag{font-weight:600}.pill.esp-ok{background:#E3DCF5;color:#3E2F6B}table.comp{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}table.comp th,table.comp td{padding:5px 8px;border-bottom:1px solid var(--line)}table.comp tr.comp-y{cursor:pointer}table.comp tr.comp-m td{font-size:12px;color:var(--muted)}#grid .al{display:inline-block;margin-left:6px;padding:0 6px;border-radius:9px;font-size:10.5px;font-style:normal;font-weight:600;line-height:16px;white-space:nowrap}#grid .al-novo,.al-novo{background:#E1ECF7;color:#1B4F80}#grid .al-up,.al-up{background:#FBE3DF;color:#9A2A1A}#grid .al-dn,.al-dn{background:#E2F2E7;color:#1F6B3A}.al{border-radius:9px;padding:0 6px;font-size:11px;font-weight:600}#al-box table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}#al-box th,#al-box td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:left}#al-box td.num,#al-box th.num{text-align:right}.esp-div-it{display:flex;gap:10px;align-items:center;padding:4px 0}.esp-div-it input[type=number]{width:80px}/* 15/10/2026: abas separadas + topo da tela Orçamento com formato fixo */
 .subtabs{display:flex;gap:4px;margin:10px 0 0}.subtabs[hidden]{display:none}.subtabs button{font:inherit;font-size:13px;padding:6px 14px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:6px;cursor:pointer}.subtabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 #v-adm .card.grp-off{display:none!important}
-#v-ind .card{margin-top:14px}
-.ind-kpis{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
-.ind-kpis>div{background:var(--surface);padding:10px 12px}.ind-kpis .k-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.ind-kpis .k-v{font-family:var(--f-mono);font-size:20px;margin-top:2px}.ind-kpis .k-s{font-size:12px;color:var(--muted)}
+#v-ind .card{margin-top:14px}#v-ind h3{font-size:15px;margin:0}.ind-sub{font-size:12px;color:var(--muted);margin:2px 0 8px}
+.ind-fbar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-start;background:var(--accent-soft);border:2px solid var(--accent);border-radius:10px;padding:8px 12px;margin-top:14px}
+.ind-fbar .lbl{display:block;font-size:10.5px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.ind-anos{display:flex}.ind-anos>.lbl{width:100%}.ind-anos button{font:inherit;font-size:13px;padding:6px 12px;border:1px solid var(--line-strong);background:var(--surface);cursor:pointer}.ind-anos{flex-direction:row;flex-wrap:wrap;align-items:flex-end}.ind-anos button:nth-of-type(1){border-radius:6px 0 0 6px}.ind-anos button:last-child{border-radius:0 6px 6px 0}.ind-anos button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.ind-fdds{flex:1 1 600px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 10px;align-items:end}.ind-dd{position:relative;min-width:0}.ind-dd .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ind-var{}.ind-var-in{display:flex;align-items:center;gap:4px;font-size:13px}.ind-var-in input{width:64px;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line-strong);border-radius:6px}.ind-kpis.ind-kpis4{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:0}.ind-kpis4 .k-v{white-space:normal}.ind-kpis4 .k-v .al{font-size:15px!important;line-height:1.5}.ind-dd-btn{display:flex;justify-content:space-between;gap:6px;width:100%;font:inherit;font-size:13px;padding:6px 9px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);cursor:pointer;text-align:left}.ind-dd-btn span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ind-dd.ativo .ind-dd-btn{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);font-weight:600}.ind-dd-pop{position:absolute;z-index:30;top:100%;left:0;margin-top:4px;width:300px;background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:8px}.ind-dd-pop[hidden]{display:none}
+.ind-dd-q{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid var(--line-strong);border-radius:6px}.ind-dd-acts{display:flex;gap:6px;margin:6px 0}.ind-dd-acts button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--surface);border-radius:5px;padding:2px 8px;cursor:pointer}.ind-dd-list{max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:2px;font-size:13px}.ind-dd-list label{display:flex;gap:6px;align-items:flex-start;padding:2px 2px;cursor:pointer}.ind-dd-list label[hidden]{display:none}
+.ind-fres{font-size:12px;color:var(--muted);margin:6px 2px 0}.print-only{display:none}
+.ind-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}.ind-kpis.ind-kpis3{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0}
+.ind-kpis>div{background:var(--surface);padding:10px 12px}.ind-kpis .k-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.ind-kpis .k-v{font-family:var(--f-mono);font-size:21px;margin-top:2px;white-space:nowrap}.ind-kpis .k-s{font-size:12px;color:var(--muted)}.k-up{color:#B3261E}.k-dn{color:#1B5FAD}
+.ind-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ind-grid2 .card{margin-top:14px}
+.ind-ch svg{width:100%;height:auto;display:block;overflow:visible}.ind-ch .g{stroke:var(--line);stroke-width:1}.ind-ch .b{stroke:var(--line-strong);stroke-width:1}.ind-ch .ax{font-size:11px;fill:var(--muted);font-family:inherit}.ind-ch .lb{font-size:11px;fill:var(--ink);font-family:var(--f-mono)}.ind-ch .xh{stroke:var(--line-strong);stroke-width:1;stroke-dasharray:3 3}
+.ind-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-top:6px;color:var(--ink)}.ind-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.ind-tip{position:fixed;z-index:9500;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.15);padding:8px 10px;font-size:12px;line-height:1.45;max-width:320px}.ind-tip[hidden]{display:none}
 .ind-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line);min-width:120px}.ind-bar>span{display:block;height:100%}
-.st-vazio{background:#C9CFCB}.st-rascunho{background:#E8B54A}.st-reaberto{background:#D9822B}.st-enviado{background:#3B82C4}.st-validado{background:#1F7A4A}
-.ind-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-top:8px}.ind-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
-#ind-tbl tr.ind-click{cursor:pointer}#ind-tbl tr.ind-click:hover td{background:var(--accent-soft)}
+.st-vazio{background:#C9CFCB;fill:#C9CFCB}.st-rascunho{background:#E8B54A;fill:#E8B54A}.st-reaberto{background:#D9822B;fill:#D9822B}.st-enviado{background:#3B82C4;fill:#3B82C4}.st-validado{background:#1F7A4A;fill:#1F7A4A}
+#v-ind tr.ind-click{cursor:pointer}#v-ind tr.ind-click:hover td,#v-ind tr.ind-emp:hover td{background:var(--accent-soft)}#v-ind tr.ind-emp{cursor:pointer}#v-ind tr.ind-obra td{font-size:12.5px}
+@media (max-width:1100px){.ind-grid2{grid-template-columns:minmax(0,1fr)}.ind-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@page{size:A4 landscape;margin:9mm}
+@media print{body.print-ind header.top,body.print-ind #tabs,body.print-ind #orc-sub,body.print-ind main>section:not(#v-ind),body.print-ind .toast,body.print-ind #v-log,body.print-ind .carga-aviso,body.print-ind .no-print,body.print-ind .ind-tip,body.print-ind div:has(>label>#carga-f){display:none!important}
+ body.print-ind{background:#fff}body.print-ind #v-ind{display:block!important}body.print-ind .ind-fbar,body.print-ind .ind-ch .xh,body.print-ind .ind-c-ins,body.print-ind .ind-c-ger,body.print-ind #ind-al .tbl-box,body.print-ind #ind-al>p,body.print-ind #ind-msg,body.print-ind .ind-head .desc{display:none!important}
+ body.print-ind #v-ind{zoom:.74}body.print-ind #v-ind .card{margin-top:8px;padding:10px 12px}body.print-ind .ind-head h2{font-size:17px}
+ body.print-ind .ind-grid2{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}body.print-ind .ind-grid2 .card{margin-top:8px}body.print-ind .ind-sub{margin:0 0 4px}body.print-ind .ind-leg{margin-top:2px;font-size:11px}
+ body.print-ind .ind-c-det{break-before:page;page-break-before:always;break-inside:auto!important}body.print-ind .ind-c-det .row{display:none}body.print-ind .ind-head .print-only{display:inline!important}body.print-ind .ind-f2{display:block!important;margin-bottom:6px;font-size:13px}
+ body.print-ind .ind-kpis.ind-kpis4{grid-template-columns:repeat(2,minmax(0,1fr))}body.print-ind .ind-kpis4 .k-v .al{font-size:13px!important}body.print-ind #ind-det{font-size:11px}body.print-ind #ind-det td,body.print-ind #ind-det th{padding:3px 6px}body.print-ind #ind-det tr{break-inside:avoid}body.print-ind #ind-det .tg{display:none}body.print-ind .ind-fres{font-size:13px;color:var(--ink);font-weight:600}body.print-ind .card{break-inside:avoid;box-shadow:none}body.print-ind .ind-grid2{grid-template-columns:repeat(2,minmax(0,1fr))}body.print-ind .ind-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}body.print-ind .tbl-box{max-height:none!important;overflow:visible!important}
+ body.print-ind *{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .obra-bar{display:grid!important;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-areas:"f m" "f a";gap:10px 20px;align-items:start}
 .obra-bar>.filtros{grid-area:f;max-width:none;width:100%;min-height:150px}
 .obra-bar>.filtros.compacto{min-height:0}
@@ -307,12 +326,24 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
 <main class="wrap">
   <div class="subtabs" id="orc-sub" role="group" aria-label="Orçamento" hidden><button type="button" data-sub="fill" aria-pressed="true">Preencher</button><button type="button" data-sub="acomp" aria-pressed="false">Verificar enviados</button></div>
   <section id="v-ind" hidden>
-    <div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2 style="margin:0">Indicadores do orçamento</h2><p class="desc" style="margin:4px 0 0">Andamento por gerente e obra (conforme a aba 3. Gerentes da CONFIGURAÇÃO), valores orçados, alertas e quem ainda não entrou no site. Só masters veem.</p></div><button class="btn" id="ind-ref">Atualizar</button></div>
-      <p class="muted" id="ind-msg" style="margin:10px 0 0"></p><div id="ind-kpi"></div></div>
-    <div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><h2 style="margin:0">Andamento por</h2><div class="row" style="gap:8px"><div class="hm-tg" role="group" aria-label="Agrupar por" id="ind-por"><button class="btn sm on" data-por="ger" aria-pressed="true">Gerente</button><button class="btn sm" data-por="emp" aria-pressed="false">Empresa</button><button class="btn sm" data-por="reg" aria-pressed="false">Regional</button></div><input type="search" id="ind-q" placeholder="Buscar" style="padding:6px 9px;border:1px solid var(--line-strong);border-radius:6px"></div></div>
-      <div class="tbl-box" style="margin-top:10px"><table class="list" id="ind-tbl"></table></div></div>
-    <div class="card"><h2 style="margin:0 0 8px">Valores orçados por empresa</h2><p class="desc" style="margin:0 0 8px">Soma dos orçamentos já iniciados (rascunho, enviado ou validado) × 2026 real (jan–set e anualizado) e × espelho, considerando só os insumos da área de quem orçou.</p><div class="tbl-box"><table class="list" id="ind-val"></table></div></div>
-    <div class="card"><h2 style="margin:0 0 8px">Alertas e acessos</h2><div id="ind-al" class="muted"></div><div id="ind-ac" style="margin-top:12px"></div></div>
+    <div class="card ind-head"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start"><div><h2 style="margin:0">Relatório de impacto do orçamento 2027–2029<span class="print-only" style="display:none"> · Folha 1 – Indicadores e gráficos</span></h2><p class="desc" style="margin:4px 0 0">Orçado pelos gerentes × histórico (2025 e 2026) × espelho já planejado. Base 2026 = realizado jan–set + espelho out–dez (sem espelho: média de jan–set × 3). Compara só os insumos da área de quem orçou. <span id="ind-gerado"></span></p></div>
+      <div class="row no-print" style="gap:6px"><button class="btn" id="ind-ref">Atualizar dados</button><button class="btn" id="ind-xlsx">Exportar Excel</button><button class="btn primary" id="ind-pdf">Exportar PDF</button></div></div>
+      <p class="muted" id="ind-msg" style="margin:8px 0 0"></p></div>
+    <div class="ind-fbar" id="ind-fbar"><div class="ind-anos" role="group" aria-label="Ano analisado"><span class="lbl">Ano</span><button data-iano="2027" aria-pressed="true">2027</button><button data-iano="2028" aria-pressed="false">2028</button><button data-iano="2029" aria-pressed="false">2029</button></div><div id="ind-fdds" class="ind-fdds"></div><button class="btn sm no-print" id="ind-flimpar">Limpar filtros</button></div>
+    <p class="ind-fres" id="ind-fres"></p>
+    <div id="ind-kpi" class="ind-kpis"></div>
+    <div class="ind-grid2">
+      <div class="card ind-card"><h3>Evolução anual</h3><p class="ind-sub">Histórico (2025 e 2026 base) e orçado (2027–2029); ponto = espelho do ano</p><div class="ind-ch" id="ch-anos"></div></div>
+      <div class="card ind-card"><h3 id="ch-mes-t">Mês a mês</h3><p class="ind-sub">Orçado no ano × base 2026 × espelho</p><div class="ind-ch" id="ch-mes"></div></div>
+      <div class="card ind-card"><h3>Impacto por empresa</h3><p class="ind-sub" id="ch-emp-s">Orçado − base 2026 (R$) · maiores variações</p><div class="ind-ch" id="ch-emp"></div></div>
+      <div class="card ind-card"><h3>Impacto por produto</h3><p class="ind-sub">Orçado − base 2026 (R$) · maiores variações</p><div class="ind-ch" id="ch-prod"></div></div>
+      <div class="card ind-card"><div class="row" style="justify-content:space-between"><h3>Andamento do preenchimento</h3><div class="hm-tg no-print" role="group" id="ind-and-por"><button class="btn sm on" data-andpor="emp" aria-pressed="true">Empresa</button><button class="btn sm" data-andpor="reg" aria-pressed="false">Regional</button><button class="btn sm" data-andpor="area" aria-pressed="false">Quem planeja</button></div></div><p class="ind-sub" id="ch-and-s">Gerente × obra por situação</p><div class="ind-ch" id="ch-and"></div></div>
+      <div class="card ind-card"><h3>Alertas nos orçamentos</h3><p class="ind-sub">Novos insumos, aumentos, reduções (pela variação mínima escolhida, vs ano anterior ou espelho) e zerados · todos os orçamentos iniciados do filtro</p><div id="ind-al"></div></div>
+    </div>
+    <div class="card ind-card ind-c-ins"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h3>Maiores impactos por insumo</h3><p class="ind-sub" style="margin:2px 0 0">Ordenado pelo tamanho do impacto (orçado − base 2026), somando as obras do filtro</p></div><input type="search" id="ind-iq" class="no-print" placeholder="Buscar insumo, serviço ou produto" style="padding:6px 9px;border:1px solid var(--line-strong);border-radius:6px;min-width:240px"></div><div class="tbl-box"><table class="list ind-tbl" id="ind-ins"></table></div><button class="btn sm no-print" id="ind-ins-mais" style="margin-top:8px" hidden>Mostrar mais</button></div>
+    <div class="card ind-card ind-c-det"><div class="print-only ind-f2"><b>Relatório de impacto do orçamento 2027–2029 · Folha 2 – Detalhe por empresa e obra</b><br><span id="ind-f2-fil"></span></div><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><h3>Detalhe por empresa e obra</h3><input type="search" id="ind-dq" class="no-print" placeholder="Buscar empresa ou obra" style="padding:6px 9px;border:1px solid var(--line-strong);border-radius:6px"></div><div class="tbl-box"><table class="list ind-tbl" id="ind-det"></table></div></div>
+    <div class="card ind-card ind-c-ger"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><h3>Andamento por gerente</h3><input type="search" id="ind-q" class="no-print" placeholder="Buscar gerente" style="padding:6px 9px;border:1px solid var(--line-strong);border-radius:6px"></div><div class="tbl-box"><table class="list ind-tbl" id="ind-tbl"></table></div><div id="ind-ac" style="margin-top:12px"></div></div>
+    <div class="ind-tip" id="ind-tip" hidden></div>
   </section>
   <section id="v-loading" class="notice"><h2>Carregando…</h2><p class="muted">Conectando à base do orçamento.</p></section>
   <section id="v-nodb" class="notice" hidden>
@@ -1506,66 +1537,199 @@ async function preencherAlertasAcomp(){const rows=(S.acRows||[]).slice();const t
   for(const r of rows){if(S.alTk!==tk)return;if(!r.orc)continue;let c=null;try{c=await alertasDoOrc(r)}catch(e){c=null}
     const el=document.querySelector(`[data-alac="${CSS.escape(acKey(r))}"]`);if(el)el.innerHTML=c?alTxt(c):`<span class="muted">—</span>`}}
 
-/* ===================== INDICADORES (só master) ===================== */
+/* ===================== INDICADORES – relatório de impacto (só master) ===================== */
 const IND_STN={vazio:"Não iniciado",rascunho:"Em preenchimento",reaberto:"Devolvido",enviado:"Enviado",validado:"Validado"};const IND_STO=["vazio","rascunho","reaberto","enviado","validado"];
+const IND_COR={orc:"#2a78d6",hist:"#eb6834",esp:"#1baf7a",up:"#e34948",dn:"#2a78d6"};
+const MESC=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const fR=v=>{const a=Math.abs(v);return (v<0?"−":"")+(a>=1e9?(a/1e9).toLocaleString("pt-BR",{maximumFractionDigits:1})+" bi":a>=1e6?(a/1e6).toLocaleString("pt-BR",{maximumFractionDigits:1})+" mi":a>=1e3?(a/1e3).toLocaleString("pt-BR",{maximumFractionDigits:0})+" mil":nf0.format(a))};
+const fP=(a,b)=>!b?(a?"novo":"—"):((a/b-1)*100>0?"+":"")+nf0.format((a/b-1)*100)+"%";
 function barraSt(c,tot){return `<div class="ind-bar" title="${IND_STO.map(k=>IND_STN[k]+": "+(c[k]||0)).join(" · ")}">${IND_STO.map(k=>c[k]?`<span class="st-${k}" style="width:${(c[k]/tot*100).toFixed(2)}%"></span>`:"").join("")}</div>`}
+/* andamento: gerente × obra (aba 3) */
 async function dadosIndicadores(){if(!S.acompEm){$("#ind-msg").textContent="Carregando orçamentos…";await loadAdm()}await loadCat();
   if(!S.regObra){try{const rd=await S.db.doc("regras/regional_obra").get();S.regObra=rd.exists?(rd.data().m||null):null}catch(e){}}
   const pess=S.pessoas||[];const depsDe=new Map(pess.map(p=>[p.email,p.acc||{}]));
   const orcObra=new Map();const vistos=new Set();(S.acomp||[]).forEach(r=>{if(!r.orc)return;const k=r.uid+"|"+r.o;if(vistos.has(k))return;vistos.add(k);if(!orcObra.has(r.o))orcObra.set(r.o,[]);orcObra.get(r.o).push(r)});
   const logados=new Set((S.acomp||[]).map(r=>(r.email||"").toLowerCase()).filter(Boolean));
   const catBy=new Map((S.cat.obras||[]).map(c=>[c[0],c]));
+  let espIdx={};try{const ei=await S.db.doc("restrito/esp_idx").get();espIdx=ei.exists?(ei.data().obras||{}):{}}catch(e){}
   const U=[];pess.forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>{const L=orcObra.get(o)||[];
     let r=L.find(x=>(x.email||"").toLowerCase()===p.email);
     if(!r)r=L.find(x=>{const d2=(depsDe.get((x.email||"").toLowerCase())||{})[o]||[];return d2.some(d=>deps.includes(d))});
-    const c=catBy.get(o)||[];U.push({nome:p.nome||p.email,email:p.email,o,deps,st:r?r.orc.status||"rascunho":"vazio",emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",reg:S.regObra?regDe(o):"",entrou:logados.has(p.email)})}));
-  return {U,orcObra,catBy,logados,pess}}
-async function renderIndicadores(forcar){if(forcar){S.acompEm=0;S.ind=null}$("#ind-msg").textContent="Calculando…";
-  const D=S.ind=S.ind||await dadosIndicadores();const {U}=D;const c={};U.forEach(u=>c[u.st]=(c[u.st]||0)+1);const n=U.length||1;const fim=(c.enviado||0)+(c.validado||0);
-  const obras=new Set(U.map(u=>u.o)).size;const obrasCom=new Set(U.filter(u=>u.st!=="vazio").map(u=>u.o)).size;
-  $("#ind-msg").textContent=`${U.length} combinações gerente × obra · ${obras} obras com gerente · ${obrasCom} obras com algum orçamento iniciado · atualizado ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
-  const kp=(l,v,sub)=>`<div><div class="k-l">${l}</div><div class="k-v">${v}</div><div class="k-s">${sub||""}</div></div>`;const pc=v=>nf0.format(v/n*100)+"%";
-  $("#ind-kpi").innerHTML=`<div class="ind-kpis">${kp("Gerente × obra",U.length,"total a orçar")}${kp("Não iniciado",c.vazio||0,pc(c.vazio||0))}${kp("Em preenchimento",c.rascunho||0,pc(c.rascunho||0))}${kp("Devolvido",c.reaberto||0,pc(c.reaberto||0))}${kp("Enviado",c.enviado||0,pc(c.enviado||0)+" aguardando validação")}${kp("Validado",c.validado||0,pc(c.validado||0))}${kp("Concluído",nf0.format(fim/n*100)+"%",`${fim} enviados ou validados`)}</div>
-   <div style="margin-top:12px">${barraSt(c,n)}</div><div class="ind-leg">${IND_STO.map(k=>`<span><i class="st-${k}"></i>${IND_STN[k]}</span>`).join("")}</div>`;
-  renderIndTabela();renderIndValores().catch(()=>{});renderIndAcessos();renderIndAlertas().catch(()=>{})}
-function renderIndTabela(){const D=S.ind;if(!D)return;const por=S.indPor||"ger";const q=semAc(($("#ind-q")&&$("#ind-q").value)||"").trim();
-  const G=new Map();D.U.forEach(u=>{const k=por==="ger"?u.email:por==="emp"?u.emp:(u.reg||"Sem regional");const lb=por==="ger"?u.nome:por==="emp"?`${u.emp}${u.empNome?" – "+u.empNome:""}`:(u.reg||"Sem regional");
-    if(!G.has(k))G.set(k,{k,lb,sub:por==="ger"?u.email:"",c:{},n:0,obras:new Set(),nunca:por==="ger"&&!u.entrou});const g=G.get(k);g.n++;g.c[u.st]=(g.c[u.st]||0)+1;g.obras.add(u.o)});
-  let L=[...G.values()].filter(g=>!q||semAc(g.lb+" "+g.sub).includes(q));L.forEach(g=>g.pf=((g.c.enviado||0)+(g.c.validado||0))/g.n);L.sort((a,b)=>a.pf-b.pf||b.n-a.n);
-  $("#ind-tbl").innerHTML=`<thead><tr><th>${por==="ger"?"Gerente":por==="emp"?"Empresa":"Regional"}</th><th class="num">Obras</th>${IND_STO.map(k=>`<th class="num">${IND_STN[k]}</th>`).join("")}<th class="num">Concluído</th><th style="min-width:160px">Andamento</th></tr></thead><tbody>${L.map(g=>`<tr class="${por==="ger"?"ind-click":""}" ${por==="ger"?`data-ind-ger="${esc(g.lb)}" title="Abrir os enviados deste gerente"`:""}><td>${esc(g.lb)}${g.sub?`<div class="muted" style="font-size:11px">${esc(g.sub)}${g.nunca?' · <b style="color:var(--warn,#B45309)">nunca entrou no site</b>':""}</div>`:""}</td><td class="num">${g.obras.size}</td>${IND_STO.map(k=>`<td class="num">${g.c[k]||""}</td>`).join("")}<td class="num"><b>${nf0.format(g.pf*100)}%</b></td><td>${barraSt(g.c,g.n)}</td></tr>`).join("")||`<tr><td class="muted">Nada encontrado.</td></tr>`}</tbody>`}
-async function renderIndValores(){const D=S.ind;const box=$("#ind-val");box.innerHTML=`<tr><td class="muted">Somando valores, 2026 e espelho das áreas de cada orçamento…</td></tr>`;
-  const depsDe=new Map((D.pess||[]).map(p=>[p.email,p.acc||{}]));
-  const E=new Map();const add=(e,nm)=>{if(!E.has(e))E.set(e,{e,nm,obras:new Set(),t:{2027:0,2028:0,2029:0},h26:0,esp:{2027:0,2028:0,2029:0}});return E.get(e)};
-  for(const [o,L] of D.orcObra){const c=D.catBy.get(o)||[];const g=add(String(c[6]||o.split("-")[0]),c[7]||"");g.obras.add(o);
+    const c=catBy.get(o)||[];U.push({nome:p.nome||p.email,email:p.email,o,deps,st:r?r.orc.status||"rascunho":"vazio",emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",reg:S.regObra?regDe(o):"Sem regional",tipo:c[3]||"Sem base",cesp:espIdx[o]?"Com espelho":"Sem espelho",entrou:logados.has(p.email)})}));
+  return {U,orcObra,catBy,logados,pess,depsDe,espIdx}}
+/* fatos por orçamento × insumo: meses orçados, histórico 2025/2026 e espelho (só insumos da área de quem orçou ou com valor) */
+async function fatosIndicadores(D,prog){const F=[];let i=0;const N=D.orcObra.size;const z=()=>new Array(12).fill(0);
+  for(const [o,L] of D.orcObra){i++;prog&&prog(`Lendo obra ${i}/${N}…`);const c=D.catBy.get(o)||[];
     let hist=null,esp=null;try{const hs=await S.db.doc("restrito/hist/eo/"+o).get();hist=hs.exists?hs.data():null}catch(e){}try{esp=await carregarEspelho(o)}catch(e){}
-    for(const r of L){YEARS.forEach(y=>g.t[y]+=+((r.orc.totais||{})[y])||0);
-      /* 2026 e espelho só dos insumos da(s) área(s) de quem orçou (ou dos insumos com valor, se a pessoa não tem área na planilha) */
-      const deps=(depsDe.get((r.email||"").toLowerCase())||{})[o]||null;const doc={v:r.orc.v||{},pr:r.orc.pr||{}};
-      buildLines(r.info.tipo||(c[3]||""),hist,extOrf(r.orc.ext,r.orc.v),esp).forEach(l=>{if(l.kind!=="leaf")return;
-        const rule=ruleFor(r.info.tipo||c[3],l);const area=rule&&rule[1];const temV=YEARS.some(y=>lineTotal(doc,l,y));
-        if(deps?!(area&&deps.includes(area))&&!temV:!temV)return;
-        g.h26+=sum((l.h||[]).slice(12,21));YEARS.forEach(y=>g.esp[y]+=sum((l.esp&&l.esp[y])||[]))})}}
-  const L=[...E.values()].sort((a,b)=>b.t[2027]-a.t[2027]);const T={obras:0,t:{2027:0,2028:0,2029:0},h26:0,esp:{2027:0,2028:0,2029:0}};L.forEach(g=>{T.obras+=g.obras.size;T.h26+=g.h26;YEARS.forEach(y=>{T.t[y]+=g.t[y];T.esp[y]+=g.esp[y]})});
-  const vr=(a,b)=>!b?(a?'<span class="delta up">novo</span>':"—"):deltaHtml(a,b);
-  const row=(lb,g,nO)=>`<td class="num">${nO}</td><td class="num"><b>${f0(g.t[2027])}</b></td><td class="num">${f0(g.h26)}</td><td class="num">${f0(g.h26/9*12)}</td><td class="num">${vr(g.t[2027],g.h26/9*12)}</td><td class="num">${f0(g.esp[2027])}</td><td class="num">${vr(g.t[2027],g.esp[2027])}</td><td class="num">${f0(g.t[2028])}</td><td class="num">${f0(g.t[2029])}</td>`;
-  box.innerHTML=`<thead><tr><th>Empresa</th><th class="num">Obras</th><th class="num">Orçado 2027</th><th class="num">2026 jan–set</th><th class="num">2026 anualizado</th><th class="num">2027 × 2026</th><th class="num">Espelho 2027</th><th class="num">2027 × espelho</th><th class="num">Orçado 2028</th><th class="num">Orçado 2029</th></tr></thead><tbody>${L.map(g=>`<tr><td>${esc(g.e)}${g.nm?" – "+esc(g.nm):""}</td>${row(g.e,g,g.obras.size)}</tr>`).join("")||`<tr><td class="muted" colspan="10">Nenhum orçamento iniciado ainda.</td></tr>`}</tbody>${L.length?`<tfoot><tr><td><b>Total</b></td>${row("",T,T.obras)}</tr></tfoot>`:""}`}
+    const cesp=(esp&&esp.h&&Object.keys(esp.h).length)||D.espIdx[o]?"Com espelho":"Sem espelho";
+    for(const r of L){const tipo=r.info.tipo||c[3]||"";const deps=(D.depsDe.get((r.email||"").toLowerCase())||{})[o]||null;const doc={v:r.orc.v||{},pr:r.orc.pr||{}};
+      const lines=buildLines(tipo,hist,extOrf(r.orc.ext,r.orc.v),esp);const pd={};lines.forEach(l=>{if(l.kind==="prod")pd[l.P]=l.desc});
+      lines.forEach(l=>{if(l.kind!=="leaf")return;const rule=ruleFor(tipo,l);const area=(rule&&rule[1])||"Sem regra";const temV=YEARS.some(y=>lineTotal(doc,l,y));
+        if(deps?!(deps.includes(area))&&!temV:!temV)return;
+        const f={o,uid:r.uid,emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",obraNome:c[2]||"",obraLb:`${o} ${c[2]||""}`.trim(),reg:S.regObra?regDe(o):"Sem regional",tipo:tipo||"Sem base",cesp,ger:r.nomeG||"",email:r.email||"",st:r.orc.status||"rascunho",area,
+          P:l.P||"",Pd:pd[l.P]||(l.extra?"Itens fora do modelo":"Produto "+(l.P||"")),S:l.S||"",Sd:SDESC[l.S]||(l.S?"Serviço "+l.S:"Sem serviço"),I:l.I||l.key,Id:`${l.desc}${l.I?" ("+l.I+")":""}`,
+          orc:{2027:z(),2028:z(),2029:z()},h25:z(),h26:z(),esp:{2026:z(),2027:z(),2028:z(),2029:z()}};
+        const h=l.h||[];const e26=(l.esp&&l.esp["2026"])||null;const r9=h.slice(12,21);const med=sum(r9)/9;let nz=0;
+        for(let m=0;m<12;m++){f.h25[m]=+h[m]||0;f.h26[m]=m<9?(+r9[m]||0):(e26&&e26.some(v=>+v)?(+e26[m]||0):med);YEARS.forEach(y=>f.orc[y][m]=lineMonth(doc,l,y,m));["2026",...YEARS].forEach(y=>f.esp[y][m]=+((l.esp&&l.esp[y]||[])[m])||0);
+          nz+=Math.abs(f.h25[m])+Math.abs(f.h26[m])+YEARS.reduce((s2,y)=>s2+Math.abs(f.orc[y][m])+Math.abs(f.esp[y][m]),0)}
+        if(nz>0.004)F.push(f)})}}
+  return F}
+/* alerta de um fato no ano (mesmas regras do selo, com a variação mínima escolhida no relatório) */
+function alertaFato(f,y){const thr=(S.indVar==null?10:S.indVar)/100;const sm=a=>a.reduce((s2,v)=>s2+v,0);const P=sm(f.orc[y]);const A=y==="2027"?sm(f.h26):sm(f.orc[String(+y-1)]);const E=sm(f.esp[y]);
+  if(P>0.5&&A<=0.5&&E<=0.5)return["Novo"];if(P<=0.5&&(A>0.5||E>0.5))return["Zerado"];const r=[];
+  [A,E].forEach(b=>{if(b>0.5&&Math.abs(P/b-1)>=thr)r.push(P>b?"Aumento":"Redução")});return r.length?[...new Set(r)]:["Sem alerta"]}
+/* ---------- filtros ---------- */
+const IND_FS=[["reg","Regional"],["emp","Empresa"],["obra","Obra"],["tipo","Base modelo"],["cesp","Espelho"],["ger","Gerente"],["area","Quem planeja"],["st","Situação"],["prod","Produto"],["serv","Serviço"],["ins","Insumo"],["al","Alerta"]];
+const IND_SO_FATO=new Set(["prod","serv","ins","al"]);
+function indOpcoes(){const D=S.ind,F=S.indF||[];const o={};IND_FS.forEach(([k])=>o[k]=new Map());
+  const put=(k,v,lb)=>{if(v!==undefined&&v!=="")o[k].set(v,lb||v)};
+  D.U.forEach(u=>{put("reg",u.reg);put("emp",u.emp,`${u.emp}${u.empNome?" – "+u.empNome:""}`);put("ger",u.nome);u.deps.forEach(d=>put("area",d));put("st",u.st,IND_STN[u.st]);put("obra",u.o,`${u.o} ${(D.catBy.get(u.o)||[])[2]||""}`);put("tipo",u.tipo);put("cesp",u.cesp)});
+  F.forEach(f=>{put("reg",f.reg);put("emp",f.emp,`${f.emp}${f.empNome?" – "+f.empNome:""}`);put("ger",f.ger);put("area",f.area);put("st",f.st,IND_STN[f.st]);put("prod",f.Pd);put("obra",f.o,f.obraLb);put("tipo",f.tipo);put("cesp",f.cesp);put("serv",f.Sd);put("ins",f.Id)});
+  ["Novo","Aumento","Redução","Zerado","Sem alerta"].forEach(v=>o.al.set(v,v));
+  Object.keys(o).forEach(k=>{if(k!=="al")o[k]=[...o[k].entries()].sort((a,b)=>String(a[1]).localeCompare(String(b[1]),"pt-BR",{numeric:true}));else o[k]=[...o[k].entries()]});return o}
+function renderIndFiltros(){const box=$("#ind-fdds");const op=indOpcoes();S.indSel=S.indSel||{};
+  box.innerHTML=IND_FS.map(([k,lb])=>{const sel=S.indSel[k]||[];const txt=!sel.length?"Todos":sel.length===1?((op[k].find(x=>x[0]===sel[0])||[0,sel[0]])[1]):sel.length+" selecionados";
+    return `<div class="ind-dd${sel.length?" ativo":""}" data-idd="${k}"><span class="lbl">${lb}</span><button type="button" class="ind-dd-btn"><span>${esc(txt)}</span><span aria-hidden="true">▾</span></button><div class="ind-dd-pop" hidden><input type="search" class="ind-dd-q" placeholder="Pesquisar…"><div class="ind-dd-acts"><button type="button" data-ddall="${k}">Marcar todos</button><button type="button" data-ddnone="${k}">Limpar</button></div><div class="ind-dd-list">${op[k].map(([v,l])=>`<label><input type="checkbox" value="${esc(v)}" ${sel.includes(v)?"checked":""}> <span>${esc(l)}</span></label>`).join("")||'<span class="muted">Sem opções</span>'}</div></div></div>`}).join("");
+  box.insertAdjacentHTML("beforeend",`<div class="ind-dd ind-var" title="Variação mínima para acender alerta de aumento/redução"><span class="lbl">Variação mín.</span><div class="ind-var-in"><input type="number" id="ind-var" min="0" max="500" step="1" value="${S.indVar==null?10:S.indVar}"> %</div></div>`);
+  const fr=IND_FS.filter(([k])=>(S.indSel[k]||[]).length).map(([k,lb])=>`${lb}: ${(S.indSel[k]).map(v=>(op[k].find(x=>x[0]===v)||[0,v])[1]).join(", ")}`);
+  $("#ind-fres").textContent=`Ano ${S.indAno} · variação mínima dos alertas ${S.indVar==null?10:S.indVar}% · `+(fr.length?"Filtros: "+fr.join(" · "):"Sem filtros (todas as obras)")}
+function indVal(x,k){const fato=x.Pd!==undefined;
+  switch(k){case "reg":return x.reg;case "emp":return x.emp;case "obra":return x.o;case "tipo":return x.tipo;case "cesp":return x.cesp;case "ger":return fato?x.ger:x.nome;case "area":return fato?[x.area]:x.deps;case "st":return x.st;
+    case "prod":return fato?x.Pd:null;case "serv":return fato?x.Sd:null;case "ins":return fato?x.Id:null;case "al":return fato?alertaFato(x,S.indAno):null}return null}
+const indPassa=(x,ign)=>IND_FS.every(([k])=>{if(k===ign)return true;const sel=(S.indSel||{})[k];if(!sel||!sel.length)return true;const v=indVal(x,k);if(v===null||v===undefined)return true;return Array.isArray(v)?v.some(z=>sel.includes(z)):sel.includes(v)});
+/* ---------- gráficos (SVG) ---------- */
+function indTip(e,html){const t=$("#ind-tip");if(!html){t.hidden=true;return}t.innerHTML=html;t.hidden=false;const w=t.offsetWidth,h=t.offsetHeight;let x=e.clientX+14,y=e.clientY+14;if(x+w>innerWidth-8)x=e.clientX-w-14;if(y+h>innerHeight-8)y=e.clientY-h-14;t.style.left=x+"px";t.style.top=y+"px"}
+function eixoY(max){if(max<=0)max=1;const p=Math.pow(10,Math.floor(Math.log10(max)));const st=[1,2,2.5,5,10].map(k=>k*p).find(s=>max/s<=5)||p*10;const t=[];for(let v=0;v<=max+st*0.001;v+=st)t.push(v);if(t[t.length-1]<max)t.push(t[t.length-1]+st);return t}
+function chAnos(el,d){const W=640,H=260,ml=58,mr=12,mt=16,mb=40;const anos=["2025","2026","2027","2028","2029"];
+  const vals=anos.map(a=>({a,v:d.v[a]||0,e:d.e[a]||0,h:a<"2027"}));const max=Math.max(1,...vals.map(x=>Math.max(x.v,x.e)));const tk=eixoY(max);const top=tk[tk.length-1];
+  const y=v=>mt+(H-mt-mb)*(1-v/top);const bw=(W-ml-mr)/anos.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolução anual">`+tk.map(v=>`<line x1="${ml}" x2="${W-mr}" y1="${y(v)}" y2="${y(v)}" class="g"/><text x="${ml-6}" y="${y(v)+4}" class="ax" text-anchor="end">${fR(v)}</text>`).join("");
+  vals.forEach((x,i)=>{const cx=ml+bw*i+bw/2,w=Math.min(56,bw*0.5),h=Math.max(0,y(0)-y(x.v));const cor=x.h?IND_COR.hist:IND_COR.orc;
+    const tip=`<b>${x.a}${x.a==="2026"?" (jan–set real + out–dez)":x.h?" (realizado)":" (orçado)"}</b><br>${x.h?"Histórico":"Orçado"}: R$ ${nf0.format(x.v)}${x.a!=="2025"?`<br>Espelho: R$ ${nf0.format(x.e)}`:""}${x.a>"2026"?`<br>vs 2026: ${fP(x.v,d.v["2026"])} · vs espelho: ${fP(x.v,x.e)}`:""}`;
+    s+=`<g class="hit" data-tip="${esc(tip)}"><rect x="${cx-bw/2}" y="${mt}" width="${bw}" height="${H-mt-mb}" fill="transparent"/><path d="M${cx-w/2},${y(0)} v${-Math.max(0,h-4)} q0,-4 4,-4 h${w-8} q4,0 4,4 v${Math.max(0,h-4)} z" fill="${cor}"/>
+      <text x="${cx}" y="${y(x.v)-6}" class="lb" text-anchor="middle">${x.v?fR(x.v):""}</text>${x.e&&x.a!=="2025"?`<circle cx="${cx+w/2+9}" cy="${y(x.e)}" r="5" fill="${IND_COR.esp}" stroke="var(--surface)" stroke-width="2"/>`:""}
+      <text x="${cx}" y="${H-mb+18}" class="ax" text-anchor="middle">${x.a}${x.a==="2026"?"*":""}</text></g>`});
+  s+=`<line x1="${ml}" x2="${W-mr}" y1="${y(0)}" y2="${y(0)}" class="b"/></svg>`;
+  el.innerHTML=s+`<div class="ind-leg"><span><i style="background:${IND_COR.hist}"></i>Histórico</span><span><i style="background:${IND_COR.orc}"></i>Orçado</span><span><i style="background:${IND_COR.esp};border-radius:50%"></i>Espelho</span><span class="muted">* 2026 = jan–set real + out–dez</span></div>`}
+function chMes(el,series){const W=640,H=260,ml=58,mr=12,mt=16,mb=34;const max=Math.max(1,...series.flatMap(s=>s.v));const tk=eixoY(max);const top=tk[tk.length-1];
+  const x=m=>ml+(W-ml-mr)*(m/11);const y=v=>mt+(H-mt-mb)*(1-v/top);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Mês a mês" data-mes="1">`+tk.map(v=>`<line x1="${ml}" x2="${W-mr}" y1="${y(v)}" y2="${y(v)}" class="g"/><text x="${ml-6}" y="${y(v)+4}" class="ax" text-anchor="end">${fR(v)}</text>`).join("");
+  s+=MESC.map((m,i)=>`<text x="${x(i)}" y="${H-mb+18}" class="ax" text-anchor="middle">${m}</text>`).join("")+`<line x1="${ml}" x2="${W-mr}" y1="${y(0)}" y2="${y(0)}" class="b"/>`;
+  series.forEach(se=>{s+=`<path d="${se.v.map((v,m)=>(m?"L":"M")+x(m).toFixed(1)+","+y(v).toFixed(1)).join("")}" fill="none" stroke="${se.c}" stroke-width="2" ${se.dash?'stroke-dasharray="5 4"':""}/>`;const u=se.v[11];s+=`<text x="${W-mr}" y="${y(u)-6}" class="lb" text-anchor="end" fill="${se.c}"></text>`});
+  s+=`<line class="xh" x1="0" x2="0" y1="${mt}" y2="${H-mb}" visibility="hidden"/>`+MESC.map((m,i)=>`<rect class="hitm" data-m="${i}" x="${x(i)-(W-ml-mr)/22}" y="${mt}" width="${(W-ml-mr)/11}" height="${H-mt-mb}" fill="transparent"/>`).join("")+`</svg>`;
+  el.innerHTML=s+`<div class="ind-leg">${series.map(se=>`<span><i style="background:${se.c}${se.dash?";height:2px;margin-bottom:4px":""}"></i>${esc(se.n)}</span>`).join("")}</div>`;el._series=series;el._x=x}
+function chImpacto(el,items,nm){if(!items.length){el.innerHTML=`<p class="muted">Sem dados com estes filtros.</p>`;return}const W=640,rh=26,ml=210,mr=70,mt=8;const H=mt+items.length*rh+22;
+  const mx=Math.max(1,...items.map(i=>Math.abs(i.d)));const x0=ml+(W-ml-mr)/2;const sc=v=>v/mx*(W-ml-mr)/2;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Impacto por ${nm}"><line x1="${x0}" x2="${x0}" y1="${mt-4}" y2="${H-18}" class="b"/>`;
+  items.forEach((it,i)=>{const yy=mt+i*rh;const w=Math.abs(sc(it.d));const pos=it.d>=0;const cor=pos?IND_COR.up:IND_COR.dn;const xr=pos?x0:x0-w;
+    const tip=`<b>${esc(it.lb)}</b><br>Orçado: R$ ${nf0.format(it.o)}<br>Base 2026: R$ ${nf0.format(it.b)}<br>Impacto: R$ ${nf0.format(it.d)} (${fP(it.o,it.b)})<br>Espelho: R$ ${nf0.format(it.e)} (${fP(it.o,it.e)})`;
+    s+=`<g class="hit" data-tip="${esc(tip)}"><rect x="0" y="${yy}" width="${W}" height="${rh}" fill="transparent"/><text x="${ml-8}" y="${yy+rh/2+4}" class="ax" text-anchor="end">${esc(it.lb.length>32?it.lb.slice(0,31)+"…":it.lb)}</text>
+      <rect x="${xr}" y="${yy+5}" width="${Math.max(1,w)}" height="${rh-10}" rx="3" fill="${cor}"/><text x="${pos?x0+w+5:x0-w-5}" y="${yy+rh/2+4}" class="lb" text-anchor="${pos?"start":"end"}">${(pos?"+":"")}${fR(it.d)}</text></g>`});
+  s+=`<text x="${x0}" y="${H-4}" class="ax" text-anchor="middle">0</text></svg>`;
+  el.innerHTML=s+`<div class="ind-leg"><span><i style="background:${IND_COR.up}"></i>Aumento vs base 2026</span><span><i style="background:${IND_COR.dn}"></i>Redução vs base 2026</span></div>`}
+function chAndamento(el,G){if(!G.length){el.innerHTML=`<p class="muted">Sem dados.</p>`;return}const W=640,rh=24,ml=210,mr=52,mt=6;const H=mt+G.length*rh+6;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento">`;
+  G.forEach((g,i)=>{const yy=mt+i*rh;let xx=ml;const ww=W-ml-mr;const tip=`<b>${esc(g.lb)}</b><br>`+IND_STO.map(k=>`${IND_STN[k]}: ${g.c[k]||0}`).join("<br>")+`<br>Concluído: ${nf0.format(g.pf*100)}%`;
+    s+=`<g class="hit" data-tip="${esc(tip)}"><rect x="0" y="${yy}" width="${W}" height="${rh}" fill="transparent"/><text x="${ml-8}" y="${yy+rh/2+4}" class="ax" text-anchor="end">${esc(g.lb.length>32?g.lb.slice(0,31)+"…":g.lb)}</text>`;
+    IND_STO.forEach(k=>{const n=g.c[k]||0;if(!n)return;const w=n/g.n*ww;s+=`<rect x="${xx}" y="${yy+5}" width="${Math.max(0,w-2)}" height="${rh-10}" class="st-${k}" rx="2"/>`;xx+=w});
+    s+=`<text x="${W-mr+6}" y="${yy+rh/2+4}" class="lb">${nf0.format(g.pf*100)}%</text></g>`});
+  el.innerHTML=s+`</svg><div class="ind-leg">${IND_STO.map(k=>`<span><i class="st-${k}"></i>${IND_STN[k]}</span>`).join("")}</div>`}
+document.addEventListener("mousemove",e=>{if(!S.indOn)return;const g=e.target.closest&&e.target.closest("#v-ind .hit");
+  const r=e.target.closest&&e.target.closest("#v-ind .hitm");
+  if(r){const el=r.closest(".ind-ch");const m=+r.dataset.m;const xh=el.querySelector(".xh");const X=el._x(m);xh.setAttribute("x1",X);xh.setAttribute("x2",X);xh.setAttribute("visibility","visible");
+    indTip(e,`<b>${MESC[m]}/${S.indAno}</b><br>`+el._series.map(se=>`<span style="color:${se.c}">■</span> ${esc(se.n)}: R$ ${nf0.format(se.v[m])}`).join("<br>"));return}
+  document.querySelectorAll("#v-ind .xh").forEach(x=>x.setAttribute("visibility","hidden"));
+  if(g){indTip(e,g.dataset.tip);return}indTip(e,null)});
+/* ---------- montagem do relatório ---------- */
+async function renderIndicadores(forcar){S.indOn=true;S.indAno=S.indAno||"2027";if(forcar){S.acompEm=0;S.ind=null;S.indF=null}
+  try{$("#ind-msg").textContent="Calculando…";if(!S.ind)S.ind=await dadosIndicadores();
+    if(!S.indF)S.indF=await fatosIndicadores(S.ind,t=>$("#ind-msg").textContent=t);
+    $("#ind-msg").textContent=`${S.ind.U.length} combinações gerente × obra · ${S.ind.orcObra.size} obras com orçamento iniciado`;
+    $("#ind-gerado").textContent=`Gerado em ${new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})}.`;
+    renderIndFiltros();desenharInd()}catch(e){$("#ind-msg").textContent="Não foi possível montar o relatório: "+(e.message||e)}}
+function desenharInd(){const y=S.indAno;const F=(S.indF||[]).filter(f=>indPassa(f));const U=S.ind.U.filter(u=>indPassa(u));
+  document.querySelectorAll("#ind-fbar [data-iano]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.iano===y)));
+  const sm=(a)=>a.reduce((s,v)=>s+v,0);const tot={o:0,b:0,e:0,h25:0,o27:0,o28:0,o29:0,e26:0,e27:0,e28:0,e29:0};const mes={o:new Array(12).fill(0),b:new Array(12).fill(0),e:new Array(12).fill(0)};
+  F.forEach(f=>{tot.o+=sm(f.orc[y]);tot.b+=sm(f.h26);tot.e+=sm(f.esp[y]);tot.h25+=sm(f.h25);YEARS.forEach(a=>{tot["o"+a.slice(2)]+=sm(f.orc[a]);tot["e"+a.slice(2)]+=sm(f.esp[a])});tot.e26+=sm(f.esp["2026"]);for(let m=0;m<12;m++){mes.o[m]+=f.orc[y][m];mes.b[m]+=f.h26[m];mes.e[m]+=f.esp[y][m]}});
+  const c={};U.forEach(u=>c[u.st]=(c[u.st]||0)+1);const nU=U.length||1;const fim=(c.enviado||0)+(c.validado||0);
+  const kp=(l,v,sub,cls)=>`<div class="${cls||""}"><div class="k-l">${l}</div><div class="k-v">${v}</div><div class="k-s">${sub||""}</div></div>`;const imp=tot.o-tot.b,impE=tot.o-tot.e;
+  $("#ind-kpi").innerHTML=kp(`Orçado ${y}`,"R$ "+fR(tot.o),`${new Set(F.map(f=>f.o)).size} obras`)+kp("Base 2026","R$ "+fR(tot.b),"mesmos insumos")+kp("Impacto vs 2026",(imp>=0?"+":"")+"R$ "+fR(imp),`<b class="${imp>0?"k-up":"k-dn"}">${fP(tot.o,tot.b)}</b>`)+kp(`Espelho ${y}`,"R$ "+fR(tot.e),"já planejado")+kp("Diferença vs espelho",(impE>=0?"+":"")+"R$ "+fR(impE),`<b class="${impE>0?"k-up":"k-dn"}">${fP(tot.o,tot.e)}</b>`)+kp("Andamento",nf0.format(fim/nU*100)+"%",`${fim} de ${U.length} enviados ou validados`);
+  chAnos($("#ch-anos"),{v:{2025:tot.h25,2026:tot.b,2027:tot.o27,2028:tot.o28,2029:tot.o29},e:{2026:tot.e26,2027:tot.e27,2028:tot.e28,2029:tot.e29}});
+  $("#ch-mes-t").textContent=`Mês a mês · ${y}`;chMes($("#ch-mes"),[{n:`Orçado ${y}`,c:IND_COR.orc,v:mes.o},{n:"Base 2026",c:IND_COR.hist,v:mes.b,dash:1},{n:`Espelho ${y}`,c:IND_COR.esp,v:mes.e}]);
+  const agrega=(key,lbf)=>{const M=new Map();F.forEach(f=>{const k=key(f);if(!M.has(k))M.set(k,{lb:lbf(f),o:0,b:0,e:0});const g=M.get(k);g.o+=sm(f.orc[y]);g.b+=sm(f.h26);g.e+=sm(f.esp[y])});return [...M.values()].map(g=>({...g,d:g.o-g.b}))};
+  const top=L=>L.filter(x=>x.o||x.b).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).slice(0,12);
+  S.indEmp=agrega(f=>f.emp,f=>`${f.emp}${f.empNome?" – "+f.empNome:""}`);S.indProd=agrega(f=>f.Pd,f=>f.Pd);
+  chImpacto($("#ch-emp"),top(S.indEmp),"empresa");chImpacto($("#ch-prod"),top(S.indProd),"produto");
+  const por=S.indAndPor||"emp";const G=new Map();U.forEach(u=>{const ks=por==="emp"?[[u.emp,`${u.emp}${u.empNome?" – "+u.empNome:""}`]]:por==="reg"?[[u.reg,u.reg]]:u.deps.map(d=>[d,d]);
+    ks.forEach(([k,lb])=>{if(!G.has(k))G.set(k,{lb,c:{},n:0});const g=G.get(k);g.n++;g.c[u.st]=(g.c[u.st]||0)+1})});
+  const GL=[...G.values()];GL.forEach(g=>g.pf=((g.c.enviado||0)+(g.c.validado||0))/g.n);GL.sort((a,b)=>b.n-a.n);chAndamento($("#ch-and"),GL.slice(0,14));
+  $("#ch-and-s").textContent=`Gerente × obra por situação${GL.length>14?` · 14 de ${GL.length} (maiores)`:""}`;
+  renderIndDetalhe(F);renderIndInsumos(F);renderIndTabela(U);renderIndAcessos();renderIndAlertas(F)}
+function renderIndDetalhe(F){F=F||(S.indF||[]).filter(f=>indPassa(f));const y=S.indAno;const q=semAc(($("#ind-dq")&&$("#ind-dq").value)||"").trim();const sm=a=>a.reduce((s,v)=>s+v,0);
+  const E=new Map();F.forEach(f=>{const ek=f.emp;if(!E.has(ek))E.set(ek,{lb:`${f.emp}${f.empNome?" – "+f.empNome:""}`,o:0,b:0,e:0,h25:0,ob:new Map()});const g=E.get(ek);
+    const ok=f.o;if(!g.ob.has(ok))g.ob.set(ok,{lb:`${f.o.split("-")[1]||f.o} ${f.obraNome}`,o:0,b:0,e:0,h25:0,ger:new Set(),st:new Set()});const ob=g.ob.get(ok);
+    [g,ob].forEach(z=>{z.o+=sm(f.orc[y]);z.b+=sm(f.h26);z.e+=sm(f.esp[y]);z.h25+=sm(f.h25)});ob.ger.add(f.ger);ob.st.add(IND_STN[f.st])});
+  S.indAb=S.indAb||new Set();const L=[...E.entries()].filter(([k,g])=>!q||semAc(g.lb+" "+[...g.ob.values()].map(o=>o.lb).join(" ")).includes(q)).sort((a,b)=>b[1].o-a[1].o);
+  const cel=z=>`<td class="num">${f0(z.h25)}</td><td class="num">${f0(z.b)}</td><td class="num"><b>${f0(z.o)}</b></td><td class="num">${f0(z.o-z.b)}</td><td class="num">${deltaHtml(z.o,z.b)||"—"}</td><td class="num">${f0(z.e)}</td><td class="num">${deltaHtml(z.o,z.e)||"—"}</td>`;
+  const T={o:0,b:0,e:0,h25:0};L.forEach(([k,g])=>{T.o+=g.o;T.b+=g.b;T.e+=g.e;T.h25+=g.h25});
+  $("#ind-det").innerHTML=`<thead><tr><th>Empresa / obra</th><th class="num">2025 real</th><th class="num">Base 2026</th><th class="num">Orçado ${y}</th><th class="num">Impacto R$</th><th class="num">vs 2026</th><th class="num">Espelho ${y}</th><th class="num">vs espelho</th></tr></thead><tbody>${L.map(([k,g])=>{const ab=S.indAb.has(k)||!!q||!!S.indPrintAll;
+    return `<tr class="ind-emp" data-indab="${esc(k)}"><td><button class="tg no-print" aria-expanded="${ab}">${ab?"▾":"▸"}</button> <b>${esc(g.lb)}</b> <span class="muted">(${g.ob.size})</span></td>${cel(g)}</tr>`+(ab?[...g.ob.values()].sort((a,b)=>b.o-a.o).map(o=>`<tr class="ind-obra"><td style="padding-left:30px">${esc(o.lb)}<div class="muted" style="font-size:11px">${esc([...o.ger].join(", "))} · ${esc([...o.st].join(", "))}</div></td>${cel(o)}</tr>`).join(""):"")}).join("")||`<tr><td class="muted" colspan="8">Nenhum orçamento com estes filtros.</td></tr>`}</tbody>${L.length?`<tfoot><tr><td><b>Total</b></td>${cel(T)}</tr></tfoot>`:""}`}
+function renderIndTabela(U){U=U||S.ind.U.filter(u=>indPassa(u));const q=semAc(($("#ind-q")&&$("#ind-q").value)||"").trim();
+  const G=new Map();U.forEach(u=>{if(!G.has(u.email))G.set(u.email,{lb:u.nome,sub:u.email,c:{},n:0,obras:new Set(),nunca:!u.entrou});const g=G.get(u.email);g.n++;g.c[u.st]=(g.c[u.st]||0)+1;g.obras.add(u.o)});
+  let L=[...G.values()].filter(g=>!q||semAc(g.lb+" "+g.sub).includes(q));L.forEach(g=>g.pf=((g.c.enviado||0)+(g.c.validado||0))/g.n);L.sort((a,b)=>a.pf-b.pf||b.n-a.n);
+  $("#ind-tbl").innerHTML=`<thead><tr><th>Gerente</th><th class="num">Obras</th>${IND_STO.map(k=>`<th class="num">${IND_STN[k]}</th>`).join("")}<th class="num">Concluído</th><th style="min-width:160px">Andamento</th></tr></thead><tbody>${L.map(g=>`<tr class="ind-click" data-ind-ger="${esc(g.lb)}" title="Abrir os enviados deste gerente"><td>${esc(g.lb)}<div class="muted" style="font-size:11px">${esc(g.sub)}${g.nunca?' · <b style="color:var(--warn,#B45309)">nunca entrou no site</b>':""}</div></td><td class="num">${g.obras.size}</td>${IND_STO.map(k=>`<td class="num">${g.c[k]||""}</td>`).join("")}<td class="num"><b>${nf0.format(g.pf*100)}%</b></td><td>${barraSt(g.c,g.n)}</td></tr>`).join("")||`<tr><td class="muted">Nada encontrado.</td></tr>`}</tbody>`}
 function renderIndAcessos(){const D=S.ind;const nunca=D.pess.filter(p=>!D.logados.has(p.email));
-  $("#ind-ac").innerHTML=`<p style="margin:0"><b>${D.pess.length-nunca.length}</b> de ${D.pess.length} gerentes já entraram no site · <b style="color:${nunca.length?"var(--warn,#B45309)":"inherit"}">${nunca.length} nunca entraram</b> ${nunca.length?`<button class="btn sm" id="ind-nunca-tg">${S.indNunca?"Fechar lista":"Ver quem"}</button>`:""}</p>
+  $("#ind-ac").innerHTML=`<p style="margin:0"><b>${D.pess.length-nunca.length}</b> de ${D.pess.length} gerentes já entraram no site · <b style="color:${nunca.length?"var(--warn,#B45309)":"inherit"}">${nunca.length} nunca entraram</b> ${nunca.length?`<button class="btn sm no-print" id="ind-nunca-tg">${S.indNunca?"Fechar lista":"Ver quem"}</button>`:""}</p>
    ${S.indNunca&&nunca.length?`<div class="tbl-box" style="margin-top:8px"><table class="list"><thead><tr><th>Nome</th><th>E-mail</th><th>Área</th><th class="num">Obras</th></tr></thead><tbody>${nunca.sort((a,b)=>(b.ids||[]).length-(a.ids||[]).length).map(p=>`<tr><td>${esc(p.nome||"")}</td><td class="muted">${esc(p.email)}</td><td>${esc(p.area||"")}</td><td class="num">${(p.ids||Object.keys(p.acc||{})).length}</td></tr>`).join("")}</tbody></table></div>`:""}`}
-async function renderIndAlertas(){const rows=(S.acomp||[]).filter(r=>r.orc&&ST_ACOMP.has(r.orc.status));const box=$("#ind-al");
-  if(!rows.length){box.innerHTML="Alertas: nenhum orçamento enviado ou validado ainda.";return}
-  const tk=S.indTk=(S.indTk||0)+1;const T={novo:0,up:0,dn:0,vNovo:0};const por=[];
-  for(let i=0;i<rows.length;i++){if(S.indTk!==tk)return;box.textContent=`Calculando alertas ${i+1}/${rows.length}…`;let c=null;try{c=await alertasDoOrc(rows[i])}catch(e){}if(!c)continue;T.novo+=c.novo;T.up+=c.up;T.dn+=c.dn;T.vNovo+=c.vNovo;por.push({r:rows[i],c})}
-  por.sort((a,b)=>(b.c.novo+b.c.up+b.c.dn)-(a.c.novo+a.c.up+a.c.dn));
-  box.innerHTML=`<p style="margin:0;color:var(--ink)">Nos ${rows.length} orçamentos enviados/validados (2027–2029, variação ≥ ${Math.round(ALERTA_PCT*100)}%): <span class="al al-novo">${T.novo} novo(s)${T.vNovo?" · "+f0(T.vNovo):""}</span> <span class="al al-up">${T.up} aumento(s)</span> <span class="al al-dn">${T.dn} redução(ões)</span></p>
-   <div class="tbl-box" style="margin-top:8px"><table class="list"><thead><tr><th>Gerente</th><th>Obra</th><th>Alertas</th><th></th></tr></thead><tbody>${por.slice(0,30).map((x,i)=>`<tr><td>${esc(x.r.nomeG)}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(x.r.info.obra||x.r.o)}</span> ${esc(x.r.info.nome||"")}</td><td>${alTxt(x.c)}</td><td><button class="btn sm" data-ind-abrir="${i}">Abrir</button></td></tr>`).join("")}</tbody></table></div>`;S.indAlRows=por}
-document.addEventListener("click",async e=>{const t=e.target;
-  if(t.id==="ind-ref"){renderIndicadores(true).catch(()=>{});return}
+function renderIndAlertas(F){const y=S.indAno;const box=$("#ind-al");const sm=a=>a.reduce((s2,v)=>s2+v,0);const T={Novo:0,Aumento:0,"Redução":0,Zerado:0};let vNovo=0;const O=new Map();
+  F.forEach(f=>{const al=alertaFato(f,y);if(al[0]==="Sem alerta")return;if(!O.has(f.o+"|"+f.uid))O.set(f.o+"|"+f.uid,{f,c:{Novo:0,Aumento:0,"Redução":0,Zerado:0},n:0});const g=O.get(f.o+"|"+f.uid);al.forEach(a=>{T[a]++;g.c[a]++});g.n++;if(al[0]==="Novo")vNovo+=sm(f.orc[y])});
+  const L=[...O.values()].sort((a,b)=>b.n-a.n);S.indAlRows=L;
+  const kp=(l,v,cls)=>`<div><div class="k-l">${l}</div><div class="k-v"><span class="al ${cls}" style="font-size:18px">${v}</span></div></div>`;
+  box.innerHTML=`<div class="ind-kpis ind-kpis4">${kp("Insumos novos",T.Novo+(vNovo?` · R$ ${fR(vNovo)}`:""),"al-novo")}${kp("Aumentos",T.Aumento,"al-up")}${kp("Reduções",T["Redução"],"al-dn")}${kp("Zerados",T.Zerado,"al-dn")}</div>
+   ${L.length?`<div class="tbl-box" style="margin-top:8px"><table class="list"><thead><tr><th>Obra</th><th>Gerente</th><th>Alertas ${y}</th><th class="no-print"></th></tr></thead><tbody>${L.slice(0,12).map((x,i)=>`<tr><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(x.f.o)}</span> ${esc(x.f.obraNome)}</td><td>${esc(x.f.ger)}</td><td>${x.c.Novo?`<span class="al al-novo">${x.c.Novo} novo(s)</span> `:""}${x.c.Aumento?`<span class="al al-up">${x.c.Aumento} ▲</span> `:""}${x.c["Redução"]?`<span class="al al-dn">${x.c["Redução"]} ▼</span> `:""}${x.c.Zerado?`<span class="al al-dn">${x.c.Zerado} zerado(s)</span>`:""}</td><td class="no-print"><button class="btn sm" data-ind-abrir="${i}">Abrir</button></td></tr>`).join("")}</tbody></table></div>`:`<p class="muted" style="margin:8px 0 0">Nenhum alerta com estes filtros.</p>`}`}
+function renderIndInsumos(F){F=F||(S.indF||[]).filter(f=>indPassa(f));const y=S.indAno;const sm=a=>a.reduce((s2,v)=>s2+v,0);const q=semAc(($("#ind-iq")&&$("#ind-iq").value)||"").trim();const M=new Map();
+  F.forEach(f=>{const k=f.I+"|"+f.Id;if(!M.has(k))M.set(k,{Id:f.Id,Sd:f.Sd,Pd:f.Pd,ob:new Set(),o:0,b:0,e:0,al:new Set()});const g=M.get(k);g.ob.add(f.o);g.o+=sm(f.orc[y]);g.b+=sm(f.h26);g.e+=sm(f.esp[y]);alertaFato(f,y).forEach(a=>{if(a!=="Sem alerta")g.al.add(a)})});
+  let L=[...M.values()].map(g=>({...g,d:g.o-g.b})).filter(g=>!q||semAc(g.Id+" "+g.Sd+" "+g.Pd).includes(q)).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));S.indIns=L;const n=S.indInsN||15;
+  const alc={Novo:"al-novo",Aumento:"al-up","Redução":"al-dn",Zerado:"al-dn"};
+  $("#ind-ins").innerHTML=`<thead><tr><th>Insumo</th><th>Serviço / produto</th><th class="num">Obras</th><th class="num">Base 2026</th><th class="num">Orçado ${y}</th><th class="num">Impacto R$</th><th class="num">vs 2026</th><th class="num">Espelho ${y}</th><th class="num">vs espelho</th><th>Alertas</th></tr></thead><tbody>${L.slice(0,n).map(g=>`<tr><td>${esc(g.Id)}</td><td class="muted" style="font-size:12px">${esc(g.Sd)}<br>${esc(g.Pd)}</td><td class="num">${g.ob.size}</td><td class="num">${f0(g.b)}</td><td class="num"><b>${f0(g.o)}</b></td><td class="num">${f0(g.d)}</td><td class="num">${deltaHtml(g.o,g.b)||"—"}</td><td class="num">${f0(g.e)}</td><td class="num">${deltaHtml(g.o,g.e)||"—"}</td><td>${[...g.al].map(a=>`<span class="al ${alc[a]}">${a}</span>`).join(" ")}</td></tr>`).join("")||`<tr><td class="muted" colspan="10">Nada com estes filtros.</td></tr>`}</tbody>`;
+  $("#ind-ins-mais").hidden=L.length<=n;$("#ind-ins-mais").textContent=`Mostrar mais (${L.length-n} restantes)`}
+/* ---------- exportações ---------- */
+async function indExcel(){if(typeof XLSX==="undefined"||!S.dl){toast("Excel indisponível nesta visualização");return}const y=S.indAno;const F=(S.indF||[]).filter(f=>indPassa(f));const sm=a=>a.reduce((s,v)=>s+v,0);const wb=XLSX.utils.book_new();
+  const fil=[["Relatório de impacto do orçamento – ano "+y],[$("#ind-fres").textContent],["Gerado em "+new Date().toLocaleString("pt-BR")],[]];
+  const add=(nm,aoa,cols)=>{const ws=XLSX.utils.aoa_to_sheet(aoa);if(cols)ws["!cols"]=cols.map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,nm)};
+  add("Resumo",[...fil,["Indicador","Valor"],...[...$("#ind-kpi").children].map(d=>[d.querySelector(".k-l").textContent,d.querySelector(".k-v").textContent+" "+d.querySelector(".k-s").textContent])],[40,40]);
+  const ob=new Map();F.forEach(f=>{const k=f.o+"|"+f.ger;if(!ob.has(k))ob.set(k,{f,o:0,b:0,e:0,h25:0});const z=ob.get(k);z.o+=sm(f.orc[y]);z.b+=sm(f.h26);z.e+=sm(f.esp[y]);z.h25+=sm(f.h25)});
+  add("Por obra",[["Regional","Empresa","Nome da empresa","Obra","Descrição da obra","Gerente","Situação","2025 real","Base 2026","Orçado "+y,"Impacto R$","Var. vs 2026","Espelho "+y,"Var. vs espelho"],...[...ob.values()].map(z=>[z.f.reg,numOr(z.f.emp),z.f.empNome,numOr(z.f.o.split("-")[1]||z.f.o),z.f.obraNome,z.f.ger,IND_STN[z.f.st],r2(z.h25),r2(z.b),r2(z.o),r2(z.o-z.b),z.b?r2(z.o/z.b-1):"",r2(z.e),z.e?r2(z.o/z.e-1):""])],[14,8,30,8,30,24,16,13,13,13,13,10,13,10]);
+  add("Por empresa",[["Empresa","Orçado "+y,"Base 2026","Impacto R$","Espelho "+y],...(S.indEmp||[]).map(g=>[g.lb,r2(g.o),r2(g.b),r2(g.d),r2(g.e)])],[40,14,14,14,14]);
+  add("Por produto",[["Produto","Orçado "+y,"Base 2026","Impacto R$","Espelho "+y],...(S.indProd||[]).map(g=>[g.lb,r2(g.o),r2(g.b),r2(g.d),r2(g.e)])],[40,14,14,14,14]);
+  const ms={o:new Array(12).fill(0),b:new Array(12).fill(0),e:new Array(12).fill(0)};F.forEach(f=>{for(let m=0;m<12;m++){ms.o[m]+=f.orc[y][m];ms.b[m]+=f.h26[m];ms.e[m]+=f.esp[y][m]}});
+  add("Mensal",[["Mês","Orçado "+y,"Base 2026","Espelho "+y],...MESC.map((m,i)=>[m,r2(ms.o[i]),r2(ms.b[i]),r2(ms.e[i])])],[8,14,14,14]);
+  add("Por insumo",[["Regional","Empresa","Obra","Descrição da obra","Gerente","Situação","Quem planeja","Produto","Serviço","Insumo","2025 real","Base 2026","Orçado "+y,"Impacto R$","Var. vs 2026","Espelho "+y,"Var. vs espelho","Alerta "+y],...F.map(f=>{const o=sm(f.orc[y]),b=sm(f.h26),e=sm(f.esp[y]);return [f.reg,numOr(f.emp),numOr(f.o.split("-")[1]||f.o),f.obraNome,f.ger,IND_STN[f.st],f.area,f.Pd,f.Sd,f.Id,r2(sm(f.h25)),r2(b),r2(o),r2(o-b),b?r2(o/b-1):"",r2(e),e?r2(o/e-1):"",alertaFato(f,y).join(", ")]})],[14,8,8,28,22,14,22,28,28,40,12,12,12,12,9,12,9,16]);
+  const U=S.ind.U.filter(u=>indPassa(u));add("Andamento",[["Gerente","E-mail","Empresa","Obra","Áreas","Situação","Já entrou no site"],...U.map(u=>[u.nome,u.email,numOr(u.emp),numOr(u.o.split("-")[1]||u.o),u.deps.join(", "),IND_STN[u.st],u.entrou?"Sim":"Não"])],[28,32,8,8,30,16,10]);
+  try{await S.dl.save({filename:`RELATORIO_IMPACTO_ORCAMENTO_${y}_${new Date().toISOString().slice(0,10)}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast("Excel gerado")}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}}
+function indPdf(){const t0=document.title;document.title=`Relatorio_Impacto_Orcamento_${S.indAno}_${new Date().toISOString().slice(0,10)}`;document.body.classList.add("print-ind");
+  /* PDF em 2 folhas: Folha 1 = indicadores e gráficos; Folha 2 = tabela empresa/obra (todas as obras abertas). A tela não muda. */
+  S.indPrintAll=true;renderIndDetalhe();$("#ind-f2-fil").textContent=$("#ind-fres").textContent+" · gerado em "+new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+  const fim=()=>{document.body.classList.remove("print-ind");document.title=t0;S.indPrintAll=false;renderIndDetalhe();window.removeEventListener("afterprint",fim)};window.addEventListener("afterprint",fim);setTimeout(()=>{window.print();setTimeout(fim,1500)},60)}
+/* ---------- eventos ---------- */
+document.addEventListener("click",async e=>{const t=e.target;if(!t.closest)return;
+  if(!t.closest(".ind-dd"))document.querySelectorAll(".ind-dd-pop").forEach(p=>p.hidden=true);
+  if(t.id==="ind-ref"){renderIndicadores(true);return}if(t.id==="ind-pdf"){indPdf();return}if(t.id==="ind-xlsx"){indExcel();return}
+  if(t.id==="ind-flimpar"){S.indSel={};renderIndFiltros();desenharInd();return}
   if(t.id==="ind-nunca-tg"){S.indNunca=!S.indNunca;renderIndAcessos();return}
-  const pb=t.closest&&t.closest("#ind-por [data-por]");if(pb){S.indPor=pb.dataset.por;document.querySelectorAll("#ind-por [data-por]").forEach(b=>{b.classList.toggle("on",b===pb);b.setAttribute("aria-pressed",String(b===pb))});renderIndTabela();return}
-  const tr=t.closest&&t.closest("[data-ind-ger]");if(tr){showTab("acomp");const q=$("#acomp-q");if(q){q.value=tr.dataset.indGer;try{renderAcomp()}catch(e){}}return}
-  const ab=t.closest&&t.closest("[data-ind-abrir]");if(ab){const x=(S.indAlRows||[])[+ab.dataset.indAbrir];if(!x)return;S.voltarPara=null;showTab("fill");$("#fill-empty").hidden=true;$("#fill-main").hidden=false;await openObra(x.r.uid,x.r.o,true)}});
-document.addEventListener("input",e=>{if(e.target.id==="ind-q")renderIndTabela()});
+  const an=t.closest("#ind-fbar [data-iano]");if(an){S.indAno=an.dataset.iano;renderIndFiltros();desenharInd();return}
+  const db=t.closest(".ind-dd-btn");if(db){const p=db.parentElement.querySelector(".ind-dd-pop");const ab=p.hidden;document.querySelectorAll(".ind-dd-pop").forEach(x=>x.hidden=true);p.hidden=!ab;if(ab)p.querySelector(".ind-dd-q").focus();return}
+  const da=t.closest("[data-ddall],[data-ddnone]");if(da){const k=da.dataset.ddall||da.dataset.ddnone;const pop=da.closest(".ind-dd-pop");S.indSel[k]=da.dataset.ddall?[...pop.querySelectorAll(".ind-dd-list label:not([hidden]) input")].map(i=>i.value):[];renderIndFiltros();desenharInd();return}
+  const ap=t.closest("#ind-and-por [data-andpor]");if(ap){S.indAndPor=ap.dataset.andpor;document.querySelectorAll("#ind-and-por [data-andpor]").forEach(b=>{b.classList.toggle("on",b===ap);b.setAttribute("aria-pressed",String(b===ap))});desenharInd();return}
+  const er=t.closest("tr.ind-emp[data-indab]");if(er){S.indAb=S.indAb||new Set();const k=er.dataset.indab;S.indAb.has(k)?S.indAb.delete(k):S.indAb.add(k);renderIndDetalhe();return}
+  const tr=t.closest("[data-ind-ger]");if(tr){showTab("acomp");const q=$("#acomp-q");if(q){q.value=tr.dataset.indGer;try{renderAcomp()}catch(e){}}return}
+  const ab=t.closest("[data-ind-abrir]");if(ab){const x=(S.indAlRows||[])[+ab.dataset.indAbrir];if(!x)return;S.voltarPara=null;showTab("fill");$("#fill-empty").hidden=true;$("#fill-main").hidden=false;await openObra(x.f.uid,x.f.o,true);return}
+  if(t.id==="ind-ins-mais"){S.indInsN=(S.indInsN||15)+30;renderIndInsumos();return}});
+document.addEventListener("change",e=>{const c=e.target;const dd=c.closest&&c.closest(".ind-dd");if(!dd||c.type!=="checkbox")return;const k=dd.dataset.idd;const pop=dd.querySelector(".ind-dd-pop");
+  S.indSel[k]=[...pop.querySelectorAll(".ind-dd-list input:checked")].map(i=>i.value);clearTimeout(S.indT);S.indT=setTimeout(()=>{const op=!pop.hidden;renderIndFiltros();desenharInd();if(op){const np=document.querySelector(`.ind-dd[data-idd="${k}"] .ind-dd-pop`);if(np)np.hidden=false}},250)});
+document.addEventListener("input",e=>{const t=e.target;if(t.id==="ind-q")renderIndTabela();if(t.id==="ind-dq")renderIndDetalhe();if(t.id==="ind-iq")renderIndInsumos();
+  if(t.id==="ind-var"){const v=+t.value;if(v>=0){S.indVar=v;clearTimeout(S.indT);S.indT=setTimeout(()=>{renderIndFiltros();desenharInd();const el=$("#ind-var");if(el){el.focus();el.setSelectionRange&&0}},500)}}
+  if(t.classList&&t.classList.contains("ind-dd-q")){const q=semAc(t.value);t.closest(".ind-dd-pop").querySelectorAll(".ind-dd-list label").forEach(l=>l.hidden=!!q&&!semAc(l.textContent).includes(q))}});
 
 /* salvar */
 let saving=null;
