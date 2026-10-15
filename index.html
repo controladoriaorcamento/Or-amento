@@ -418,6 +418,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <label class="row" style="gap:6px"><input type="checkbox" id="only-mine"> Só itens que eu preencho</label>
         <label class="row" style="gap:6px"><input type="checkbox" id="only-empty"> Só itens ainda não preenchidos</label>
         <label class="row" style="gap:6px"><input type="checkbox" id="only-filled"> Só itens preenchidos</label>
+        <label class="row" style="gap:6px" title="Mostra só os insumos que têm valor no espelho (já planejado) em algum ano de 2026 a 2029"><input type="checkbox" id="only-esp"> Só itens com espelho</label>
         <label class="row" style="gap:6px" id="lb-only-rev" hidden><input type="checkbox" id="only-rev"> Só itens com apontamento <span class="pill reaberto" id="n-rev"></span></label>
         <button class="btn sm" id="btn-copy-prev" hidden>Copiar ano anterior</button>
         <span class="hm-tg niv-tg" id="niv-tg" role="group" aria-label="Recolher ou abrir a estrutura">Estrutura: <button class="btn sm" data-nstep="-1" title="Fecha só o nível mais aberto (primeiro os subitens, depois os insumos, e assim por diante)">− Recolher 1 nível</button><button class="btn sm" data-nstep="1" title="Abre mais um nível">+ Abrir 1 nível</button><span id="niv-bts" class="niv-txt"></span></span>
@@ -961,7 +962,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
 /* Limpar filtros: tira TUDO — segmentações, pesquisas dentro delas, busca de item, caixas "Só itens…", meses abertos e níveis da estrutura */
 $("#f-limpar-tudo").addEventListener("click",()=>{Object.keys(S.fSel).forEach(k=>S.fSel[k]=[]);document.querySelectorAll(".sl-q").forEach(x=>x.value="");
   const bo=$("#busca-obra");if(bo)bo.value="";S.q="";$("#q").value="";
-  S.onlyUsed=S.onlyMine=S.onlyEmpty=S.onlyFilled=S.onlyRev=false;["#only-used","#only-mine","#only-empty","#only-filled","#only-rev"].forEach(q=>{const c=$(q);if(c)c.checked=false});
+  S.onlyUsed=S.onlyMine=S.onlyEmpty=S.onlyFilled=S.onlyRev=S.onlyEsp=false;["#only-used","#only-mine","#only-empty","#only-filled","#only-rev","#only-esp"].forEach(q=>{const c=$(q);if(c)c.checked=false});
   S.fDeps=null;S.fDepsKey=null;S.hm={a25:false,a26:false};S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}
   document.querySelectorAll(".sl-pop").forEach(p=>p.hidden=true);
   filtrarObras();if(S.cur&&S.cur.lines)renderGrid();toast("Filtros limpos")});
@@ -1092,7 +1093,7 @@ async function openObra(uid,o,fromAdm){
   if(!fromAdm)aplicarFiltroLinhas(true);else{
     /* conferência: limpa todos os filtros para mostrar exatamente o que o gerente preencheu */
     S.fDeps=null;S.fDepsKey=null;Object.keys(S.fSel||{}).forEach(k=>S.fSel[k]=[]);["reg","emp","ger","cargo","obra"].forEach(n=>{try{renderSlicer(n)}catch(e){}});try{renderResumoFiltros()}catch(e){}
-    S.q="";$("#q").value="";S.onlyUsed=S.onlyMine=S.onlyEmpty=false;["#only-used","#only-mine","#only-empty"].forEach(q=>$(q).checked=false);S.collapsed=new Set();
+    S.q="";$("#q").value="";S.onlyUsed=S.onlyMine=S.onlyEmpty=S.onlyEsp=false;["#only-used","#only-mine","#only-empty","#only-esp"].forEach(q=>$(q).checked=false);S.collapsed=new Set();
     $("#consol").hidden=true;$("#filtros").classList.remove("ativo")}
   /* conferência da Controladoria: abre mostrando só o que o gerente preencheu */
   S.onlyFilled=!!fromAdm&&S.voltarPara!=="reg";$("#only-filled").checked=S.onlyFilled;if(fromAdm){S.onlyEmpty=false;$("#only-empty").checked=false}
@@ -1137,6 +1138,7 @@ function visible(l){
     if(S.onlyUsed&&!sum(l.h)&&!YEARS.some(y=>lineYearVals(S.cur.doc,l,y)&&sum(lineYearVals(S.cur.doc,l,y))))return false;
     if(S.q){const q=S.q;if(!(l.desc+" "+l.S+" "+l.I+" "+l.item).toLowerCase().includes(q))return false}
     if(S.onlyMine&&!l.canEdit)return false;
+    if(S.onlyEsp&&!temEsp(l))return false;
     if(restrito()&&!l.mine)return false;
     if(S.onlyEmpty&&linhaPreenchida(l))return false;
     if(S.onlyFilled&&!temValor(S.cur.doc,l))return false;
@@ -1581,12 +1583,20 @@ function alertaFato(f,y){const thr=(S.indVar==null?10:S.indVar)/100;const sm=a=>
 /* ---------- filtros ---------- */
 const IND_FS=[["reg","Regional"],["emp","Empresa"],["obra","Obra"],["tipo","Base modelo"],["cesp","Espelho"],["ger","Gerente"],["area","Quem planeja"],["st","Situação"],["prod","Produto"],["serv","Serviço"],["ins","Insumo"],["al","Alerta"]];
 const IND_SO_FATO=new Set(["prod","serv","ins","al"]);
-function indOpcoes(){const D=S.ind,F=S.indF||[];const o={};IND_FS.forEach(([k])=>o[k]=new Map());
-  const put=(k,v,lb)=>{if(v!==undefined&&v!=="")o[k].set(v,lb||v)};
-  D.U.forEach(u=>{put("reg",u.reg);put("emp",u.emp,`${u.emp}${u.empNome?" – "+u.empNome:""}`);put("ger",u.nome);u.deps.forEach(d=>put("area",d));put("st",u.st,IND_STN[u.st]);put("obra",u.o,`${u.o} ${(D.catBy.get(u.o)||[])[2]||""}`);put("tipo",u.tipo);put("cesp",u.cesp)});
-  F.forEach(f=>{put("reg",f.reg);put("emp",f.emp,`${f.emp}${f.empNome?" – "+f.empNome:""}`);put("ger",f.ger);put("area",f.area);put("st",f.st,IND_STN[f.st]);put("prod",f.Pd);put("obra",f.o,f.obraLb);put("tipo",f.tipo);put("cesp",f.cesp);put("serv",f.Sd);put("ins",f.Id)});
-  ["Novo","Aumento","Redução","Zerado","Sem alerta"].forEach(v=>o.al.set(v,v));
-  Object.keys(o).forEach(k=>{if(k!=="al")o[k]=[...o[k].entries()].sort((a,b)=>String(a[1]).localeCompare(String(b[1]),"pt-BR",{numeric:true}));else o[k]=[...o[k].entries()]});return o}
+/* opções em cascata: cada filtro só mostra o que existe com os OUTROS filtros aplicados (os já marcados continuam na lista) */
+function indOpcoes(){const D=S.ind,F=S.indF||[];const o={};IND_FS.forEach(([k])=>o[k]=new Map());const sel=S.indSel||{};
+  const put=(k,v,lb)=>{if(v!==undefined&&v!==null&&v!=="")o[k].set(v,lb||v)};
+  IND_FS.forEach(([k])=>{
+    if(!IND_SO_FATO.has(k))D.U.forEach(u=>{if(!indPassa(u,k))return;
+      if(k==="reg")put(k,u.reg);else if(k==="emp")put(k,u.emp,`${u.emp}${u.empNome?" – "+u.empNome:""}`);else if(k==="obra")put(k,u.o,`${u.o} ${(D.catBy.get(u.o)||[])[2]||""}`);
+      else if(k==="tipo")put(k,u.tipo);else if(k==="cesp")put(k,u.cesp);else if(k==="ger")put(k,u.nome);else if(k==="area")u.deps.forEach(d=>put(k,d));else if(k==="st")put(k,u.st,IND_STN[u.st])});
+    F.forEach(f=>{if(!indPassa(f,k))return;
+      if(k==="al"){alertaFato(f,S.indAno).forEach(v=>put(k,v));return}
+      const v={reg:f.reg,emp:f.emp,obra:f.o,tipo:f.tipo,cesp:f.cesp,ger:f.ger,area:f.area,st:f.st,prod:f.Pd,serv:f.Sd,ins:f.Id}[k];
+      const lb=k==="emp"?`${f.emp}${f.empNome?" – "+f.empNome:""}`:k==="obra"?f.obraLb:k==="st"?IND_STN[f.st]:v;put(k,v,lb)});
+    (sel[k]||[]).forEach(v=>{if(!o[k].has(v))o[k].set(v,k==="st"?(IND_STN[v]||v):v)})});
+  const ordAl=["Novo","Aumento","Redução","Zerado","Sem alerta"];
+  Object.keys(o).forEach(k=>{o[k]=[...o[k].entries()];if(k==="al")o[k].sort((a,b)=>ordAl.indexOf(a[0])-ordAl.indexOf(b[0]));else o[k].sort((a,b)=>String(a[1]).localeCompare(String(b[1]),"pt-BR",{numeric:true}))});return o}
 function renderIndFiltros(){const box=$("#ind-fdds");const op=indOpcoes();S.indSel=S.indSel||{};
   box.innerHTML=IND_FS.map(([k,lb])=>{const sel=S.indSel[k]||[];const txt=!sel.length?"Todos":sel.length===1?((op[k].find(x=>x[0]===sel[0])||[0,sel[0]])[1]):sel.length+" selecionados";
     return `<div class="ind-dd${sel.length?" ativo":""}" data-idd="${k}"><span class="lbl">${lb}</span><button type="button" class="ind-dd-btn"><span>${esc(txt)}</span><span aria-hidden="true">▾</span></button><div class="ind-dd-pop" hidden><input type="search" class="ind-dd-q" placeholder="Pesquisar…"><div class="ind-dd-acts"><button type="button" data-ddall="${k}">Marcar todos</button><button type="button" data-ddnone="${k}">Limpar</button></div><div class="ind-dd-list">${op[k].map(([v,l])=>`<label><input type="checkbox" value="${esc(v)}" ${sel.includes(v)?"checked":""}> <span>${esc(l)}</span></label>`).join("")||'<span class="muted">Sem opções</span>'}</div></div></div>`}).join("");
@@ -1618,19 +1628,19 @@ function chMes(el,series){const W=640,H=260,ml=58,mr=12,mt=16,mb=34;const max=Ma
   series.forEach(se=>{s+=`<path d="${se.v.map((v,m)=>(m?"L":"M")+x(m).toFixed(1)+","+y(v).toFixed(1)).join("")}" fill="none" stroke="${se.c}" stroke-width="2" ${se.dash?'stroke-dasharray="5 4"':""}/>`;const u=se.v[11];s+=`<text x="${W-mr}" y="${y(u)-6}" class="lb" text-anchor="end" fill="${se.c}"></text>`});
   s+=`<line class="xh" x1="0" x2="0" y1="${mt}" y2="${H-mb}" visibility="hidden"/>`+MESC.map((m,i)=>`<rect class="hitm" data-m="${i}" x="${x(i)-(W-ml-mr)/22}" y="${mt}" width="${(W-ml-mr)/11}" height="${H-mt-mb}" fill="transparent"/>`).join("")+`</svg>`;
   el.innerHTML=s+`<div class="ind-leg">${series.map(se=>`<span><i style="background:${se.c}${se.dash?";height:2px;margin-bottom:4px":""}"></i>${esc(se.n)}</span>`).join("")}</div>`;el._series=series;el._x=x}
-function chImpacto(el,items,nm){if(!items.length){el.innerHTML=`<p class="muted">Sem dados com estes filtros.</p>`;return}const W=640,rh=26,ml=210,mr=70,mt=8;const H=mt+items.length*rh+22;
-  const mx=Math.max(1,...items.map(i=>Math.abs(i.d)));const x0=ml+(W-ml-mr)/2;const sc=v=>v/mx*(W-ml-mr)/2;
+function chImpacto(el,items,nm){if(!items.length){el.innerHTML=`<p class="muted">Sem dados com estes filtros.</p>`;return}const W=640,rh=26,ml=250,mr=70,mt=8;const H=mt+items.length*rh+22;
+  const mx=Math.max(1,...items.map(i=>Math.abs(i.d)));const half=(W-ml-mr-12)/2;const x0=ml+12+half;const sc=v=>v/mx*half;
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Impacto por ${nm}"><line x1="${x0}" x2="${x0}" y1="${mt-4}" y2="${H-18}" class="b"/>`;
   items.forEach((it,i)=>{const yy=mt+i*rh;const w=Math.abs(sc(it.d));const pos=it.d>=0;const cor=pos?IND_COR.up:IND_COR.dn;const xr=pos?x0:x0-w;
     const tip=`<b>${esc(it.lb)}</b><br>Orçado: R$ ${nf0.format(it.o)}<br>Base 2026: R$ ${nf0.format(it.b)}<br>Impacto: R$ ${nf0.format(it.d)} (${fP(it.o,it.b)})<br>Espelho: R$ ${nf0.format(it.e)} (${fP(it.o,it.e)})`;
-    s+=`<g class="hit" data-tip="${esc(tip)}"><rect x="0" y="${yy}" width="${W}" height="${rh}" fill="transparent"/><text x="${ml-8}" y="${yy+rh/2+4}" class="ax" text-anchor="end">${esc(it.lb.length>32?it.lb.slice(0,31)+"…":it.lb)}</text>
-      <rect x="${xr}" y="${yy+5}" width="${Math.max(1,w)}" height="${rh-10}" rx="3" fill="${cor}"/><text x="${pos?x0+w+5:x0-w-5}" y="${yy+rh/2+4}" class="lb" text-anchor="${pos?"start":"end"}">${(pos?"+":"")}${fR(it.d)}</text></g>`});
+    s+=`<g class="hit" data-tip="${esc(tip)}"><rect x="0" y="${yy}" width="${W}" height="${rh}" fill="transparent"/><text x="${ml-8}" y="${yy+rh/2+4}" class="ax" text-anchor="end">${esc(it.lb.length>30?it.lb.slice(0,29)+"…":it.lb)}</text>
+      <rect x="${xr}" y="${yy+5}" width="${Math.max(1,w)}" height="${rh-10}" rx="3" fill="${cor}"/><text x="${pos?x0+w+5:x0+6}" y="${yy+rh/2+4}" class="lb" text-anchor="start">${(pos?"+":"")}${fR(it.d)}</text></g>`});
   s+=`<text x="${x0}" y="${H-4}" class="ax" text-anchor="middle">0</text></svg>`;
   el.innerHTML=s+`<div class="ind-leg"><span><i style="background:${IND_COR.up}"></i>Aumento vs base 2026</span><span><i style="background:${IND_COR.dn}"></i>Redução vs base 2026</span></div>`}
-function chAndamento(el,G){if(!G.length){el.innerHTML=`<p class="muted">Sem dados.</p>`;return}const W=640,rh=24,ml=210,mr=52,mt=6;const H=mt+G.length*rh+6;
+function chAndamento(el,G){if(!G.length){el.innerHTML=`<p class="muted">Sem dados.</p>`;return}const W=640,rh=24,ml=250,mr=52,mt=6;const H=mt+G.length*rh+6;
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento">`;
   G.forEach((g,i)=>{const yy=mt+i*rh;let xx=ml;const ww=W-ml-mr;const tip=`<b>${esc(g.lb)}</b><br>`+IND_STO.map(k=>`${IND_STN[k]}: ${g.c[k]||0}`).join("<br>")+`<br>Concluído: ${nf0.format(g.pf*100)}%`;
-    s+=`<g class="hit" data-tip="${esc(tip)}"><rect x="0" y="${yy}" width="${W}" height="${rh}" fill="transparent"/><text x="${ml-8}" y="${yy+rh/2+4}" class="ax" text-anchor="end">${esc(g.lb.length>32?g.lb.slice(0,31)+"…":g.lb)}</text>`;
+    s+=`<g class="hit" data-tip="${esc(tip)}"><rect x="0" y="${yy}" width="${W}" height="${rh}" fill="transparent"/><text x="${ml-8}" y="${yy+rh/2+4}" class="ax" text-anchor="end">${esc(g.lb.length>30?g.lb.slice(0,29)+"…":g.lb)}</text>`;
     IND_STO.forEach(k=>{const n=g.c[k]||0;if(!n)return;const w=n/g.n*ww;s+=`<rect x="${xx}" y="${yy+5}" width="${Math.max(0,w-2)}" height="${rh-10}" class="st-${k}" rx="2"/>`;xx+=w});
     s+=`<text x="${W-mr+6}" y="${yy+rh/2+4}" class="lb">${nf0.format(g.pf*100)}%</text></g>`});
   el.innerHTML=s+`</svg><div class="ind-leg">${IND_STO.map(k=>`<span><i class="st-${k}"></i>${IND_STN[k]}</span>`).join("")}</div>`}
@@ -1885,6 +1895,7 @@ async function exportarMeuExcel(op){op=op||{anos:YEARS.slice(),todos:false,obras
   try{await S.dl.save({filename:`MEU_ORCAMENTO_${op.anos.length===1?op.anos[0]:"2027_2029"}_${nm}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast(`Excel gerado: ${aoa.length-1} linha(s)`)}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
 }
 $("#btn-exp-me").addEventListener("click",e=>{e.stopPropagation();menuMeuExcel()});
+$("#only-esp").addEventListener("change",e=>{S.onlyEsp=e.target.checked;renderGrid()});
 $("#only-empty").addEventListener("change",e=>{S.onlyEmpty=e.target.checked;if(S.onlyEmpty){S.onlyFilled=false;$("#only-filled").checked=false}renderGrid()});
 $("#only-filled").addEventListener("change",e=>{S.onlyFilled=e.target.checked;if(S.onlyFilled){S.onlyEmpty=false;$("#only-empty").checked=false}renderGrid()});
 $("#only-rev").addEventListener("change",e=>{S.onlyRev=e.target.checked;renderGrid()});
@@ -2140,18 +2151,24 @@ async function loadAdm(){
   rows.forEach(r=>{const p=ps[r.uid];r.nomeG=r.perf&&r.perf.offline?(r.perf.nome||"Gerente")+" (offline)":(p&&p.name)||"Gerente";r.email=(r.perf&&r.perf.offline&&r.perf.email)||(S.dpPerf&&S.dpPerf.get(r.uid)&&S.dpPerf.get(r.uid).email)||(p&&p.email)||(r.perf&&r.perf.email)||""});
   rows.sort((a,b)=>a.nomeG.localeCompare(b.nomeG)||a.o.localeCompare(b.o));
   S.acomp=rows;S.acompEm=Date.now();renderAcomp();
+  {const c=document.querySelector("#tbl-acomp caption");if(c)c.insertAdjacentHTML("beforeend",` · <span class="muted">atualizado às ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})} (atualiza sozinho a cada 2 min)</span>`)}
 }
+/* Verificar enviados: recarrega a cada 2 min e ao voltar para a aba, para nenhum envio novo ficar de fora */
+setInterval(()=>{if(S.tab==="acomp"&&document.visibilityState==="visible"&&!S.acompCarregando){S.acompCarregando=true;loadAdm().catch(()=>{}).finally(()=>S.acompCarregando=false)}},120000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&S.tab==="acomp"&&Date.now()-(S.acompEm||0)>30000&&!S.acompCarregando){S.acompCarregando=true;loadAdm().catch(()=>{}).finally(()=>S.acompCarregando=false)}});
 const acKey=r=>r.uid+"|"+r.o;
-const EST=[["enviado","Aguardando validação"],["validado","Validadas"],["removidas","Removidas"]];
+/* "Removida" do acompanhamento só vale até o gerente enviar de novo: se o orçamento foi enviado/alterado depois da remoção, volta a aparecer */
+function acOculto(r,ocl){return false;/* 15/10/2026: botão Remover retirado — nada fica escondido do acompanhamento */const t=ocl[acKey(r)];if(!t)return false;const o=r.orc||{};if(o.status==="enviado")return false;/* aguardando validação sempre aparece */const ult=[o.enviadoEm,o.atualizadoEm,o.validadoEm].filter(Boolean).sort().pop()||"";return !(ult>t)}
+const EST=[["enviado","Aguardando validação"],["validado","Validadas"]];
 /* Acompanhamento mostra só o que já foi ENVIADO à Controladoria (o resto ainda está com os gerentes) */
 const ST_ACOMP=new Set(["enviado","validado"]);
 function renderAcomp(){
   const ocl=(S.acOcultos&&S.acOcultos.k)||{};S.acEst=S.acEst||new Set();S.acSel=S.acSel||new Set();
-  const stOf=r=>r.orc?r.orc.status:"vazio";const cnt0={removidas:0};S.acomp.forEach(r=>{if(!ST_ACOMP.has(stOf(r)))return;if(ocl[acKey(r)])cnt0.removidas++;else cnt0[stOf(r)]=(cnt0[stOf(r)]||0)+1});
+  const stOf=r=>r.orc?r.orc.status:"vazio";const cnt0={removidas:0};S.acomp.forEach(r=>{if(!ST_ACOMP.has(stOf(r)))return;if(acOculto(r,ocl))cnt0.removidas++;else cnt0[stOf(r)]=(cnt0[stOf(r)]||0)+1});
   $("#est-list").innerHTML=EST.map(([v,lb])=>`<label class="sl-it${S.acEst.has(v)?" on":""}"><input type="checkbox" data-est="${v}" ${S.acEst.has(v)?"checked":""}><span>${lb}</span><span class="muted">${cnt0[v]||0}</span></label>`).join("");
   $("#est-dd .sl-txt").textContent=!S.acEst.size?"Todos os estágios":S.acEst.size===1?EST.find(x=>S.acEst.has(x[0]))[1]:`${S.acEst.size} estágios`;$("#est-dd").classList.toggle("ativo",S.acEst.size>0);
   const qq=semAc(($("#acomp-q")&&$("#acomp-q").value)||"").trim();const verRem=S.acEst.size===1&&S.acEst.has("removidas");
-  const rows=S.acomp.filter(r=>{if(!ST_ACOMP.has(stOf(r)))return false;const rem=!!ocl[acKey(r)];if(S.acEst.size){if(rem){if(!S.acEst.has("removidas"))return false}else if(!S.acEst.has(stOf(r)))return false}else if(rem)return false;
+  const rows=S.acomp.filter(r=>{if(!ST_ACOMP.has(stOf(r)))return false;const rem=acOculto(r,ocl);if(S.acEst.size){if(rem){if(!S.acEst.has("removidas"))return false}else if(!S.acEst.has(stOf(r)))return false}else if(rem)return false;
     return !qq||semAc(`${r.nomeG} ${r.email} ${r.info.emp||""} ${r.info.empNome||""} ${r.info.obra||r.o} ${r.info.nome||""}`).includes(qq)});S.acRows=rows;
   if(verRem&&!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra removida do acompanhamento.</td></tr>`;return}
   if(!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhum orçamento enviado à Controladoria neste filtro. Os que ainda estão em preenchimento aparecem na tela Preencher (visão completa da obra).</td></tr>`;return}
@@ -2163,7 +2180,7 @@ function renderAcomp(){
   ${rows.map((r,i)=>{const st=r.orc?r.orc.status:"vazio";return`<tr class="${S.acSel.has(acKey(r))?"ac-on":""}"><td><input type="checkbox" data-acs="${i}" aria-label="Marcar para exportar" ${S.acSel.has(acKey(r))?"checked":""}></td><td>${esc(r.nomeG)}${r.email?`<div class="muted" style="font-size:11px">${esc(r.email)}</div>`:""}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(r.info.obra||r.o)}</span> ${esc(r.info.nome)}<div class="muted" style="font-size:11px">Empresa ${esc(r.info.emp||"—")}${r.info.empNome?" · "+esc(r.info.empNome):""}</div></td><td class="muted">${esc(r.info.tipo||"—")}</td>
   <td><span class="pill ${st}">${{vazio:"Não iniciado",rascunho:"Rascunho",enviado:"Aguardando validação",validado:"Validado",reaberto:"Devolvido"}[st]}</span></td><td class="muted">${fmtDate(r.orc&&r.orc.atualizadoEm)}</td><td data-alac="${esc(acKey(r))}" style="white-space:nowrap">${alTxt((S.alCache||{})[acKey(r)+"|"+((r.orc&&r.orc.atualizadoEm)||"")])}</td>
   ${YEARS.map(y=>`<td class="num">${f0(r.orc&&r.orc.totais&&r.orc.totais[y])}</td>`).join("")}
-  <td style="white-space:nowrap"><button class="btn sm" data-open="${i}">Abrir</button> <span data-rmbox="${i}">${verRem?`<button class="btn sm" data-rest="${i}">Restaurar</button> <button class="btn sm danger" data-del="${i}">Excluir de vez</button>`:`<button class="btn sm danger" data-rm="${i}">Remover</button>`}</span></td></tr>`}).join("")}
+  <td style="white-space:nowrap"><button class="btn sm" data-open="${i}">Abrir</button></td></tr>`}).join("")}
   </tbody><tfoot><tr><td colspan="7"><b>Total</b></td>${tot.map(t=>`<td class="num"><b>${f0(t)}</b></td>`).join("")}<td></td></tr></tfoot>`;
   preencherAlertasAcomp();
 }
@@ -2387,7 +2404,7 @@ const numOr=v=>(typeof v==="string"&&/^\d+$/.test(v))?+v:v;
 const r2=v=>Math.round((+v||0)*100)/100;
 function scopeRows(){const sc=$("#exp-scope").value;const ocl=(S.acOcultos&&S.acOcultos.k)||{};
   if(S.acSel&&S.acSel.size)return S.acomp.filter(r=>r.orc&&S.acSel.has(acKey(r)));
-  return S.acomp.filter(r=>r.orc&&!ocl[acKey(r)]&&(sc==="todas"||travado(r.orc.status)))}
+  return S.acomp.filter(r=>r.orc&&!acOculto(r,ocl)&&(sc==="todas"||travado(r.orc.status)))}
 function mergeObras(rows){
   const by=new Map();rows.forEach(r=>{if(!by.has(r.o))by.set(r.o,[]);by.get(r.o).push(r)});
   const out=[];
