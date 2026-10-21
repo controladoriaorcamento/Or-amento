@@ -78,7 +78,7 @@ nav.tabs{display:flex;gap:4px;margin-left:auto}nav.tabs[hidden],nav.tabs .tab[hi
 .obra-meta>*{min-width:0;max-width:100%}.em-edicao,#obra-tipo{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #viewing-as{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
 @media (max-width:1100px){.obra-bar{grid-template-columns:minmax(0,1fr);grid-template-areas:"f" "m" "a"}.ind-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
+#tabs .tab.tab-alerta{color:#B3261E;font-weight:600}.pill.reg-flag{background:#7A4E00;color:#fff;font-weight:600;letter-spacing:.02em}
 .tab{border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
 button{font:inherit;cursor:pointer}
@@ -2158,6 +2158,9 @@ async function loadAdm(){
 /* Verificar enviados: recarrega a cada 2 min e ao voltar para a aba, para nenhum envio novo ficar de fora */
 setInterval(()=>{if(S.tab==="acomp"&&document.visibilityState==="visible"&&!S.acompCarregando){S.acompCarregando=true;loadAdm().catch(()=>{}).finally(()=>S.acompCarregando=false)}},120000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&S.tab==="acomp"&&Date.now()-(S.acompEm||0)>30000&&!S.acompCarregando){S.acompCarregando=true;loadAdm().catch(()=>{}).finally(()=>S.acompCarregando=false)}});
+/* contador da aba Gerenciar acesso: solicitações de acesso + pedidos de nova senha (window.ORC_SENHA_PEND, vem do adaptador) */
+function atualizarTabAcc(){const t=$("#tab-adm");if(!t)return;const a=(S.solic||[]).length,b=+window.ORC_SENHA_PEND||0;const n=a+b;t.textContent=n?`Gerenciar acesso (${n})`:"Gerenciar acesso";t.title=n?`${a} solicitação(ões) de acesso · ${b} pedido(s) de nova senha`:"";t.classList.toggle("tab-alerta",b>0)}
+window.ORC_ATUALIZA_TAB=atualizarTabAcc;
 const acKey=r=>r.uid+"|"+r.o;
 /* "Removida" do acompanhamento só vale até o gerente enviar de novo: se o orçamento foi enviado/alterado depois da remoção, volta a aparecer */
 function acOculto(r,ocl){return false;/* 15/10/2026: botão Remover retirado — nada fica escondido do acompanhamento */const t=ocl[acKey(r)];if(!t)return false;const o=r.orc||{};if(o.status==="enviado")return false;/* aguardando validação sempre aparece */const ult=[o.enviadoEm,o.atualizadoEm,o.validadoEm].filter(Boolean).sort().pop()||"";return !(ult>t)}
@@ -2314,7 +2317,7 @@ async function loadSolic(){
   const pend=g.docs.map(d=>({id:d.id,p:d.data()})).filter(x=>x.p.solicitacao&&x.p.solicitacao.status==="pendente");
   const ps=pend.length?await S.user.profiles(pend.map(x=>x.id)):{};
   S.solic=pend.map(x=>({...x,nome:(ps[x.id]&&ps[x.id].name)||"Conta sem nome"}));
-  const n=S.solic.length;$("#tab-adm").textContent=n?`Gerenciar acesso (${n})`:"Gerenciar acesso";
+  atualizarTabAcc();
   if(!$("#tbl-sol"))return;
   if(!n){$("#tbl-sol").innerHTML=`<tr><td class="muted">Nenhuma solicitação pendente.</td></tr>`;return}
   $("#tbl-sol").innerHTML=`<thead><tr><th>Quem pediu</th><th>E-mail informado</th><th>Área</th><th>Obras pedidas</th><th>Pedido em</th><th></th></tr></thead><tbody>${S.solic.map((x,i)=>`<tr><td>${esc(x.nome)}</td><td>${esc(x.p.email||"")}</td><td>${esc(x.p.solicitacao.area)}</td><td style="white-space:pre-line;max-width:360px">${esc(x.p.solicitacao.obras)}</td><td class="muted">${fmtDate(x.p.solicitacao.em)}</td><td style="white-space:nowrap"><button class="btn sm primary" data-sat="${i}">Atender</button> <button class="btn sm" data-sok="${i}" title="Marca como atendida sem liberar nada">Arquivar</button></td></tr>`).join("")}</tbody>`;

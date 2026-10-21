@@ -82,14 +82,16 @@
           <button id="lg-ok" type="submit" style="${btn}">Continuar</button>
           <p id="lg-msg" style="margin:12px 0 0;font-size:13px;color:#5A6862">${msg||"Use o e-mail cadastrado pela Controladoria."}</p>
           <p style="margin:10px 0 0;font-size:11px;color:#7A8782">Para controle da Controladoria, o sistema registra a data, a hora e o tempo de uso de cada acesso.</p>
-          <p style="margin:10px 0 0;font-size:12px;display:flex;gap:16px"><a href="#" id="lg-trocar" hidden>Usar outro e-mail</a><a href="#" id="lg-esqueci" hidden>Esqueci minha senha</a></p>
+          <p style="margin:10px 0 0;font-size:12px;display:flex;gap:16px"><a href="#" id="lg-trocar" hidden>Usar outro e-mail</a><a href="#" id="lg-esqueci">Esqueci minha senha</a></p>
         </form></div>`;
       document.body.appendChild(box);const lv=document.getElementById("v-loading");if(lv)lv.hidden=true;
       const $=id=>document.getElementById(id),m=$("lg-msg");let modo="email",em="";
-      const fase=f=>{modo=f;const cria=f==="novo"||f==="reset";$("lg-p1").hidden=f==="email";$("lg-p2").hidden=!cria;$("lg-email").readOnly=f!=="email";$("lg-trocar").hidden=f==="email";$("lg-esqueci").hidden=f!=="cadastrado";
+      const fase=f=>{modo=f;const cria=f==="novo"||f==="reset";$("lg-p1").hidden=f==="email";$("lg-p2").hidden=!cria;$("lg-email").readOnly=f!=="email";$("lg-trocar").hidden=f==="email";$("lg-esqueci").hidden=f==="novo"||f==="reset";
         $("lg-l1").textContent=f==="novo"?"Crie uma senha (mínimo 8 caracteres)":f==="reset"?"Crie a sua NOVA senha (mínimo 8 caracteres)":"Senha";$("lg-s1").autocomplete=cria?"new-password":"current-password";
         $("lg-ok").textContent=f==="email"?"Continuar":cria?"Criar senha e entrar":"Entrar";if(f!=="email")setTimeout(()=>$("lg-s1").focus(),0)};
-      $("lg-esqueci").onclick=async e=>{e.preventDefault();try{const r=await sb.rpc("pedir_nova_senha",{p:em});if(r.error)throw r.error;m.textContent="Pedido enviado à Controladoria. Quando liberarem, digite seu e-mail aqui de novo e crie a senha nova."}catch(x){m.textContent="Não foi possível registrar o pedido. Fale com a Controladoria."}};
+      $("lg-esqueci").onclick=async e=>{e.preventDefault();const e2=(em||$("lg-email").value||"").trim().toLowerCase();
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e2)){m.textContent="Digite o seu e-mail no campo acima e clique de novo em \"Esqueci minha senha\".";$("lg-email").focus();return}
+        try{const r=await sb.rpc("pedir_nova_senha",{p:e2});if(r.error)throw r.error;m.innerHTML="<b>Pedido enviado aos masters da Controladoria.</b> Assim que liberarem, volte aqui, digite o seu e-mail e clique em Continuar: o site vai pedir para você criar a senha nova."}catch(x){m.textContent="Não foi possível registrar o pedido. Fale com a Controladoria."}};
       $("lg-trocar").onclick=e=>{e.preventDefault();$("lg-s1").value=$("lg-s2").value="";m.textContent="";fase("email")};
       $("lg-form").onsubmit=async e=>{e.preventDefault();const b=$("lg-ok");b.disabled=true;
         try{
@@ -146,7 +148,7 @@
     const host=document.querySelector("header.top .top-in");if(host){b.textContent="Sair";b.title="Sair ("+em+")";b.style.cssText="margin-left:10px;font-size:13px;padding:5px 12px";const w=document.createElement("span");w.className="quem-logado";w.style.cssText="margin-left:12px;font-size:12px;color:var(--muted,#5A6862);white-space:nowrap";w.textContent=em;host.append(w,b)}else document.body.appendChild(b);
     if(admin)botaoCarga();
     registrarSessao();
-    try{const d=await sb.rpc("sou_dono");if(d.data)abaAcessos()}catch(e){}
+    try{const d=await sb.rpc("sou_dono");if(d.data||admin)abaAcessos(!!d.data)}catch(e){if(admin)abaAcessos(false)}
   };
   /* registro de acesso: início da sessão + sinal a cada minuto enquanto a aba está visível */
   async function registrarSessao(){
@@ -158,24 +160,26 @@
   const fmtDur=s=>{s=+s||0;const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return h?`${h}h${String(m).padStart(2,"0")}`:`${m} min`};
   const fmtDt=d=>d?new Date(d).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
   const esc2=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  function abaAcessos(){
+  function abaAcessos(dono){
     if(document.getElementById("v-log"))return;
     /* 15/10/2026: sem aba própria; aparece dentro de "Gerenciar acesso" (window.ORC_HOOKS.mostrarLog) */
     const sec=document.createElement("section");sec.id="v-log";sec.hidden=true;sec.style.marginTop="14px";
-    sec.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Acessos ao site</h2><p class="desc" style="margin:4px 0 0">Quem entrou, quando e quanto tempo ficou com o site aberto (tempo com a aba visível). Visível só para você.</p></div>
+    sec.innerHTML=`<div class="card" id="log-card" ${dono?"":"hidden"}><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Acessos ao site</h2><p class="desc" style="margin:4px 0 0">Quem entrou, quando e quanto tempo ficou com o site aberto (tempo com a aba visível). Visível só para você.</p></div>
       <div class="row" style="gap:8px"><select id="log-dias" class="btn"><option value="1">Hoje</option><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="365">12 meses</option></select><button class="btn" id="log-ref">Atualizar</button><button class="btn" id="log-xlsx">Baixar Excel</button></div></div>
       <p class="muted" id="log-res" style="margin:12px 0 8px"></p><h3 style="font-size:14px;margin:8px 0">Por pessoa</h3><div class="tbl-box"><table class="list" id="log-pess"></table></div>
       <h3 style="font-size:14px;margin:16px 0 8px">Sessões</h3><div class="tbl-box"><table class="list" id="log-sess"></table></div></div>
-      <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Usuários e senhas</h2><p class="desc" style="margin:4px 0 0">Ninguém vê as senhas. "Gerar nova senha" invalida a senha atual e encerra as sessões da pessoa; no próximo acesso ela digita o e-mail e cria uma senha nova (vale por 7 dias).</p></div>
+      <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h2>Usuários e senhas</h2><p class="desc" style="margin:4px 0 0">Ninguém vê as senhas. Quem clica em <b>Esqueci minha senha</b> na tela de login aparece aqui como <b>pediu nova senha</b> (no topo da lista). <b>Gerar nova senha</b> serve para atender o pedido ou para <b>obrigar</b> a pessoa a criar outra senha: a senha atual para de valer, as sessões abertas são encerradas e, no próximo acesso, ela digita o e-mail e cria a senha nova (a liberação vale 7 dias).</p></div>
       <div class="row" style="gap:8px"><input id="us-q" type="search" placeholder="Pesquisar e-mail…" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px"><button class="btn" id="us-ref">Atualizar</button></div></div>
       <p class="muted" id="us-res" style="margin:10px 0 8px"></p><div class="tbl-box"><table class="list" id="us-tbl"></table></div></div>`;
     const adm=document.getElementById("v-adm");if(adm&&adm.parentNode)adm.parentNode.insertBefore(sec,adm.nextSibling);else document.querySelector("main.wrap").appendChild(sec);
-    window.ORC_HOOKS=window.ORC_HOOKS||{};window.ORC_HOOKS.mostrarLog=on=>{sec.hidden=!on;if(on&&!sec.dataset.ok){sec.dataset.ok="1";carregar();usuarios()}};
+    window.ORC_HOOKS=window.ORC_HOOKS||{};window.ORC_HOOKS.mostrarLog=on=>{sec.hidden=!on;if(on){if(!sec.dataset.ok){sec.dataset.ok="1";if(dono)carregar()}usuarios()}};
     {const ta=document.getElementById("tab-adm");if(ta&&ta.getAttribute("aria-selected")==="true")window.ORC_HOOKS.mostrarLog(true)}
     let US=[];
+    const contarPend=async()=>{try{const r=await sb.rpc("admin_usuarios");if(r.error)return;window.ORC_SENHA_PEND=(r.data||[]).filter(u=>/pediu/.test(u.situacao)).length;window.ORC_ATUALIZA_TAB&&window.ORC_ATUALIZA_TAB()}catch(e){}};
+    contarPend();setInterval(()=>{if(document.visibilityState==="visible")contarPend()},120000);
     async function usuarios(){const m=document.getElementById("us-res");m.textContent="Carregando…";
       const r=await sb.rpc("admin_usuarios");if(r.error){m.textContent=/admin_usuarios|function/i.test(r.error.message)?"Controle de senhas ainda não ativado no banco (falta aplicar o script 05_redefinir_senha.sql).":"Erro: "+r.error.message;US=[];desenhaUs();return}
-      US=r.data||[];const pend=US.filter(u=>/pediu/.test(u.situacao)).length;m.innerHTML=`<b>${US.length}</b> usuários · ${US.filter(u=>u.situacao==="ativo").length} ativos · ${pend?`<b style="color:var(--warn,#B45309)">${pend} pedido(s) de nova senha</b>`:"nenhum pedido de nova senha"}`;desenhaUs()}
+      US=r.data||[];const pend=US.filter(u=>/pediu/.test(u.situacao)).length;window.ORC_SENHA_PEND=pend;try{window.ORC_ATUALIZA_TAB&&window.ORC_ATUALIZA_TAB()}catch(e){}m.innerHTML=`<b>${US.length}</b> usuários · ${US.filter(u=>u.situacao==="ativo").length} ativos · ${pend?`<b style="color:var(--warn,#B45309)">${pend} pedido(s) de nova senha</b>`:"nenhum pedido de nova senha"}`;desenhaUs()}
     function desenhaUs(){const q=(document.getElementById("us-q").value||"").toLowerCase();const L=US.filter(u=>!q||u.email.includes(q));
       document.getElementById("us-tbl").innerHTML=L.length?`<thead><tr><th>E-mail</th><th>Situação</th><th>Senha criada em</th><th>Último login</th><th>Pedido de nova senha</th><th>Nova senha liberada</th><th></th></tr></thead><tbody>${L.map(u=>`<tr><td>${esc2(u.email)}</td><td>${/pediu/.test(u.situacao)?`<b style="color:var(--warn,#B45309)">${esc2(u.situacao)}</b>`:esc2(u.situacao)}</td><td>${u.criado_em?fmtDt(u.criado_em):"—"}</td><td>${u.ultimo_login?fmtDt(u.ultimo_login):"—"}</td><td>${u.pedido_em?fmtDt(u.pedido_em):"—"}</td><td>${u.liberado_em?fmtDt(u.liberado_em)+(u.liberado_por?" · "+esc2(u.liberado_por):""):"—"}</td><td>${u.criado_em?`<button class="btn sm" data-reset="${esc2(u.email)}">Gerar nova senha</button>`:""}</td></tr>`).join("")}</tbody>`:"";}
     document.getElementById("us-q").oninput=desenhaUs;document.getElementById("us-ref").onclick=usuarios;
