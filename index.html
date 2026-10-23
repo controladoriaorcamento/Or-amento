@@ -442,7 +442,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
       <div class="grid-box" id="grid-box"><table class="grid" id="grid"></table></div>
       <div class="legend">
         <span><i style="background:var(--ref)"></i>Referência: histórico jan/2025 a set/2026</span>
-        <span>Células em verde: quantidade (itens com unidade UN, M, M2); o total usa o preço unitário do ano</span>
+        <span>Todos os insumos são preenchidos em R$ pelos subitens (inclusive os de unidade UN, M, M2)</span>
         <span>Cole direto do Excel: selecione células, copie e cole na primeira célula</span>
         <span>Coluna “Como preencher” (logo depois do histórico): “Repetir em todos os meses” copia o valor digitado para os 12 meses; “mesmo mês + %” calcula cada mês pelo mesmo mês do ano anterior (2027 usa o histórico de 2026; out–dez usa 2025) acrescido do % (padrão 5%)</span>
         <span>Média = total ÷ meses com gasto · Fonte: Base de Análise, aba Por Orçamento</span>
@@ -769,7 +769,8 @@ function buildLines(tipo,hist,ext,esp){
   lines.forEach(l=>{if(l.kind!=="leaf")l.h=null});
   return lines;
 }
-const isQty=l=>l.un&&l.un!=="VB";
+/* 23/10/2026: todos os insumos são em R$ com detalhamento (inclusive os de unidade UN/M/M2, ex.: Sondagem). O modo quantidade × preço ficou desativado. */
+const isQty=l=>false;
 const AREA_CURTA={"Gente & Gestão":"G&G","Engenharia":"Eng."};
 function ruleFor(tipo,l,o){const R=(S.regras&&S.regras.r)||{};
   const ex=o&&S.dpR&&S.dpR.o&&S.dpR.o[o];const xc=ex&&(ex[`${l.P}|${l.S}|${l.I}`]||ex[`*|${l.S}|${l.I}`]);
@@ -793,7 +794,9 @@ function applyRules(cur){
     l.lockMsg=alheio&&!ajusta?"Preenchido por "+alheio+" — já enviado à Controladoria (somente leitura)":!l.area?"Sem regra definida na Bases - Gerais":(l.canEdit?"":"Preenchido pela área "+l.area);
     if(l.orf){l.mine=true;l.canEdit=cur.editable;l.lockMsg=""}
     {const fo=foraDe(cur.o,l.area);l.fora=!!fo;if(fo){l.canEdit=false;l.lockMsg="Planejado fora do aplicativo"+(fo.motivo?": "+fo.motivo:"")}}
-    if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){{const cs=(S.subR&&S.subR.c&&S.subR.c[`${cur.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>cs[i]?{id:"p"+i,n,c:cs[i]}:{id:"p"+i,n})}}
+    if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){{const cs=(S.subR&&S.subR.c&&S.subR.c[`${cur.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>cs[i]?{id:"p"+i,n,c:cs[i]}:{id:"p"+i,n});
+      /* valor já digitado direto no insumo (antes do detalhamento): vai para o 1º subitem, nada se perde */
+      {const lv=cur.doc.v[l.key];const k0=l.key+"#"+cur.doc.sub[l.key][0].id;if(lv&&!cur.doc.v[k0]){const c={};Object.entries(lv).forEach(([y,a])=>{if(Array.isArray(a)&&a.some(v=>+v))c[y]=a.slice()});if(Object.keys(c).length)cur.doc.v[k0]=c}}}}
   });
   absorverHistSub(cur);
 }
