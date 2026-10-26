@@ -317,6 +317,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
     <button class="tab" id="tab-ind" aria-selected="false" hidden>Indicadores</button>
     <button class="tab" id="tab-ger" aria-selected="false" hidden>Gerentes e acessos</button>
     <button class="tab" id="tab-imp" aria-selected="false" hidden>Importações</button>
+    <button class="tab" id="tab-est" aria-selected="false" hidden>Estrutura</button>
     <button class="tab" id="tab-adm" aria-selected="false" hidden>Gerenciar acesso</button>
     <button class="tab" id="tab-sg" aria-selected="false" hidden aria-hidden="true" tabindex="-1">Sem gerente</button>
     <button class="tab" id="tab-reg" aria-selected="false" hidden>Regional</button>
@@ -465,6 +466,17 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
   </section>
 
   <!-- CONTROLADORIA -->
+  <!-- ESTRUTURA ERP (Base - Geral) -->
+  <section id="v-est" hidden>
+    <div class="card"><h2>Base - Geral (estrutura do ERP)</h2><p class="desc">Carregue a planilha <b>Base - Planejamento Estrutura Geral</b> (aba <b>Base - Geral</b>). Ela define as <b>empresas/obras que precisam de orçamento</b> em 2027–2029 e a <b>estrutura válida</b> (Produto · Contrato · Item · Serviço · Insumo) para a exportação final. Nada é inventado: o que foi preenchido no aplicativo e não existe na estrutura vira apontamento. Nada já preenchido muda.</p>
+      <div class="row" style="gap:10px;align-items:center;flex-wrap:wrap"><label class="btn primary" for="est-file" style="display:inline-block">Carregar Base - Geral</label><input type="file" id="est-file" accept=".xlsx,.xls" hidden><span class="muted" id="est-msg"></span></div></div>
+    <div class="card"><h2>Empresas e obras para orçar (2027–2029)</h2><p class="desc">Todas as empresas/obras da Base - Geral comparadas com o aplicativo (catálogo de obras) e com os responsáveis da aba <b>3. Gerentes</b> da CONFIGURAÇÃO. O que está marcado como planejamento fora do aplicativo não conta como pendente.</p>
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><select id="est-modo" class="btn"><option value="todas">Todas</option><option value="falta_app">Faltam no aplicativo</option><option value="sem_ger">Sem gerente responsável</option><option value="area">Com área sem responsável</option><option value="fora_base">No aplicativo, fora da Base - Geral</option><option value="ok">Completas</option></select><select id="est-reg" class="btn"><option value="">Todas as Regionais</option></select><input id="est-q" type="search" placeholder="Buscar empresa, obra ou gerente" style="padding:7px 9px;border:1px solid var(--line-strong);border-radius:6px;min-width:240px"><button class="btn" id="est-xlsx">Baixar Excel</button></div>
+      <p class="muted" id="est-res" style="margin:10px 0 8px"></p><div class="tbl-box" style="max-height:70vh;overflow:auto"><table class="list" id="est-tbl"></table></div></div>
+    <div class="card"><h2>Apontamentos: valores fora da estrutura</h2><p class="desc">Confere cada valor preenchido no aplicativo (2027–2029) contra a Base - Geral da mesma empresa/obra. Ex.: valor em <b>Despesas Jurídicas (produto 10084)</b> numa empresa da obra 71200 que ainda não tem esse produto na estrutura. Esses itens <b>não</b> entram na exportação final até a estrutura ser ajustada no ERP.</p>
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><button class="btn primary" id="est-ap-run">Verificar orçamentos</button><select id="est-ap-mot" class="btn"><option value="">Todos os motivos</option></select><input id="est-ap-q" type="search" placeholder="Buscar empresa, obra, gerente ou insumo" style="padding:7px 9px;border:1px solid var(--line-strong);border-radius:6px;min-width:240px"><button class="btn" id="est-ap-xlsx">Baixar Excel</button></div>
+      <p class="muted" id="est-ap-res" style="margin:10px 0 8px"></p><div class="tbl-box" style="max-height:70vh;overflow:auto"><table class="list" id="est-ap-tbl"></table></div></div>
+  </section>
   <section id="v-sg" hidden>
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
@@ -826,7 +838,7 @@ async function boot(){
   S.me=await user.id();
   S.owner=!!(await user.isOwner());
   if(!S.me){$("#v-nodb").hidden=false;return}
-  if(S.owner){$("#tabs").hidden=false;["#tab-ind","#tab-ger","#tab-imp","#tab-adm"].forEach(q=>$(q).hidden=false);$("#orc-sub").hidden=false}else{["#tab-ind","#tab-ger","#tab-imp","#tab-adm","#tab-sg"].forEach(q=>$(q).hidden=true)}
+  if(S.owner){$("#tabs").hidden=false;["#tab-ind","#tab-ger","#tab-imp","#tab-est","#tab-adm"].forEach(q=>$(q).hidden=false);$("#orc-sub").hidden=false}else{["#tab-ind","#tab-ger","#tab-imp","#tab-est","#tab-adm","#tab-sg"].forEach(q=>$(q).hidden=true)}
   try{const rg=await db.doc("regras/atual").get();S.regras=rg.exists?rg.data():{r:{}}}catch(e){S.regras={r:{}}}indexRegras();
   try{const dp=await db.doc("regras/depara").get();S.dpR=dp.exists?dp.data():null}catch(e){S.dpR=null}
   try{const sb=await db.doc("regras/subitens").get();S.subR=sb.exists?sb.data():null}catch(e){S.subR=null}
@@ -2246,9 +2258,9 @@ function setCard(c,on,semSalvar){c.classList.toggle("recolhido",on);const h=c.qu
 const GRP_CARD=[[/^Planejamento fora/i,"ger"],[/^CONFIGURA/i,"imp"],[/^Atualizar bases/i,"imp"],[/^Validar com a estrutura/i,"imp"],[/^Regras por insumo/i,"imp"],[/^Espelho e estrutura/i,"imp"],[/^Acompanhamento/i,"acomp"],[/^Controle de acesso/i,"ger"],[/^Formulário offline/i,"acc"],[/^Solicitações de acesso/i,"acc"],[/^Atribuir obras/i,"acc"]];
 function marcarGrupos(){document.querySelectorAll("#v-adm .card").forEach(c=>{if(c.dataset.grp)return;const h=c.querySelector("h2");const t=h?h.textContent.trim():"";const g=GRP_CARD.find(([re])=>re.test(t));c.dataset.grp=g?g[1]:"imp"})}
 function showTab(t){if(t==="adm")t="acomp";if(t==="sg")t="ger";S.tab=t;
-  const tabOf={fill:"tab-fill",acomp:"tab-fill",ind:"tab-ind",ger:"tab-ger",imp:"tab-imp",acc:"tab-adm",reg:"tab-reg"};
+  const tabOf={fill:"tab-fill",acomp:"tab-fill",ind:"tab-ind",ger:"tab-ger",imp:"tab-imp",est:"tab-est",acc:"tab-adm",reg:"tab-reg"};
   document.querySelectorAll("#tabs .tab").forEach(b=>b.setAttribute("aria-selected",String(b.id===tabOf[t])));
-  $("#v-fill").hidden=t!=="fill";$("#v-reg").hidden=t!=="reg";$("#v-sg").hidden=t!=="ger";$("#v-ind").hidden=t!=="ind";
+  $("#v-fill").hidden=t!=="fill";$("#v-reg").hidden=t!=="reg";{const ve=$("#v-est");if(ve)ve.hidden=t!=="est"}if(t==="est")abrirEstrutura().catch(e=>{$("#est-res").textContent="Não foi possível carregar: "+(e.message||e)});$("#v-sg").hidden=t!=="ger";$("#v-ind").hidden=t!=="ind";
   const adm=["acomp","ger","imp","acc"].includes(t);$("#v-adm").hidden=!adm;
   const sub=$("#orc-sub");if(sub){sub.hidden=!(S.owner&&(t==="fill"||t==="acomp"));sub.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.sub===t)))}
   try{if(window.ORC_HOOKS&&window.ORC_HOOKS.mostrarLog)window.ORC_HOOKS.mostrarLog(t==="acc")}catch(e){}
@@ -2299,8 +2311,88 @@ $("#sg-xlsx").addEventListener("click",async()=>{if(!S.sg){toast("Abra a aba pri
 });
 $("#tab-fill").addEventListener("click",async()=>{showTab("fill");if(S.cur&&S.cur.uid!==S.me){S.cur=null;await loadMine()}});
 $("#tab-adm").addEventListener("click",async()=>{await flush();showTab("acc")});
+$("#tab-est").addEventListener("click",async()=>{await flush();showTab("est")});
 ["ind","ger","imp"].forEach(t=>$("#tab-"+t).addEventListener("click",async()=>{await flush();showTab(t)}));
 $("#orc-sub").addEventListener("click",async e=>{const b=e.target.closest("button[data-sub]");if(!b)return;if(b.dataset.sub==="fill"){$("#tab-fill").click();return}await flush();showTab("acomp")});
+
+
+/* ===== ESTRUTURA ERP (Base - Geral): empresas/obras para orçar × aplicativo × gerente, e apontamentos ===== */
+/* restrito/estr_idx = {eo:{"emp-obra":[empNome,grupoEmp,obraNome,grupoObra,linhas]},dP,dS,dI,arquivo,atualizadoEm}
+   restrito/estr/<emp> = {o:{obra:[[P,contrato,item,S,I,(1=inativo)],...]}} */
+async function carregarEstIdx(f){if(S.estIdx&&!f)return S.estIdx;try{const d=await S.db.doc("restrito/estr_idx").get();S.estIdx=d.exists?d.data():null}catch(e){S.estIdx=null}return S.estIdx}
+async function estEmpresa(emp){S.estE=S.estE||{};if(emp in S.estE)return S.estE[emp];let d=null;try{const x=await S.db.doc("restrito/estr/"+emp).get();d=x.exists?x.data():null}catch(e){}S.estE[emp]=d;return d}
+onCarga("#est-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
+  const msg=$("#est-msg");msg.textContent="Lendo a planilha (pode levar alguns segundos)…";await new Promise(r=>setTimeout(r,50));
+  const wb=XLSX.read(await f.arrayBuffer(),{type:"array",dense:true,sheets:["Base - Geral"]});const ws=wb.Sheets["Base - Geral"];if(!ws){msg.textContent="Não encontrei a aba \"Base - Geral\".";return}
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});const h=(rows[0]||[]).map(x=>String(x).trim());
+  const ok=h[0]==="Empresa"&&h[3]==="Obra"&&h[6]==="Prod_plt"&&h[10]==="Serv_plt"&&h[12]==="Ins_cins";if(!ok){msg.textContent="Não foi possível: colunas diferentes do esperado (Empresa, Descricao, Grupo_Empresa, Obra, Descricao, Grupo, Prod_plt, descricao, Contrato_plt, Item_plt, Serv_plt, Descr_plt, Ins_cins, Descr_ins…).";return}
+  const t=v=>String(v==null?"":v).trim();const eo={},dP={},dS={},dI={},E={};let n=0,inat=0;
+  for(let i=1;i<rows.length;i++){const r=rows[i];const emp=t(r[0]),ob=t(r[3]);if(!emp||!ob)continue;const k=emp+"-"+ob;
+    if(!eo[k])eo[k]=[t(r[1]),t(r[2]),t(r[4]),t(r[5]),0];eo[k][4]++;const P=t(r[6]),S_=t(r[10]),I=t(r[12]);
+    if(P&&!dP[P]&&t(r[7]))dP[P]=t(r[7]);if(S_&&!dS[S_]&&t(r[11]))dS[S_]=t(r[11]);if(I&&!dI[I]&&t(r[13]))dI[I]=t(r[13]);
+    const ina=[14,15,16].some(j=>String(r[j]).trim()==="1");if(ina)inat++;const L=[P,t(r[8]),t(r[9]),S_,I];if(ina)L.push(1);
+    ((E[emp]=E[emp]||{})[ob]=(E[emp][ob]||[])).push(L);n++}
+  const emps=Object.keys(E);let i=0;for(const emp of emps){i++;msg.textContent=`Gravando estrutura: empresa ${i}/${emps.length}…`;await S.db.doc("restrito/estr/"+emp).set({o:E[emp],atualizadoEm:nowISO()})}
+  const idx={eo,dP,dS,dI,arquivo:f.name,linhas:n,inativas:inat,empresas:emps.length,atualizadoEm:nowISO()};await S.db.doc("restrito/estr_idx").set(idx);S.estIdx=idx;S.estE={};S.estAp=null;
+  msg.textContent=`Base - Geral carregada: ${nf0.format(n)} linhas · ${emps.length} empresas · ${nf0.format(Object.keys(eo).length)} empresas/obras${inat?` · ${nf0.format(inat)} linhas inativas`:""} · arquivo ${f.name}.`;renderEst()});
+async function abrirEstrutura(){await loadCat();await carregarEstIdx();
+  if(!S.pessoas){try{const pp=await S.db.doc("restrito/pessoas").get();S.pessoas=pp.exists?pp.data().lista||[]:[]}catch(e){S.pessoas=[]}}
+  if(!S.areasObra){try{const d=await S.db.doc("restrito/areasobra").get();S.areasObra=d.exists?d.data().m:{}}catch(e){S.areasObra={}}}
+  if(S.foraApp===undefined){try{const fd=await S.db.doc("regras/fora_app").get();S.foraApp=fd.exists?(fd.data().m||{}):{}}catch(e){S.foraApp={}}}
+  if(!S.regObra){try{const rd=await S.db.doc("regras/regional_obra").get();S.regObra=rd.exists?(rd.data().m||null):null}catch(e){}}
+  const X=S.estIdx;$("#est-msg").textContent=X?`Carregada em ${fmtDate(X.atualizadoEm)} · ${nf0.format(X.linhas||0)} linhas · ${X.empresas||0} empresas · ${nf0.format(Object.keys(X.eo||{}).length)} empresas/obras · arquivo ${X.arquivo||"—"}`:"Ainda não carregada.";renderEst();renderEstAp()}
+const EST_SIT={falta_app:"Falta no aplicativo",sem_ger:"Sem gerente responsável",area:"Área sem responsável",fora_base:"Fora da Base - Geral",fora:"Fora do app (por fora)",ok:"Completa"};
+function linhasEst(){const X=S.estIdx||{eo:{}};const cat=new Map((S.cat.obras||[]).map(c=>[c[0],c]));const AO=S.areasObra||{};
+  const ger=new Map();(S.pessoas||[]).forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>{if(!ger.has(o))ger.set(o,[]);ger.get(o).push({nome:p.nome||p.email,email:p.email,deps})}));
+  const ids=new Set([...Object.keys(X.eo||{}),...(S.estIdx?cat.keys():[])]);const L=[];
+  ids.forEach(o=>{const b=(X.eo||{})[o],c=cat.get(o);const [emp,ob]=[o.split("-")[0],o.split("-").slice(1).join("-")];const G=ger.get(o)||[];
+    const areas=(AO[o]||[]).filter(a=>!foraDe(o,a));const cob=new Set(G.flatMap(g=>g.deps));const semR=areas.filter(a=>!cob.has(a));const todasFora=(AO[o]||[]).length&&!areas.length||!!((S.foraApp||{})[o]||{})["*"];
+    const sit=!b?"fora_base":!c?"falta_app":todasFora?"fora":!G.length?"sem_ger":semR.length?"area":"ok";
+    L.push({o,emp,ob,empNome:(b&&b[0])||(c&&c[7])||"",reg:(b&&b[1])||(S.regObra?regDe(o):"")||"Sem regional",obraNome:(b&&b[2])||(c&&c[2])||"",grupo:(b&&b[3])||"",linhas:b?b[4]:0,base:c?c[3]:"",G,areas,semR,sit})});
+  return L.sort((a,b)=>a.emp.localeCompare(b.emp,undefined,{numeric:true})||a.ob.localeCompare(b.ob,undefined,{numeric:true}))}
+function renderEst(){const tb=$("#est-tbl");if(!tb)return;if(!S.estIdx){tb.innerHTML=`<tr><td class="muted">Carregue a Base - Geral para ver a lista.</td></tr>`;$("#est-res").textContent="";return}
+  const L=linhasEst();S.estL=L;const rs=$("#est-reg");if(rs&&!rs.dataset.ok){rs.dataset.ok=1;rs.innerHTML=`<option value="">Todas as Regionais</option>`+[...new Set(L.map(x=>x.reg))].sort().map(r=>`<option>${esc(r)}</option>`).join("")}
+  const cnt={};L.forEach(x=>cnt[x.sit]=(cnt[x.sit]||0)+1);const nB=L.filter(x=>x.sit!=="fora_base").length;
+  $("#est-res").innerHTML=`<b>${nf0.format(nB)}</b> empresas/obras na Base - Geral · <b>${nf0.format(cnt.falta_app||0)}</b> faltam no aplicativo · <b>${nf0.format(cnt.sem_ger||0)}</b> sem gerente responsável · <b>${nf0.format(cnt.area||0)}</b> com área sem responsável · ${nf0.format(cnt.ok||0)} completas · ${nf0.format(cnt.fora||0)} planejadas fora do app · <b>${nf0.format(cnt.fora_base||0)}</b> do aplicativo fora da Base - Geral`;
+  const F=estFiltradas();const mx=1500;
+  tb.innerHTML=`<thead><tr><th>Regional</th><th>Empresa</th><th>Obra</th><th>Grupo da obra</th><th>No aplicativo</th><th>Gerente(s) responsável(is)</th><th>Áreas sem responsável</th><th>Situação</th></tr></thead><tbody>${F.slice(0,mx).map(x=>`<tr><td>${esc(x.reg)}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(x.emp)}</span> ${esc(x.empNome)}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(x.ob)}</span> ${esc(x.obraNome)}</td><td class="muted">${esc(x.grupo||"—")}</td><td>${x.sit==="falta_app"?'<span class="pill reaberto">Não</span>':`Sim${x.base?` <span class="muted">· base ${esc(x.base)}</span>`:""}`}</td><td style="font-size:12px">${x.G.length?x.G.map(g=>`${esc(g.nome)} <span class="muted">(${esc(g.deps.join(", "))})</span>`).join("<br>"):'<span class="muted">—</span>'}</td><td style="font-size:12px">${x.semR.length?esc(x.semR.join(", ")):'<span class="muted">—</span>'}</td><td><span class="pill ${x.sit==="ok"?"validado":x.sit==="fora"?"":x.sit==="area"?"rascunho":"reaberto"}">${EST_SIT[x.sit]}</span></td></tr>`).join("")||`<tr><td colspan="8" class="muted">Nada neste filtro.</td></tr>`}${F.length>mx?`<tr><td colspan="8" class="muted">Mostrando ${mx} de ${nf0.format(F.length)}. Baixe o Excel para ver todas.</td></tr>`:""}</tbody>`}
+function estFiltradas(){const m=$("#est-modo").value,rg=$("#est-reg").value,q=semAc($("#est-q").value||"").trim();
+  return (S.estL||[]).filter(x=>(m==="todas"?true:x.sit===m)&&(!rg||x.reg===rg)&&(!q||semAc(`${x.o} ${x.empNome} ${x.obraNome} ${x.G.map(g=>g.nome+" "+g.email).join(" ")}`).includes(q)))}
+["#est-modo","#est-reg"].forEach(q=>{const el=$(q);if(el)el.addEventListener("change",renderEst)});{const el=$("#est-q");if(el)el.addEventListener("input",renderEst)}
+{const el=$("#est-xlsx");if(el)el.addEventListener("click",async()=>{if(!S.estL){toast("Carregue a Base - Geral primeiro.");return}
+  const cab=["Regional","Empresa","Nome da empresa","Obra","Descrição da obra","Grupo da obra","Linhas na Base - Geral","No aplicativo","Base modelo","Gerente(s)","E-mail(s)","Áreas com insumo","Áreas sem responsável","Situação"];
+  const mk=rs=>{const ws=XLSX.utils.aoa_to_sheet([cab,...rs.map(x=>[x.reg,numOr(x.emp),x.empNome,numOr(x.ob),x.obraNome,x.grupo,x.linhas,x.sit==="falta_app"?"Não":"Sim",x.base,x.G.map(g=>g.nome+" ("+g.deps.join(", ")+")").join("; "),x.G.map(g=>g.email).join("; "),x.areas.join(", "),x.semR.join(", "),EST_SIT[x.sit]])]);ws["!cols"]=[18,8,40,9,44,24,10,10,10,50,40,40,40,24].map(w=>({wch:w}));ws["!autofilter"]={ref:"A1:N"+(rs.length+1)};return ws};
+  const wb=XLSX.utils.book_new();const L=S.estL;XLSX.utils.book_append_sheet(wb,mk(L.filter(x=>x.sit!=="fora_base")),"Base - Geral × app");
+  [["falta_app","Faltam no aplicativo"],["sem_ger","Sem gerente"],["area","Área sem responsável"],["fora_base","App fora da Base"]].forEach(([k,n])=>XLSX.utils.book_append_sheet(wb,mk(L.filter(x=>x.sit===k)),n));
+  try{await S.dl.save({filename:`EMPRESAS_OBRAS_ORCAR_${new Date().toISOString().slice(0,10)}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast("Excel gerado")}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}})}
+/* apontamentos: cada valor do aplicativo × estrutura da mesma empresa/obra */
+async function rodarEstAp(){if(!S.estIdx){toast("Carregue a Base - Geral primeiro.");return}const res=$("#est-ap-res");res.textContent="Lendo os orçamentos…";
+  if(!S.acompEm)await loadAdm();if(!S.insDesc)extOrf({},{});const X=S.estIdx;const sets={};const L=[];let nVal=0;const rows=(S.acomp||[]).filter(r=>r.orc&&r.orc.v);
+  const emps=[...new Set(rows.map(r=>r.o.split("-")[0]))];let i=0;for(const e of emps){i++;res.textContent=`Lendo a estrutura das empresas ${i}/${emps.length}…`;await estEmpresa(e)}
+  const vistos=new Set();rows.forEach(r=>{const k0=r.uid+"|"+r.o;if(vistos.has(k0))return;vistos.add(k0);const [emp,...ob]=r.o.split("-");const obra=ob.join("-");
+    let st=sets[r.o];if(!st){const E=(S.estE[emp]||{}).o||{};const rs=E[obra]||[];st={P:new Set(),PS:new Set(),PSI:new Map(),SI:new Map()};rs.forEach(x=>{st.P.add(x[0]);st.PS.add(x[0]+"|"+x[3]);const k=x[0]+"|"+x[3]+"|"+x[4];if(!st.PSI.has(k)||!x[5])st.PSI.set(k,x[5]?1:0);const si=x[3]+"|"+x[4];if(!st.SI.has(si))st.SI.set(si,new Set());st.SI.get(si).add(x[0])});sets[r.o]=st}
+    Object.entries(r.orc.v).forEach(([k,ys])=>{if(k.includes("#"))return;const tot={};YEARS.forEach(y=>tot[y]=Math.round(sum((ys&&ys[y])||[])*100)/100);if(!YEARS.some(y=>Math.abs(tot[y])>0.004))return;nVal++;
+      const [P,Sv,I]=k.split("|");let mot="",tm="";const outros=[...(st.SI.get(Sv+"|"+I)||[])].filter(x=>x!==P);
+      if(!X.eo[r.o]){tm="Empresa/obra fora da Base - Geral";mot="Esta empresa/obra não existe na Base - Geral"}
+      else if(!st.PSI.has(P+"|"+Sv+"|"+I)&&outros.length){tm="Produto diferente na estrutura";mot=`Produto ${P} não tem este serviço/insumo nesta obra; na estrutura ele está no produto ${outros.join(", ")}${X.dP[outros[0]]?" ("+X.dP[outros[0]]+")":""}`}
+      else if(!st.P.has(P)){tm="Produto não existe na obra";mot=`Produto ${P}${X.dP[P]?" ("+X.dP[P]+")":""} não existe nesta empresa/obra`}
+      else if(!st.PS.has(P+"|"+Sv)){tm="Serviço não existe no produto";mot=`Serviço ${Sv} não existe no produto ${P} desta obra`}
+      else if(I&&!st.PSI.has(P+"|"+Sv+"|"+I)){tm="Insumo não existe no serviço";mot=`Insumo ${I} não existe no serviço ${Sv} (produto ${P}) desta obra`}
+      else if(I&&st.PSI.get(P+"|"+Sv+"|"+I)===1){tm="Insumo inativo na estrutura";mot="Insumo inativo na estrutura do ERP"}
+      if(!mot)return;const c=(S.catMap&&S.catMap.get(r.o))||[];const tp=(T.tipos[c[3]||(r.info&&r.info.tipo)]||{}).prods||{};
+      L.push({o:r.o,emp,obra,empNome:(X.eo[r.o]||[])[0]||c[7]||"",obraNome:(X.eo[r.o]||[])[2]||c[2]||"",ger:r.nomeG,email:r.email,st:r.orc.status||"rascunho",P,Pd:X.dP[P]||tp[P]||"",S:Sv,Sd:X.dS[Sv]||SDESC[Sv]||"",I,Id:X.dI[I]||(S.insDesc&&S.insDesc[I])||"",tot,mot,tipoMot:tm})})});
+  S.estAp={L,nVal,em:Date.now()};const ms=$("#est-ap-mot");ms.innerHTML=`<option value="">Todos os motivos</option>`+[...new Set(L.map(x=>x.tipoMot))].sort().map(m=>`<option>${esc(m)}</option>`).join("");renderEstAp()}
+function estApFiltrados(){const A=S.estAp;if(!A)return[];const m=$("#est-ap-mot").value,q=semAc($("#est-ap-q").value||"").trim();return A.L.filter(x=>(!m||x.tipoMot===m)&&(!q||semAc(`${x.o} ${x.empNome} ${x.obraNome} ${x.ger} ${x.P} ${x.Pd} ${x.S} ${x.Sd} ${x.I} ${x.Id}`).includes(q)))}
+function renderEstAp(){const tb=$("#est-ap-tbl");if(!tb)return;const A=S.estAp;if(!A){tb.innerHTML=`<tr><td class="muted">Clique em “Verificar orçamentos”.</td></tr>`;$("#est-ap-res").textContent="";return}
+  const F=estApFiltrados();const cm={};A.L.forEach(x=>cm[x.tipoMot]=(cm[x.tipoMot]||0)+1);const STN={rascunho:"Em preenchimento",reaberto:"Devolvido",enviado:"Enviado",validado:"Validado"};
+  $("#est-ap-res").innerHTML=`<b>${nf0.format(A.L.length)}</b> apontamento(s) em <b>${new Set(A.L.map(x=>x.o)).size}</b> obra(s), de ${nf0.format(A.nVal)} valores preenchidos conferidos${A.L.length?" · "+Object.entries(cm).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`${esc(m)}: ${n}`).join(" · "):""} · verificado às ${new Date(A.em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`;
+  tb.innerHTML=A.L.length?`<thead><tr><th>Empresa</th><th>Obra</th><th>Gerente</th><th>Situação</th><th>Produto</th><th>Serviço</th><th>Insumo</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th>Apontamento</th></tr></thead><tbody>${F.slice(0,2000).map(x=>`<tr><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(x.emp)}</span> ${esc(x.empNome)}</td><td><span class="muted" style="font-family:var(--f-mono);font-size:12px">${esc(x.obra)}</span> ${esc(x.obraNome)}</td><td>${esc(x.ger||"")}</td><td><span class="pill ${x.st}">${STN[x.st]||x.st}</span></td><td>${esc(x.P)} <span class="muted">${esc(x.Pd)}</span></td><td>${esc(x.S)} <span class="muted">${esc(x.Sd)}</span></td><td>${esc(x.I)} <span class="muted">${esc(x.Id)}</span></td>${YEARS.map(y=>`<td class="num">${f0(x.tot[y])}</td>`).join("")}<td style="font-size:12px"><b>${esc(x.mot)}</b></td></tr>`).join("")||`<tr><td colspan="11" class="muted">Nada neste filtro.</td></tr>`}</tbody>`:`<tr><td class="muted">Nenhum apontamento: todos os ${nf0.format(A.nVal)} valores preenchidos existem na estrutura.</td></tr>`}
+{const el=$("#est-ap-run");if(el)el.addEventListener("click",()=>rodarEstAp().catch(e=>{$("#est-ap-res").textContent="Não foi possível verificar: "+(e.message||e)}))}
+{const el=$("#est-ap-mot");if(el)el.addEventListener("change",renderEstAp)}{const el=$("#est-ap-q");if(el)el.addEventListener("input",renderEstAp)}
+{const el=$("#est-ap-xlsx");if(el)el.addEventListener("click",async()=>{const A=S.estAp;if(!A){toast("Clique em Verificar orçamentos primeiro.");return}
+  const ws=XLSX.utils.aoa_to_sheet([["Empresa","Nome da empresa","Obra","Descrição da obra","Gerente","E-mail","Situação","Produto","Descrição do produto","Serviço","Descrição do serviço","Insumo","Descrição do insumo",...YEARS.map(y=>"Total "+y),"Apontamento"],...A.L.map(x=>[numOr(x.emp),x.empNome,numOr(x.obra),x.obraNome,x.ger,x.email,x.st,numOr(x.P),x.Pd,x.S,x.Sd,x.I,x.Id,...YEARS.map(y=>x.tot[y]),x.mot])]);
+  ws["!cols"]=[8,36,8,40,26,30,14,9,30,9,30,9,36,14,14,14,60].map(w=>({wch:w}));ws["!autofilter"]={ref:"A1:Q"+(A.L.length+1)};const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Apontamentos");
+  try{await S.dl.save({filename:`APONTAMENTOS_ESTRUTURA_${new Date().toISOString().slice(0,10)}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast("Excel gerado")}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}})}
 
 async function loadCat(){if(!S.cat){const c=await S.db.doc("restrito/catalogo").get();S.cat=c.exists?c.data():{obras:[]};S.catMap=new Map(S.cat.obras.map(c=>[c[0],c]))}}
 /* catálogo v2: [id "empresa-obra", obra, nome obra, base modelo, total25, total26, empresa, nome empresa] */
