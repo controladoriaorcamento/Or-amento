@@ -501,6 +501,27 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
       <p class="muted" id="fora-msg" style="margin:8px 0"></p><div class="row" style="gap:8px;align-items:center;margin-bottom:6px"><input type="search" id="fora-q" placeholder="Buscar na lista" style="padding:6px 9px;border:1px solid var(--line-strong);border-radius:6px"><span class="muted" style="font-size:12px">A lista abaixo também segue os filtros de Empresa, Obra e Quem planeja.</span><button class="btn sm danger" id="fora-del-filt" hidden>Tirar as listadas</button></div><div class="tbl-box"><table class="list" id="fora-tbl"></table></div></div>
     <div class="card" data-grp="imp" id="card-imp-config"><h2>CONFIGURAÇÃO (gerentes, quem planeja e Regional)</h2><p class="desc">Carrega a <b>CONFIGURACAO_ORCAMENTO_2027_2029.xlsx</b>: aba 2 (quem planeja cada insumo e obras novas) e aba 3 (gerentes e Gerente Regional). Ao terminar aparece a mensagem de sucesso ou de falha. O que já foi preenchido não muda.</p>
       <div class="row"><label class="btn primary" for="pl-file" style="display:inline-block">Carregar CONFIGURAÇÃO</label></div></div>
+    <div class="card" data-grp="imp" id="card-imp-sistema">
+      <h2>Importar Empresas e Obras do sistema interno</h2>
+      <p class="desc">Carregue a planilha exportada do banco de dados da empresa (mesma fonte do Power BI). A aba <b>obras</b> deve conter: código da empresa, nome da empresa, código da obra, descrição da obra e na <b>coluna H</b> o status (<b>0 = ativa, 1 = inativa</b>). O catálogo será atualizado — histórico já importado é preservado. Obras inativas somem do seletor dos gerentes automaticamente.</p>
+      <div class="row" style="align-items:flex-end;gap:10px;flex-wrap:wrap">
+        <label class="btn primary" for="sys-file" style="display:inline-block">Selecionar planilha do sistema</label>
+        <input type="file" id="sys-file" accept=".xlsx" hidden>
+        <button class="btn primary" id="sys-salvar" hidden>Atualizar catálogo</button>
+        <span class="muted" id="sys-msg" style="font-size:13px"></span>
+      </div>
+      <div id="sys-preview" hidden style="margin-top:12px">
+        <div class="row" style="gap:16px;margin-bottom:8px">
+          <span id="sys-stat-add" style="color:var(--ok,#1a7a1a)"></span>
+          <span id="sys-stat-upd" style="color:var(--warn,#7a6000)"></span>
+          <span id="sys-stat-rem" style="color:var(--muted)"></span>
+          <span id="sys-stat-ina" style="color:var(--danger,#c00)"></span>
+        </div>
+        <details><summary style="cursor:pointer;font-size:13px" id="sys-det-sum">Ver detalhes</summary>
+          <div class="tbl-box" style="max-height:260px;margin-top:6px"><table class="list" id="sys-tbl"><thead><tr><th>ID</th><th>Empresa</th><th>Obra</th><th>Descrição</th><th>Status</th><th>Situação</th></tr></thead><tbody></tbody></table></div>
+        </details>
+      </div>
+    </div>
     <div class="panel">
       <div class="card">
         <h2>Atualizar bases (Excel)</h2>
@@ -556,7 +577,7 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
       </div>
       <div class="card">
         <h2>Validar com a estrutura do sistema</h2>
-        <p class="desc">Confere o Excel no layout do modelo contra a estrutura real (planilha <b>Base - Planejamento.xlsx</b>, exportada do sistema): empresa/obra, produto, serviço e insumo precisam existir e estar ativos. Contrato e item são corrigidos pela estrutura. Usa o mesmo filtro de obras do Acompanhamento.</p>
+        <p class="desc">Confere o Excel no layout do modelo contra a estrutura real (planilha <b>Base - Planejamento.xlsx</b>, exportada do sistema): empresa/obra, produto, serviço e insumo precisam existir e estar ativos. Contrato e item são corrigidos pela estrutura. Usa o mesmo filtro de obras do Acompanhamento. <b>Sem carregar nada aqui, o Excel no layout do modelo já confere com a Base - Geral da aba Estrutura</b>: produto que não existe na obra sai do arquivo; se o serviço/insumo existir em outro produto da obra (ex.: produto 4), a linha vai para esse produto; o que não existir vira apontamento na aba de validação.</p>
         <div class="row" style="flex-wrap:wrap;gap:8px">
           <label class="btn" for="es-file" style="display:inline-block">1. Carregar estrutura (Base - Planejamento.xlsx)</label><input type="file" id="es-file" accept=".xlsx,.xlsb,.xls" hidden>
           <button class="btn" id="es-validar" disabled>2. Validar e baixar relatório</button>
@@ -619,6 +640,62 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
         <div class="tbl-box"><table class="list" id="tbl-dp"></table></div>
         </details>
       </div>
+      <div class="card" data-grp="ger" id="card-cad-gerente">
+        <h2>Cadastrar / editar gerente</h2>
+        <p class="desc">Adicione ou atualize um gerente diretamente — sem precisar carregar a planilha de configuração. Preencha o e-mail, nome, selecione as obras e o departamento e clique em <b>Salvar</b>. Para remover um gerente, deixe as obras em branco e salve.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:12px">
+          <div><label class="lbl" for="cg-email">E-mail do gerente</label><input type="email" id="cg-email" placeholder="gerente@btsa.com.br" style="width:100%"></div>
+          <div><label class="lbl" for="cg-nome">Nome</label><input type="text" id="cg-nome" placeholder="Nome completo" style="width:100%"></div>
+          <div><label class="lbl" for="cg-dep">Departamento / área</label><select id="cg-dep" style="width:100%"><option value="">Selecione</option></select></div>
+          <div><label class="lbl" for="cg-cargo">Cargo (opcional)</label><input type="text" id="cg-cargo" placeholder="Ex.: Gerente de Operações" style="width:100%"></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="lbl" for="cg-q">Obras a liberar</label>
+          <div class="row" style="gap:8px;align-items:center;margin-bottom:4px">
+            <input type="search" id="cg-q" placeholder="Código ou nome da obra" style="flex:1">
+            <span class="muted" id="cg-sel-n" style="font-size:12px"></span>
+            <button class="btn sm" id="cg-limpar-sel">Limpar seleção</button>
+          </div>
+          <div class="olist" id="cg-olist" style="max-height:220px"></div>
+        </div>
+        <div class="row" style="gap:8px;align-items:center">
+          <button class="btn primary" id="cg-salvar">Salvar gerente</button>
+          <button class="btn" id="cg-buscar-ger">Buscar gerente existente</button>
+          <span class="muted" id="cg-msg" style="font-size:13px"></span>
+        </div>
+      </div>
+      <div class="card" data-grp="ger" id="card-resp-obra">
+        <h2>Responsáveis por obra</h2>
+        <p class="desc">Veja e gerencie quem planeja cada obra diretamente — sem precisar carregar a planilha de configuração. Filtre por texto, departamento ou <b>só sem responsável</b> e clique em <b>+ Responsável</b> para adicionar ao lado de qualquer linha.</p>
+        <div class="row" style="gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+          <input type="search" id="ro-q" placeholder="Empresa, código ou nome da obra" style="flex:1;min-width:180px">
+          <select id="ro-dep" style="min-width:160px"><option value="">Todos os departamentos</option></select>
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="ro-sem-resp"> Só sem responsável</label>
+          <span class="muted" id="ro-stats" style="font-size:12px;white-space:nowrap"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="list" id="ro-tbl" style="width:100%;font-size:13px">
+            <thead><tr>
+              <th style="width:70px">Empresa</th>
+              <th style="width:85px">Obra</th>
+              <th>Descrição</th>
+              <th>Responsável(eis)</th>
+              <th style="width:120px;text-align:right"></th>
+            </tr></thead>
+            <tbody id="ro-tbody"></tbody>
+          </table>
+        </div>
+        <div id="ro-add-box" style="display:none;margin-top:10px;padding:12px;background:var(--bg2,#f7f7f7);border-radius:8px;border:1px solid var(--brd,#ddd)">
+          <p class="lbl" id="ro-add-title" style="margin:0 0 8px;font-weight:600;font-size:13px"></p>
+          <div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div style="flex:2;min-width:200px"><label class="lbl" for="ro-email">E-mail do responsável</label><input type="email" id="ro-email" placeholder="gerente@btsa.com.br" list="ro-email-list" style="width:100%"><datalist id="ro-email-list"></datalist></div>
+            <div style="flex:1;min-width:160px"><label class="lbl" for="ro-dep2">Departamento</label><select id="ro-dep2" style="width:100%"><option value="">Selecione</option></select></div>
+            <button class="btn primary sm" id="ro-salvar">Salvar</button>
+            <button class="btn sm" id="ro-cancelar">Cancelar</button>
+          </div>
+          <p class="muted" id="ro-add-msg" style="margin:6px 0 0;font-size:12px"></p>
+        </div>
+      </div>
       <div class="card" id="assign-card">
         <h2>Atribuir obras a um gerente</h2>
         <p class="desc">O gerente só vê as obras atribuídas e o histórico delas. Compartilhe o formulário com ele como <b>Colaborador</b> para que possa salvar.</p>
@@ -633,7 +710,11 @@ table.list td.num,table.list th.num{text-align:right;font-family:var(--f-mono);f
           </div>
           <div>
             <label class="lbl" for="o-q">Obras</label>
-            <input type="search" id="o-q" placeholder="Código ou nome da obra" style="width:100%">
+            <div class="row" style="gap:8px;align-items:center;margin-bottom:4px">
+              <input type="search" id="o-q" placeholder="Código ou nome da obra" style="flex:1">
+              <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="o-show-inativas"> Mostrar inativas</label>
+              <span class="muted" id="o-inativas-info" style="font-size:11px"></span>
+            </div>
             <div class="olist" id="o-list"></div>
             <div class="sel-list" id="sel-list"></div>
             <div class="row" style="margin-top:12px"><button class="btn primary" id="btn-assign" disabled>Atribuir</button><label class="row" style="gap:6px"><span class="muted">Área</span><select id="as-area" aria-label="Área liberada"></select></label><span class="muted" id="assign-msg"></span></div>
@@ -898,7 +979,7 @@ async function loadMine(){
   S.perfil=snap.exists?snap.data():{obras:{}};S.perfil.obras=S.perfil.obras||{};
   if(!snap.exists&&!S.owner){try{await S.db.doc("gerentes/"+S.me).set({obras:{},acessoEm:nowISO()})}catch(e){}}
   if(!S.owner&&!S.offline)fillReqForm();
-  if(S.owner){await loadCat();(S.cat.obras||[]).forEach(c=>{if(!S.perfil.obras[c[0]])S.perfil.obras[c[0]]={...catInfo(c),todas:true}})}
+  if(S.owner){await loadCat();(S.cat.obras||[]).forEach(c=>{if(c[8]===1)return;/* inativas: não adicionar ao seletor do admin */if(!S.perfil.obras[c[0]])S.perfil.obras[c[0]]={...catInfo(c),todas:true}})}
   let obras=Object.entries(S.perfil.obras);
   /* desempenho: traz o histórico de todas as obras do gerente numa única consulta (antes era uma por obra) */
   if(!S.owner&&obras.length>3){try{const q=await S.db.collection("gerentes/"+S.me+"/hist").get();S.histPre={};obras.forEach(([o])=>S.histPre[o]=null);q.docs.forEach(d=>S.histPre[d.id]=d.data())}catch(e){S.histPre=null}}
@@ -1638,7 +1719,7 @@ function anDe(r){const A=S.anR||{};return (A.obra||{})[r.o]||anArea(r)||(A.emp||
 async function salvarAnalistas(){S.anR.nomes=[...new Set([...(S.anR.nomes||[]),...Object.values(S.anR.obra),...Object.values(S.anR.emp),...Object.values(S.anR.reg),...Object.values(S.anR.area)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));await S.db.doc("restrito/analistas").set({obra:S.anR.obra,emp:S.anR.emp,reg:S.anR.reg,area:S.anR.area,nomes:S.anR.nomes,atualizadoEm:nowISO()})}
 function renderAnFiltro(){const sel=$("#an-filtro");if(!sel)return;const v=S.anF||"";const nomes=(S.anR&&S.anR.nomes)||[];sel.innerHTML=`<option value="">Todos</option>${nomes.map(n=>`<option ${n===v?"selected":""}>${esc(n)}</option>`).join("")}<option value="__sem" ${v==="__sem"?"selected":""}>Sem analista</option>`}
 function renderAnBox(){const b=$("#an-box");if(!b||b.hidden)return;const A=S.anR;const tipos=[["reg","Regional"],["area","Quem planeja"],["emp","Empresa"],["obra","Obra"]];
-  const opts={reg:[...new Set((S.acomp||[]).map(r=>S.regObra?regDe(r.o):"").filter(Boolean))].sort(),emp:[...new Set((S.cat.obras||[]).map(c=>String(c[6])+" – "+(c[7]||"")))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),obra:(S.cat.obras||[]).map(c=>c[0]+" · "+(c[2]||"")),area:[...new Set([...areasDisponiveis(),...(S.acomp||[]).flatMap(r=>(r.info&&r.info.areas)||[])])].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"))};
+  const opts={reg:[...new Set((S.acomp||[]).map(r=>S.regObra?regDe(r.o):"").filter(Boolean))].sort(),emp:[...new Set((S.cat.obras||[]).filter(c=>c[8]!==1).map(c=>String(c[6])+" – "+(c[7]||"")))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),obra:(S.cat.obras||[]).filter(c=>c[8]!==1).map(c=>c[0]+" · "+(c[2]||"")),area:[...new Set([...areasDisponiveis(),...(S.acomp||[]).flatMap(r=>(r.info&&r.info.areas)||[])])].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"))};
   const R=[];tipos.forEach(([t,lb])=>Object.entries(A[t]).forEach(([v,a])=>R.push({t,lb,v,a})));
   b.innerHTML=`<div class="row" style="justify-content:space-between"><b>Quem da Controladoria analisa o quê</b><button class="btn sm" id="an-fechar">Fechar</button></div><p class="desc" style="margin:4px 0 8px">Vale a regra mais específica: <b>Obra</b> &gt; <b>Quem planeja</b> &gt; <b>Empresa</b> &gt; <b>Regional</b>. Também dá para trocar o analista de uma obra direto na lista.</p>
    <div class="row" style="gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><select id="an-t">${tipos.map(([t,lb])=>`<option value="${t}">${lb}</option>`).join("")}</select><input id="an-v" list="an-vl" placeholder="Regional, quem planeja, empresa ou obra" style="min-width:280px"><datalist id="an-vl">${opts.reg.map(x=>`<option value="${esc(x)}">`).join("")}</datalist><input id="an-a" list="an-al" placeholder="Nome do analista"><datalist id="an-al">${(A.nomes||[]).map(n=>`<option value="${esc(n)}">`).join("")}</datalist><button class="btn sm primary" id="an-add">Adicionar</button><span class="muted" id="an-msg"></span></div>
@@ -2395,15 +2476,16 @@ function renderEstAp(){const tb=$("#est-ap-tbl");if(!tb)return;const A=S.estAp;i
   try{await S.dl.save({filename:`APONTAMENTOS_ESTRUTURA_${new Date().toISOString().slice(0,10)}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast("Excel gerado")}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}})}
 
 async function loadCat(){if(!S.cat){const c=await S.db.doc("restrito/catalogo").get();S.cat=c.exists?c.data():{obras:[]};S.catMap=new Map(S.cat.obras.map(c=>[c[0],c]))}}
-/* catálogo v2: [id "empresa-obra", obra, nome obra, base modelo, total25, total26, empresa, nome empresa] */
-const catInfo=c=>({nome:c[2],tipo:c[3],emp:c[6],empNome:c[7],obra:c[1]});
+/* catálogo v2: [id "empresa-obra", obra, nome obra, base modelo, total25, total26, empresa, nome empresa, inativo] */
+/* c[8]: 0/undefined = ativa, 1 = inativa */
+const catInfo=c=>({nome:c[2],tipo:c[3],emp:c[6],empNome:c[7],obra:c[1],inativo:c[8]===1});
 const obraLbl=(o,i)=>`${i&&i.emp?"Emp. "+i.emp+" - ":""}${(i&&i.obra)||o} - ${(i&&i.nome)||""}`;
 function parseObrasTexto(txt){const out=new Map();const T_=String(txt||"").toUpperCase();
   const re=/(\d{1,6})\s*[-–\/|;:]\s*([A-Z0-9]{5})/g;let m;while((m=re.exec(T_))){const id=m[1]+"-"+m[2];const c=S.catMap&&S.catMap.get(id);if(c)out.set(id,catInfo(c))}
   (S.cat.obras||[]).forEach(c=>{if(out.has(c[0]))return;if(new RegExp("(^|[^0-9A-Z-])"+c[1]+"([^0-9A-Z-]|$)").test(T_)){const same=S.cat.obras.filter(x=>x[1]===c[1]);if(same.length===1)out.set(c[0],catInfo(c))}});
   return out}
 async function loadAdm(){
-  await loadCat();renderObraList();renderRegrasMsg();
+  await loadCat();renderObraList();renderRegrasMsg();if(typeof initCgForm==="function")initCgForm();
   try{const c=await S.db.doc("restrito/config").get();S.cfg=c.exists?c.data():{};const pp=await S.db.doc("restrito/pessoas").get();S.pessoas=pp.exists?pp.data().lista||[]:[]}catch(e){S.cfg={};S.pessoas=[]}
   $("#pl-auto").checked=!!S.cfg.autoLiberar;renderPessoas();renderBases();
   const RT=S.cfg.retorno||{};$("#og-ret-email").value=RT.email||"";$("#og-ret-url").value=RT.url||"";$("#og-ret-pasta").value=RT.pasta||"";$("#og-ret-token").textContent=RT.token||"(gerada ao salvar)";
@@ -2494,11 +2576,16 @@ async function searchPeople(q){const r=await S.user.search(q||"");S.people=r;
   $("#p-list").querySelectorAll("button").forEach((b,i)=>{b.textContent=(r[i].name||"Sem nome")+(r[i].isMe?" (você)":"")})}
 $("#p-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.pick=b.dataset.id;$("#p-list").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));updAssignBtn()});
 $("#o-q").addEventListener("input",renderObraList);
+{const el=document.getElementById("o-show-inativas");if(el)el.addEventListener("change",renderObraList)}
+document.addEventListener("change",e=>{if(e.target.id==="o-show-inativas")renderObraList()});
 function renderObraList(){
   const q=$("#o-q").value.trim().toLowerCase();const obras=(S.cat&&S.cat.obras)||[];
   if(!obras.length){$("#o-list").innerHTML=`<div class="muted" style="padding:10px">A base histórica ainda não foi carregada.</div>`;return}
-  const r=obras.filter(o=>!q||(o[0]+" "+o[2]+" "+o[7]).toLowerCase().includes(q)).slice(0,150);
-  $("#o-list").innerHTML=r.map(o=>`<label><input type="checkbox" data-o="${esc(o[0])}" ${S.sel.has(o[0])?"checked":""}><span class="cod">${esc(o[1])}</span><span class="nm" title="${esc(o[2])} · Empresa ${esc(o[6])} ${esc(o[7])}">${esc(o[2])}<br><span class="muted" style="font-size:11px">Emp. ${esc(o[6])} · ${esc(o[7])}</span></span><span class="tp">pago 25/26: ${f0(o[4]+o[5])}</span></label>`).join("");
+  const mostrarInativas=document.getElementById("o-show-inativas")&&document.getElementById("o-show-inativas").checked;
+  const r=obras.filter(o=>(mostrarInativas||o[8]!==1)&&(!q||(o[0]+" "+o[2]+" "+o[7]).toLowerCase().includes(q))).slice(0,200);
+  const ninativas=obras.filter(o=>o[8]===1).length;
+  const el=document.getElementById("o-inativas-info");if(el)el.textContent=ninativas?`${ninativas} inativas ocultas`:"";
+  $("#o-list").innerHTML=r.map(o=>`<label${o[8]===1?' style="opacity:0.45" title="Obra inativa"':""} ><input type="checkbox" data-o="${esc(o[0])}" ${S.sel.has(o[0])?"checked":""}><span class="cod">${esc(o[1])}${o[8]===1?' <span style="color:var(--danger,#c00);font-size:10px">INATIVA</span>':""}</span><span class="nm" title="${esc(o[2])} · Empresa ${esc(o[6])} ${esc(o[7])}">${esc(o[2])}<br><span class="muted" style="font-size:11px">Emp. ${esc(o[6])} · ${esc(o[7])}</span></span><span class="tp">pago 25/26: ${f0(o[4]+o[5])}</span></label>`).join("");
 }
 $("#o-list").addEventListener("change",e=>{const o=e.target.dataset.o;const c=S.catMap.get(o);if(e.target.checked)S.sel.set(o,catInfo(c));else S.sel.delete(o);renderSel()});
 function renderSel(){
@@ -2764,7 +2851,8 @@ async function baixarExcel(comPadrao){
   if(!S.dl){toast("Download indisponível nesta visualização");return}
   const wb=XLSX.utils.book_new();
   const mrg=mergeObras(rows);
-  let val=null;let pa=comPadrao?padraoAoa(mrg):null;if(comPadrao&&S.estr&&$("#es-corrigir").checked){val=validarEstrutura(pa,true);pa=val.aoa}
+  let val=null;let pa=comPadrao?padraoAoa(mrg):null;if(comPadrao&&$("#es-corrigir").checked&&!(S.estr&&!S.estr.base)){try{toast("Conferindo com a Base - Geral (estrutura do ERP)…");await estrDaBaseGeral([...new Set(mrg.map(r=>String(r.info.emp||r.o.split("-")[0])))])}catch(e){}}
+  if(comPadrao&&S.estr&&$("#es-corrigir").checked){val=validarEstrutura(pa,true);pa=val.aoa}
   if(comPadrao){const ws=XLSX.utils.aoa_to_sheet(pa);ws["!freeze"]={xSplit:8,ySplit:1};ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:40},{wch:12},{wch:9},{wch:9},{wch:44},{wch:5},{wch:8},{wch:9}];XLSX.utils.book_append_sheet(wb,ws,"Padrão")}
   const wi=XLSX.utils.aoa_to_sheet(await insumosAoa(mrg,m=>toast(m)));wi["!cols"]=[{wch:24},{wch:8},{wch:8},{wch:36},{wch:8},{wch:9},{wch:9},{wch:44},{wch:5},{wch:16},{wch:10},...Array(15).fill({wch:13}),{wch:30},...Array(9).fill({wch:14})];wi["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(32)+"1"};
   const wr=XLSX.utils.aoa_to_sheet(resumoAoa(rows));wr["!cols"]=[{wch:26},{wch:28},{wch:8},{wch:30},{wch:8},{wch:44},{wch:10},{wch:10},{wch:18},{wch:14},{wch:14},{wch:14},{wch:60}];XLSX.utils.book_append_sheet(wb,wr,"Resumo");XLSX.utils.book_append_sheet(wb,wi,"Resumo por insumo");if(val)abasValidacao(wb,val);
@@ -2795,6 +2883,13 @@ onCarga("#es-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
     $("#es-msg").textContent=`Estrutura carregada: ${f.name} · ${E.n.toLocaleString("pt-BR")} linhas · ${E.eo.size} empresa/obra. Agora clique em Validar.`;
   }catch(err){S.estr=null;$("#es-validar").disabled=true;$("#es-msg").textContent=err&&err.message==="cols"?"Não encontrei as colunas da estrutura (Empresa_plt, Obra_plt, Prod_plt, Serv_plt, Ins_cins).":"Não consegui ler a planilha da estrutura."}});
 /* valida (e corrige contrato/item) as linhas do layout do modelo; devolve {aoa corrigido, problemas, resumo} */
+/* estrutura da Base - Geral (aba Estrutura) no formato usado pela validação: obra → produto → serviço → insumo {contrato,item,inativo} */
+async function estrDaBaseGeral(emps){const X=await carregarEstIdx();if(!X)return null;const E=(S.estr&&S.estr.base)?S.estr:{eo:new Map(),n:0,arquivo:"Base - Geral: "+(X.arquivo||""),em:new Date(X.atualizadoEm||Date.now()),base:true,emps:new Set()};
+  for(const emp of emps){if(E.emps.has(emp))continue;E.emps.add(emp);const d=await estEmpresa(emp);if(!d||!d.o)continue;
+    Object.entries(d.o).forEach(([ob,rs])=>{const eo=emp+"-"+ob;const o={nome:((X.eo||{})[eo]||[])[2]||"",P:new Map()};E.eo.set(eo,o);
+      rs.forEach(x=>{const [P,C,It,Sv,I,ina]=x;E.n++;let pp=o.P.get(P);if(!pp){pp={d:(X.dP||{})[P]||"",S:new Map()};o.P.set(P,pp)}let sv=pp.S.get(Sv);if(!sv){sv={d:(X.dS||{})[Sv]||"",I:new Map()};pp.S.set(Sv,sv)}
+        const old=sv.I.get(I);if(!old||(old.inat&&!ina))sv.I.set(I,{d:(X.dI||{})[I]||"",C:cod(C),It:cod(It),inat:ina?"inativo":""})})})}
+  S.estr=E;return E}
 function validarEstrutura(aoa,corrigir){
   const E=S.estr;const head=aoa[0];const nv=head.length;const out=[head];const prob=[];const res=new Map();
   const valorDe=row=>{let t=0;for(let j=11;j<nv;j+=3){const v=row[j+2];t+=typeof v==="object"&&v?+v.v||0:+v||0}return r2(t)};
@@ -2804,7 +2899,10 @@ function validarEstrutura(aoa,corrigir){
     const o=E.eo.get(eo);let st="OK",mot="",sug="";
     if(!o){st="ERRO";mot="Empresa/obra não existe na estrutura"}
     else{const p=o.P.get(P);
-      if(!p){st="ERRO";mot="Produto não existe nesta obra";const alt=[...o.P.entries()].filter(([,pp])=>!isHead&&pp.S.has(S_)&&pp.S.get(S_).I.has(I)).map(([k,pp])=>k+" "+pp.d);sug=alt.length?"Produto(s) da obra com esse serviço/insumo: "+alt.slice(0,3).join("; "):"Produtos da obra: "+[...o.P.keys()].slice(0,8).join(", ")}
+      const altPI=isHead||!I?[]:[...o.P.entries()].filter(([k,pp])=>k!==P&&pp.S.has(S_)&&pp.S.get(S_).I.has(I)&&!pp.S.get(S_).I.get(I).inat);
+      if((!p||!p.S.has(S_)||(I&&!p.S.get(S_).I.has(I)))&&altPI.length){const [nP,pp]=altPI[0];const ii=pp.S.get(S_).I.get(I);st="CORRIGIDO";mot=`produto ${P} → ${nP}${pp.d?" "+pp.d:""} (este serviço/insumo só existe nesse produto na estrutura)`;
+        if(corrigir){row[2]=nP+(pp.d?" "+pp.d:"");if(ii.C)row[3]=+ii.C||ii.C;if(ii.It)row[4]=ii.It}}
+      else if(!p){st="ERRO";mot="Produto não existe nesta obra";const alt=[...o.P.entries()].filter(([,pp])=>!isHead&&pp.S.has(S_)&&pp.S.get(S_).I.has(I)).map(([k,pp])=>k+" "+pp.d);sug=alt.length?"Produto(s) da obra com esse serviço/insumo: "+alt.slice(0,3).join("; "):"Produtos da obra: "+[...o.P.keys()].slice(0,8).join(", ")}
       else if(!isHead){const sv=p.S.get(S_);
         if(!sv){st="ERRO";mot="Serviço não existe neste produto";const alt=[...o.P.entries()].filter(([,pp])=>pp.S.has(S_)).map(([k])=>k);sug=alt.length?"Serviço existe nos produtos: "+alt.join(", "):""}
         else if(!I){}else{const ii=sv.I.get(I);
@@ -2818,6 +2916,12 @@ function validarEstrutura(aoa,corrigir){
     if(st!=="OK")prob.push([st,numOr(row0[0]),numOr(row0[1]),o?o.nome:"",row0[2],row0[3],row0[4],row0[5],row0[6],row0[7],val,mot,sug]);
     if(!corrigir||st==="OK"||st==="CORRIGIDO")out.push(row);
   });
+  if(corrigir){const vis=new Map();const fin=[out[0]];out.slice(1).forEach(row=>{const S_=cod(row[5]);if(S_==="-1"||S_===""){fin.push(row);return}
+      const k=cod(row[0])+"-"+cod(row[1])+"|"+cod(String(row[2]).split(" ")[0])+"|"+S_+"|"+cod(row[6]);const a=vis.get(k);if(!a){vis.set(k,row);fin.push(row);return}
+      for(let j=11;j<nv;j+=3){const q1=+a[j]||0,q2=+row[j]||0,p1=+a[j+1]||0,p2=+row[j+1]||0;if(q1===1&&q2===1)a[j+1]=r2(p1+p2);else if(!q1&&q2){a[j]=row[j];a[j+1]=row[j+1]}else if(q2&&p1===p2)a[j]=r2(q1+q2);else a[j+1]=r2((q1*p1+q2*p2)/((q1||1)));
+        const t=a[j+2];const v=r2((+a[j]||0)*(+a[j+1]||0));if(t&&typeof t==="object")t.v=v;else a[j+2]=v}
+      prob.push(["MESCLADO",numOr(row[0]),numOr(row[1]),"",row[2],row[3],row[4],row[5],row[6],row[7],0,"Linha repetida depois da correção do produto: valores somados na mesma linha",""])});
+    return {aoa:fin,prob,res:[...res.values()]}}
   return {aoa:out,prob,res:[...res.values()]};
 }
 function abasValidacao(wb,v){
@@ -3019,6 +3123,349 @@ onCarga("#sb-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
     const doc={r:R,c:C,q:Q,arquivo:f.name,aba:nm,atualizadoEm:nowISO()};await S.db.doc("regras/subitens").set(doc);S.subR=doc;renderBases();
     $("#bs-msg").textContent=`Subitens carregados: ${Object.keys(R).length} insumos, ${Object.values(R).reduce((a,v)=>a+v.length,0)} subitens. Valem para obras ainda sem subitens; quem já começou mantém os dele.`;
   }catch(err){$("#bs-msg").textContent=err&&err.message==="aba"?"Não encontrei a aba Subitens.":"Não consegui ler a planilha de subitens."}});
+
+/* ===================== IMPORTAR SISTEMA INTERNO (Empresas e Obras do BD / Power BI) ===================== */
+{
+  let _sysObras=null;/* buffer do preview antes de salvar */
+
+  function _sysMapCols(h){
+    /* tenta mapear colunas automaticamente pelo cabeçalho */
+    const f=(ns)=>{for(const n of ns){const i=h.findIndex(c=>new RegExp(n,"i").test(String(c||"").trim()));if(i>=0)return i}return -1};
+    return{
+      emp:f(["c[oó]d.*emp","empresa","codemp","cod_emp"]),
+      empNome:f(["nome.*emp","descri[cç][aã]o.*emp","raz[aã]o"]),
+      obra:f(["c[oó]d.*obra","codob","obra","cod_obra"]),
+      obraNome:f(["nome.*obra","descri[cç][aã]o.*obra","descri[cç][aã]o","nome"]),
+      inativo:7/* coluna H (índice 7) por padrão */
+    }
+  }
+
+  document.getElementById("sys-file").addEventListener("change",async e=>{
+    const f=e.target.files[0];e.target.value="";if(!f)return;
+    const msg=$("#sys-msg"),prev=$("#sys-preview"),sal=$("#sys-salvar");
+    msg.textContent="Lendo…";prev.hidden=true;sal.hidden=true;_sysObras=null;
+    if(typeof XLSX==="undefined"){msg.textContent="O leitor de Excel não carregou. Recarregue a página.";return}
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+      /* procura aba "obras" (aceita variações) */
+      const nm=wb.SheetNames.find(n=>/^obras?$/i.test(n.trim()))||wb.SheetNames[0];
+      const ws=wb.Sheets[nm];
+      if(!ws){msg.textContent="Aba 'obras' não encontrada. Verifique a planilha.";return}
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+      if(rows.length<2){msg.textContent="A planilha não tem dados.";return}
+      const h=rows[0].map(c=>String(c||"").trim());
+      const M=_sysMapCols(h);
+      if(M.emp<0||M.obra<0){
+        msg.textContent=`Colunas de empresa e obra não identificadas. Cabeçalhos encontrados: ${h.slice(0,12).join(", ")}`;return}
+      /* carrega catálogo atual para preservar hist25, hist26 e base */
+      await loadCat();
+      const catAtual=new Map((S.cat.obras||[]).map(c=>[c[0],c]));
+      const novas=[];const erros=[];
+      rows.slice(1).forEach(r=>{
+        const emp=String(r[M.emp]||"").trim();
+        const obra=String(r[M.obra]||"").trim();
+        if(!emp||!obra)return;
+        const id=emp+"-"+obra;
+        const empNome=M.empNome>=0?String(r[M.empNome]||"").trim():"";
+        const obraNome=M.obraNome>=0?String(r[M.obraNome]||"").trim():"";
+        const iniVal=r[M.inativo];
+        const inativo=(iniVal===1||iniVal==="1"||String(iniVal||"").trim().toLowerCase()==="1")?1:0;
+        const ant=catAtual.get(id);
+        /* preserva base, hist25, hist26 do catálogo atual */
+        const base=ant?ant[3]:"";const h25=ant?ant[4]:0;const h26=ant?ant[5]:0;
+        novas.push([id,obra,obraNome,base,h25,h26,emp,empNome,inativo]);
+      });
+      if(!novas.length){msg.textContent="Nenhuma linha válida encontrada. Verifique os cabeçalhos.";return}
+      _sysObras={novas,arquivo:f.name,aba:nm,cols:M,h};
+      /* monta preview */
+      const novosIds=new Set(novas.map(c=>c[0]));
+      const removidas=[...catAtual.keys()].filter(id=>!novosIds.has(id));
+      const adicionadas=novas.filter(c=>!catAtual.has(c[0]));
+      const atualizadas=novas.filter(c=>catAtual.has(c[0]));
+      const inativas=novas.filter(c=>c[8]===1);
+      $("#sys-stat-add").textContent=`+${adicionadas.length} obra(s) nova(s)`;
+      $("#sys-stat-upd").textContent=`${atualizadas.length} obra(s) atualizadas`;
+      $("#sys-stat-rem").textContent=`${removidas.length} obra(s) não encontradas na planilha (serão mantidas no catálogo com os dados atuais)`;
+      $("#sys-stat-ina").textContent=`${inativas.length} obra(s) inativas (ficarão ocultas)`;
+      const rows2=[...adicionadas.map(c=>[c[0],c[6],c[1],c[2],c[8]===1?"Inativa":"Ativa","➕ Nova"]),
+                   ...inativas.filter(c=>catAtual.has(c[0])).map(c=>[c[0],c[6],c[1],c[2],"Inativa","⚠️ Inativando"]),
+                   ...adicionadas.map(()=>null).filter(()=>false)/* placeholder */].filter(Boolean).slice(0,200);
+      const tbody=$("#sys-tbl tbody");
+      tbody.innerHTML=rows2.map(r=>`<tr><td><code style="font-size:11px">${esc(r[0])}</code></td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td>${esc(r[4])}</td><td>${esc(r[5])}</td></tr>`).join("")||`<tr><td colspan="6" class="muted">Nenhuma mudança detectada.</td></tr>`;
+      $("#sys-det-sum").textContent=`Ver detalhes (${rows2.length} linhas na prévia)`;
+      msg.textContent=`Planilha lida: ${novas.length} empresa/obra(s). Confira acima e clique em Atualizar catálogo.`;
+      prev.hidden=false;sal.hidden=false;
+    }catch(err){msg.textContent="Erro ao ler a planilha: "+(err.message||err)}
+  });
+
+  document.getElementById("sys-salvar").addEventListener("click",async()=>{
+    if(!_sysObras){toast("Carregue a planilha primeiro.");return}
+    const sal=$("#sys-salvar"),msg=$("#sys-msg");
+    sal.disabled=true;msg.textContent="Salvando catálogo…";
+    try{
+      /* mantém obras que não estavam na planilha (removidas = mantém, não apaga) */
+      await loadCat();
+      const catAtual=new Map((S.cat.obras||[]).map(c=>[c[0],c]));
+      const novasIds=new Set(_sysObras.novas.map(c=>c[0]));
+      const mantidas=[...catAtual.values()].filter(c=>!novasIds.has(c[0]));
+      const catFinal=[..._sysObras.novas,...mantidas];
+      catFinal.sort((a,b)=>String(a[0]).localeCompare(String(b[0]),undefined,{numeric:true}));
+      S.cat={obras:catFinal};S.catMap=new Map(catFinal.map(c=>[c[0],c]));
+      await S.db.doc("restrito/catalogo").set({obras:catFinal,arquivo:_sysObras.arquivo,aba:_sysObras.aba,atualizadoEm:nowISO()});
+      const nAtivas=catFinal.filter(c=>c[8]!==1).length;
+      const nInativas=catFinal.filter(c=>c[8]===1).length;
+      msg.textContent=`Catálogo atualizado: ${nAtivas} obra(s) ativa(s), ${nInativas} inativa(s). Recarregue a página para ver as mudanças no seletor.`;
+      toast("Catálogo atualizado com sucesso");_sysObras=null;$("#sys-preview").hidden=true;sal.hidden=true;
+    }catch(err){msg.textContent="Erro ao salvar: "+(err.message||err);sal.disabled=false}
+  });
+}
+
+/* ===================== CADASTRO DE GERENTE POR FORMULÁRIO ===================== */
+{
+  let _cgSel=new Set();/* obras selecionadas no form de cadastro */
+
+  function renderCgList(){
+    const q=(document.getElementById("cg-q")||{value:""}).value.trim().toLowerCase();
+    const obras=(S.cat&&S.cat.obras)||[];
+    const el=document.getElementById("cg-olist");if(!el)return;
+    const r=obras.filter(o=>o[8]!==1&&(!q||(o[0]+" "+o[2]+" "+o[7]).toLowerCase().includes(q))).slice(0,200);
+    el.innerHTML=r.map(o=>`<label><input type="checkbox" data-cgo="${esc(o[0])}" ${_cgSel.has(o[0])?"checked":""}><span class="cod">${esc(o[1])}</span><span class="nm" title="${esc(o[2])} · Emp. ${esc(o[6])} ${esc(o[7])}">${esc(o[2])}<br><span class="muted" style="font-size:11px">Emp. ${esc(o[6])} · ${esc(o[7])}</span></span></label>`).join("");
+    const n=document.getElementById("cg-sel-n");if(n)n.textContent=_cgSel.size?`${_cgSel.size} selecionada(s)`:"";
+  }
+
+  window.initCgForm=function initCgForm(){
+    const el=document.getElementById("cg-olist");if(!el||el._init)return;el._init=true;
+    /* preenche departamentos */
+    const dep=document.getElementById("cg-dep");if(dep){dep.innerHTML='<option value="">Selecione</option>'+areasDisponiveis().map(a=>`<option>${esc(a)}</option>`).join("")}
+    document.getElementById("cg-q").addEventListener("input",renderCgList);
+    el.addEventListener("change",ev=>{const o=ev.target.dataset.cgo;if(!o)return;if(ev.target.checked)_cgSel.add(o);else _cgSel.delete(o);renderCgList()});
+    document.getElementById("cg-limpar-sel").addEventListener("click",()=>{_cgSel.clear();renderCgList()});
+    document.getElementById("cg-buscar-ger").addEventListener("click",()=>{
+      const email=(document.getElementById("cg-email").value||"").trim().toLowerCase();
+      if(!email){document.getElementById("cg-msg").textContent="Preencha o e-mail primeiro.";return}
+      const p=(S.pessoas||[]).find(x=>x.email===email);
+      if(!p){document.getElementById("cg-msg").textContent="Gerente não encontrado na lista atual.";return}
+      document.getElementById("cg-nome").value=p.nome||"";
+      document.getElementById("cg-cargo").value=p.cargo||"";
+      const dep=document.getElementById("cg-dep");
+      const area=p.area||Object.values(p.acc||{}).flat()[0]||"";
+      if([...dep.options].some(o=>o.value===area))dep.value=area;
+      _cgSel=new Set(p.ids||[]);renderCgList();
+      document.getElementById("cg-msg").textContent=`Gerente encontrado: ${p.ids.length} obra(s) liberada(s). Faça as alterações e salve.`;
+    });
+    document.getElementById("cg-salvar").addEventListener("click",async()=>{
+      const email=(document.getElementById("cg-email").value||"").trim().toLowerCase();
+      const nome=(document.getElementById("cg-nome").value||"").trim();
+      const dep=(document.getElementById("cg-dep").value||"").trim();
+      const cargo=(document.getElementById("cg-cargo").value||"").trim();
+      const msg=document.getElementById("cg-msg");
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.textContent="E-mail inválido.";return}
+      if(!nome){msg.textContent="Preencha o nome.";return}
+      if(!dep){msg.textContent="Selecione o departamento.";return}
+      const ids=[..._cgSel];
+      const btn=document.getElementById("cg-salvar");btn.disabled=true;msg.textContent="Salvando…";
+      try{
+        /* monta acc: {[id]: [dep]} */
+        const acc={};ids.forEach(id=>acc[id]=[dep]);
+        /* merge com S.pessoas */
+        const lista=(S.pessoas||[]).filter(p=>p.email!==email);
+        if(ids.length>0){/* adiciona ou substitui */
+          lista.push({nome,email,cargo,semClaude:true,acc,ids,area:dep});
+        }/* se ids vazio, remove o gerente da lista */
+        /* salva restrito/pessoas */
+        const dpArq=(await S.db.doc("restrito/pessoas").get().catch(()=>({exists:false}))||{}).exists;
+        await S.db.doc("restrito/pessoas").set({lista,arquivo:(S.pessoas&&S.dpR&&S.dpR.arquivo)||"formulário",aba:"3. Gerentes",atualizadoEm:nowISO()});
+        S.pessoas=lista;
+        /* reconstrói depara */
+        const novas=[];lista.forEach(p=>Object.entries(p.acc||{}).forEach(([id,deps])=>deps.forEach(d=>novas.push([p.email,id,"",d]))));
+        const old=(S.dp||[]).filter(l=>l[0]!==email);
+        S.dp=old.concat(novas);
+        await S.db.doc("restrito/depara").set({linhas:S.dp,atualizadoEm:nowISO(),arquivo:"formulário"});
+        /* ORC_HOOKS.acessos */
+        if(window.ORC_HOOKS&&window.ORC_HOOKS.acessos){try{await window.ORC_HOOKS.acessos(lista)}catch(e){console.warn("acessos hook:",e)}}
+        renderPessoas();
+        const acao=ids.length?"salvo":"removido";
+        msg.textContent=`Gerente ${acao}: ${nome} · ${email}${ids.length?" · "+ids.length+" obra(s)":""}.`;
+        toast(`Gerente ${acao}`);
+        if(ids.length===0){/* limpa form */
+          document.getElementById("cg-email").value="";document.getElementById("cg-nome").value="";
+          document.getElementById("cg-dep").value="";document.getElementById("cg-cargo").value="";
+          _cgSel.clear();renderCgList();
+        }
+      }catch(err){msg.textContent="Erro ao salvar: "+(err.message||err)}
+      btn.disabled=false;
+    });
+    renderCgList();
+  }
+
+  /* inicializa quando o painel admin abre (loadAdm já foi chamado) */
+  const _origLoadAdm=window._cgFormHook;
+  /* hook no loadAdm para inicializar o form depois que o catálogo carrega */
+  const _cgOrigLoadAdm=window.loadAdm;
+  /* aproveita que loadAdm é chamado na abertura do painel admin */
+  document.addEventListener("click",e=>{if(e.target.id==="cg-salvar"||e.target.id==="cg-buscar-ger"||e.target.id==="cg-limpar-sel"){if(S.cat&&window.initCgForm)window.initCgForm()}});
+  document.addEventListener("focusin",e=>{if(e.target&&e.target.closest&&e.target.closest("#card-cad-gerente")&&S.cat&&window.initCgForm)window.initCgForm()});
+}
+
+/* ===================== RESPONSÁVEIS POR OBRA ===================== */
+{
+  let _roObra=null,_roReady=false;
+
+  function _roFillDeps(){
+    const deps=areasDisponiveis();
+    const s=document.getElementById("ro-dep");
+    if(s){const v=s.value;s.innerHTML='<option value="">Todos os departamentos</option>'+deps.map(a=>`<option>${esc(a)}</option>`).join("");s.value=v}
+    const s2=document.getElementById("ro-dep2");
+    if(s2)s2.innerHTML='<option value="">Selecione</option>'+deps.map(a=>`<option>${esc(a)}</option>`).join("");
+    const dl=document.getElementById("ro-email-list");
+    if(dl)dl.innerHTML=(S.pessoas||[]).map(p=>`<option value="${esc(p.email)}">${esc(p.nome||p.email)} — ${esc(p.email)}</option>`).join("");
+  }
+
+  function _roMap(){
+    /* obra_id → [{email,nome,cargo,deps:[]}] */
+    const m=new Map();
+    (S.pessoas||[]).forEach(p=>{
+      Object.entries(p.acc||{}).forEach(([oid,deps])=>{
+        if(!m.has(oid))m.set(oid,[]);
+        m.get(oid).push({email:p.email,nome:p.nome||p.email,cargo:p.cargo||"",deps:Array.isArray(deps)?deps:[]});
+      });
+    });
+    return m;
+  }
+
+  function roRender(){
+    if(!S.cat||!S.cat.obras)return;
+    const qRaw=(document.getElementById("ro-q")||{value:""}).value||"";
+    const q=semAc(qRaw).toLowerCase().trim();
+    const dep=(document.getElementById("ro-dep")||{value:""}).value;
+    const semResp=!!(document.getElementById("ro-sem-resp")||{}).checked;
+    const m=_roMap();
+    const obras=(S.cat.obras||[]).filter(c=>c[8]!==1);
+    let total=obras.length,semN=0;
+    obras.forEach(c=>{if(!(m.get(c[0])||[]).length)semN++});
+    const st=document.getElementById("ro-stats");
+    if(st)st.textContent=`${total} obras ativas · ${semN} sem responsável`;
+    const tbody=document.getElementById("ro-tbody");if(!tbody)return;
+    const linhas=[];
+    obras.forEach(c=>{
+      const oid=c[0],emp=String(c[6]||""),obraCod=String(c[1]||""),desc=c[2]||"",empNome=c[7]||"";
+      const resps=m.get(oid)||[];
+      if(semResp&&resps.length)return;
+      if(dep&&!resps.some(r=>r.deps.includes(dep)))return;
+      if(q){const hay=semAc([emp,empNome,obraCod,desc].join(" ")).toLowerCase();if(!hay.includes(q))return}
+      linhas.push({oid,emp,obraCod,desc,empNome,resps});
+    });
+    const PAGE=120;
+    tbody.innerHTML=linhas.slice(0,PAGE).map(({oid,emp,obraCod,desc,empNome,resps})=>{
+      const chips=resps.length
+        ?resps.map(r=>`<span style="display:inline-flex;align-items:center;gap:4px;margin:1px 3px 1px 0;padding:2px 6px;background:var(--badge-bg,#e8f0fe);border-radius:4px;font-size:11px;white-space:nowrap">${esc(r.nome)}<span class="muted" style="font-size:10px">·${esc(r.deps.join(","))}</span><button class="btn sm" data-ro-rem="${esc(oid)}" data-ro-email="${esc(r.email)}" title="Remover ${esc(r.email)}" style="padding:0 3px;font-size:11px;min-width:0;line-height:14px;border-radius:3px">×</button></span>`).join("")
+        :`<span class="muted" style="font-size:12px">— sem responsável</span>`;
+      return `<tr><td style="white-space:nowrap;font-size:12px">${esc(emp)}<br><span class="muted" style="font-size:10px">${esc(empNome.substring(0,28))}</span></td><td style="white-space:nowrap;font-weight:600">${esc(obraCod)}</td><td style="font-size:12px">${esc(desc)}</td><td style="line-height:1.6">${chips}</td><td style="text-align:right"><button class="btn sm" data-ro-add="${esc(oid)}" data-ro-cod="${esc(obraCod)}" data-ro-desc="${esc(desc.substring(0,40))}" style="font-size:11px;white-space:nowrap">+ Responsável</button></td></tr>`;
+    }).join("");
+    if(linhas.length>PAGE){const tr=document.createElement("tr");tr.innerHTML=`<td colspan="5" class="muted" style="text-align:center;padding:8px;font-size:12px">Mostrando ${PAGE} de ${linhas.length} obras — refine o filtro para ver mais.</td>`;tbody.appendChild(tr)}
+  }
+
+  async function _roSalvar(){
+    const email=(document.getElementById("ro-email")||{value:""}).value.trim().toLowerCase();
+    const dep=(document.getElementById("ro-dep2")||{value:""}).value;
+    const msg=document.getElementById("ro-add-msg");
+    if(!email){if(msg)msg.textContent="Informe o e-mail.";return}
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){if(msg)msg.textContent="E-mail inválido.";return}
+    if(!dep){if(msg)msg.textContent="Selecione o departamento.";return}
+    if(!_roObra){if(msg)msg.textContent="Obra não selecionada.";return}
+    const btn=document.getElementById("ro-salvar");if(btn)btn.disabled=true;
+    if(msg)msg.textContent="Salvando…";
+    try{
+      /* garante S.pessoas carregado */
+      if(!S.pessoas){const pp=await S.db.doc("restrito/pessoas").get();S.pessoas=pp.exists?pp.data().lista||[]:[]}
+      /* copia lista e atualiza o gerente */
+      const lista=(S.pessoas||[]).map(p=>({...p,acc:p.acc?{...p.acc}:{}}));
+      let ger=lista.find(p=>p.email===email);
+      if(!ger){
+        /* tenta pegar nome do datalist */
+        const opts=[...(document.querySelectorAll("#ro-email-list option"))];
+        const found=opts.find(o=>o.value===email);
+        const nome=found?found.text.split(" — ")[0]:"";
+        ger={email,nome:nome||"",cargo:"",semClaude:true,acc:{}};lista.push(ger);
+      }
+      const depsAtuais=Array.isArray(ger.acc[_roObra])?ger.acc[_roObra]:[];
+      if(depsAtuais.includes(dep)){if(msg)msg.textContent="Esse responsável já está nessa obra/departamento.";if(btn)btn.disabled=false;return}
+      ger.acc[_roObra]=[...depsAtuais,dep];
+      ger.ids=Object.keys(ger.acc);
+      /* reconstrói S.dp inteiro a partir da lista atualizada */
+      const novas=[];lista.forEach(p=>Object.entries(p.acc||{}).forEach(([id,ds])=>(ds||[]).forEach(d=>novas.push([p.email,id,"",d]))));
+      await S.db.doc("restrito/pessoas").set({lista,arquivo:"formulário",aba:"3. Gerentes",atualizadoEm:nowISO()});
+      S.pessoas=lista;S.dp=novas;
+      await S.db.doc("restrito/depara").set({linhas:S.dp,atualizadoEm:nowISO(),arquivo:"formulário"});
+      if(window.ORC_HOOKS&&window.ORC_HOOKS.acessos){try{await window.ORC_HOOKS.acessos(lista)}catch(e){console.warn("acessos:",e)}}
+      renderPessoas();
+      document.getElementById("ro-add-box").style.display="none";
+      _roObra=null;roRender();toast("Responsável adicionado.");
+    }catch(err){if(msg)msg.textContent="Erro: "+(err&&err.message||err)}
+    if(btn)btn.disabled=false;
+  }
+
+  async function _roRemover(obraId,email){
+    if(!S.pessoas)return;
+    const ger=(S.pessoas||[]).find(p=>p.email===email);
+    const deps=ger&&ger.acc&&ger.acc[obraId];
+    const info=deps&&deps.length?` (${deps.join(", ")})`:"";
+    if(!confirm(`Remover ${email}${info} da obra ${obraId}?`))return;
+    try{
+      const lista=(S.pessoas||[]).map(p=>{
+        if(p.email!==email)return p;
+        const acc={...(p.acc||{})};delete acc[obraId];
+        return{...p,acc,ids:Object.keys(acc)};
+      });
+      const novas=[];lista.forEach(p=>Object.entries(p.acc||{}).forEach(([id,ds])=>(ds||[]).forEach(d=>novas.push([p.email,id,"",d]))));
+      await S.db.doc("restrito/pessoas").set({lista,arquivo:"formulário",aba:"3. Gerentes",atualizadoEm:nowISO()});
+      S.pessoas=lista;S.dp=novas;
+      await S.db.doc("restrito/depara").set({linhas:S.dp,atualizadoEm:nowISO(),arquivo:"formulário"});
+      if(window.ORC_HOOKS&&window.ORC_HOOKS.acessos){try{await window.ORC_HOOKS.acessos(lista)}catch(e){console.warn("acessos:",e)}}
+      renderPessoas();roRender();toast("Responsável removido.");
+    }catch(err){toast("Erro ao remover: "+(err&&err.message||err))}
+  }
+
+  /* inicializa quando o card é aberto pela primeira vez */
+  function _roInitCard(){
+    if(_roReady)return;_roReady=true;
+    _roFillDeps();
+    ["ro-q"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",roRender)});
+    ["ro-dep","ro-sem-resp"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("change",roRender)});
+    roRender();
+  }
+
+  document.addEventListener("click",async e=>{
+    const b=e.target.closest&&e.target.closest("button");if(!b)return;
+    if(b.dataset.roAdd){
+      const oid=b.dataset.roAdd,cod=b.dataset.roCod||oid,desc=b.dataset.roDesc||"";
+      _roObra=oid;
+      const box=document.getElementById("ro-add-box");
+      const title=document.getElementById("ro-add-title");
+      const emailIn=document.getElementById("ro-email");
+      const msgEl=document.getElementById("ro-add-msg");
+      if(title)title.textContent=`Adicionar responsável → Obra ${cod}${desc?" · "+desc:""}`;
+      if(emailIn)emailIn.value="";
+      const s2=document.getElementById("ro-dep2");if(s2){s2.innerHTML='<option value="">Selecione</option>'+areasDisponiveis().map(a=>`<option>${esc(a)}</option>`).join("")}
+      if(msgEl)msgEl.textContent="";
+      if(box){box.style.display="";box.scrollIntoView({block:"nearest",behavior:"smooth"})}
+      if(emailIn)setTimeout(()=>emailIn.focus(),100);
+      return;
+    }
+    if(b.dataset.roRem){await _roRemover(b.dataset.roRem,b.dataset.roEmail);return}
+    if(b.id==="ro-salvar"){await _roSalvar();return}
+    if(b.id==="ro-cancelar"){const box=document.getElementById("ro-add-box");if(box)box.style.display="none";_roObra=null;return}
+  });
+
+  document.addEventListener("focusin",e=>{
+    if(e.target&&e.target.closest&&e.target.closest("#card-resp-obra")&&S.cat&&!_roReady){
+      /* aguarda S.pessoas */
+      if(S.pessoas===undefined){S.db.doc("restrito/pessoas").get().then(pp=>{S.pessoas=pp.exists?pp.data().lista||[]:[]; _roInitCard();}).catch(()=>{S.pessoas=[];_roInitCard()})}
+      else{_roInitCard()}
+    }
+  });
+  window.roRender=roRender;
+}
 
 /* ===================== carga do ESPELHO e conferência da ESTRUTURA (Controladoria) ===================== */
 const xlsRows=(wb,n)=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:"",raw:true});

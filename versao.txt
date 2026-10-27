@@ -1,1 +1,1 @@
-Versao do site: 06/10/2026 - republicacao apos falha do GitHub Actions
+Versao do site: 27/10/2026 - Responsaveis por obra (Feature 4)
