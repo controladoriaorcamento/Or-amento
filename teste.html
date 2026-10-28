@@ -4076,13 +4076,16 @@ function cadGerStatus(r){const X=_cgsCtx||{GX:cadGOctx(),EM:new Set(cadEmpresas(
   return["enviado","ok",n]}
 const cadLink=r=>/com\s*claude/i.test(String(r.obs||""));
 function cadGerFiltradas(){const q=semAc($("#cadg-q").value||"").trim(),dep=$("#cadg-dep").value,emp=$("#cadg-emp").value,pend=$("#cadg-pend").checked;
-  return S.cad.ger.map((r,i)=>[r,i]).filter(([r])=>(!q||semAc(`${r.nome} ${r.email} ${r.cargo} ${r.regNome}`).includes(q))&&(!dep||r.dep===dep)&&(!emp||String(r.emp)===emp)&&(!pend||cadGerStatus(r)[1]!=="ok"))}
+  return S.cad.ger.map((r,i)=>[r,i]).filter(([r])=>(!q||semAc(`${r.nome} ${r.email} ${r.cargo} ${r.regNome}`).includes(q))&&(!dep||r.dep===dep)&&(!emp||String(r.emp)===emp)&&(!pend||((S.cad._stc&&S.cad._stc.get(r))?S.cad._stc.get(r).v:cadGerStatus(r))[1]!=="ok"))}
 function cadRenderGer(){const emps0=cadEmpresas();_cgsCtx={GX:cadGOctx(),EM:new Set(emps0.map(x=>x[0]))};try{cadRenderGer0(emps0)}finally{_cgsCtx=null}}
 function cadRenderGer0(emps){const C=S.cad;const R=C.ger;const ar=cadAreas();
-  const st=R.map(r=>cadGerStatus(r));const pes=new Set(R.filter(r=>CAD_EMAIL.test(String(r.email||"").trim().toLowerCase())).map(r=>r.email.trim().toLowerCase()));
+  /* desempenho: status e cobertura só são recalculados quando a linha (ou o cadastro) muda */
+  const sgk=r=>[r.dep,r.emp,r.obra,r.email,r.regEmail].map(v=>String(v==null?"":v)).join("\u0001");C._stc=C._stc||new WeakMap();
+  const sigs=R.map(sgk);const allSig=sigs.join("\n")+"|"+(S.cat.obras||[]).length+"|"+C.novas.length+"|"+C.fora.size+"|"+C.cat.size;{const g=(S.cat.obras||[]).length+"|"+C.novas.length+"|"+Object.keys(C.aoNovas||{}).length;if(C._stcG!==g){C._stcG=g;C._stc=new WeakMap()}}
+  const st=R.map((r,i)=>{const c=C._stc.get(r);if(c&&c.sig===sigs[i])return c.v;const v=cadGerStatus(r);C._stc.set(r,{sig:sigs[i],v});return v});const pes=new Set(R.filter(r=>CAD_EMAIL.test(String(r.email||"").trim().toLowerCase())).map(r=>r.email.trim().toLowerCase()));
   const link=new Set(R.filter(r=>cadLink(r)&&r.email).map(r=>r.email.trim().toLowerCase()));const prob=st.filter(s=>s[1]!=="ok").length;
-  const cob=new Set();const GX=_cgsCtx.GX;R.forEach((r,i)=>{if(st[i][0]==="reaberto"||!r.email)return;cadGerObras(r,GX).forEach(id=>cob.add(id+"|"+r.dep))});
-  let falta=0;(S.cat.obras||[]).concat(C.novas).forEach(c=>{const e=cadObraEstado(c);if(e.inat||e.fora)return;const fm=(S.foraApp||{})[c[0]]||{};(GX.AO[c[0]]||[]).forEach(a=>{if(!fm[a]&&!cob.has(c[0]+"|"+a))falta++})});
+  let falta=0;if(C._faltaSig===allSig)falta=C._falta;else{const cob=new Set();const GX=_cgsCtx.GX;R.forEach((r,i)=>{if(st[i][0]==="reaberto"||!r.email)return;cadGerObras(r,GX).forEach(id=>cob.add(id+"|"+r.dep))});
+  (S.cat.obras||[]).concat(C.novas).forEach(c=>{const e=cadObraEstado(c);if(e.inat||e.fora)return;const fm=(S.foraApp||{})[c[0]]||{};(GX.AO[c[0]]||[]).forEach(a=>{if(!fm[a]&&!cob.has(c[0]+"|"+a))falta++})});C._faltaSig=allSig;C._falta=falta}
   $("#cad-kpi").innerHTML=cadKpi("Pessoas com e-mail",cadN(pes.size),`${R.length} linha(s) no cadastro`)+cadKpi("Acessam pelo link",cadN(link.size),`${cadN(pes.size-link.size)} recebem formulário offline`)+cadKpi("Departamentos",cadN(new Set(R.map(r=>r.dep).filter(Boolean)).size),"quem planeja")+cadKpi("Linhas com pendência",`<span style="color:${prob?"var(--warn)":"var(--good)"}">${cadN(prob)}</span>`,"veja a coluna Situação")+cadKpi("Áreas de obra sem gerente",`<span style="color:${falta?"var(--bad)":"var(--good)"}">${cadN(falta)}</span>`,"obras ativas no app");
   const sd=$("#cadg-dep"),se=$("#cadg-emp");const dv=sd.value,ev=se.value;sd.innerHTML=cadOpts(ar.map(a=>[a,a]),dv,"Todos os departamentos");se.innerHTML=cadOpts(emps.map(([e,n])=>[e,`${e} – ${n}`]),ev,"Todas as empresas");
   $("#cadg-origem").textContent=C.gerOrigem||"";{const ns=R.filter(r=>r.sug&&!r.email).length;const bs=$("#cadg-sugs");bs.hidden=!ns;bs.textContent=`Usar as ${ns} sugestões`}
