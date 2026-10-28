@@ -360,6 +360,7 @@ tr.cf-form td{background:var(--accent-soft)}
 .cad-h3{font-size:14px;margin:16px 0 6px}
 #cx-card[hidden]{display:none}
 #pz-sbox[hidden]{display:none}
+#lote-box .tbl-box{max-height:50vh}#lote-box td.num{text-align:right;white-space:nowrap}.lote-ok{color:var(--good)}.lote-x{color:var(--bad)}
 .cp-emp{border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
 .cp-emp-h{display:flex;width:100%;gap:8px;align-items:center;padding:8px 12px;border:0;background:none;cursor:pointer;font:inherit;text-align:left;flex-wrap:wrap}
 .cp-emp-h:hover{background:var(--accent-soft)}
@@ -468,9 +469,11 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
           <button class="btn primary" id="btn-validar" hidden>Validar e travar</button>
           <button class="btn" id="btn-reopen" hidden>Devolver ao gerente</button>
           <span id="send-box"><button class="btn primary" id="btn-send">Enviar para a Controladoria</button></span>
+          <button class="btn" id="btn-lote" hidden title="Projetos, Projetos - Aprovações e Projetos - Urbanístico">Enviar várias obras</button>
         </div>
       </div>
       <div id="sem-obra" class="card sem-obra-msg" hidden></div>
+      <div id="lote-box" class="card" hidden></div>
       <div id="orc-quem" class="orc-quem" hidden></div>
       <div id="guia" class="guia" hidden></div>
       <div id="consol" class="card consol" hidden></div>
@@ -1375,6 +1378,7 @@ function renderStatus(){
   $("#send-box").hidden=!mine||travado(st)||!!(S.cur.info&&S.cur.info.reg&&!S.cur.doc.exists);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
+  {const bl=$("#btn-lote");if(bl)bl.hidden=!lotePodeUsar()||loteObras().length<2}
   renderGuia();
   $("#btn-add").hidden=!S.cur.editable;$("#btn-savever").hidden=!S.cur.editable;
 }
@@ -2401,6 +2405,41 @@ function sendFlow(){
     try{const pl=await gravarOrc(S.cur,payload());await saveVersion(S.cur.uid,S.cur.o,pl,"Envio").catch(()=>{});S.cur.dirty=false;restoreSend();toast("Orçamento enviado à Controladoria");if(S.offline)offlineAfterSend();else await loadMine();}
     catch(err){S.cur.doc.status=prev;S.cur.doc.enviadoEm=null;restoreSend();toast("Não foi possível enviar. Verifique sua conexão e tente de novo.")}};
 }
+/* ---------- envio de várias obras de uma vez: só Projetos, Projetos - Aprovações e Projetos - Urbanístico ----------
+   Usa exatamente o mesmo caminho do envio de uma obra (abre a obra, mesmas conferências, gravarOrc + versão "Envio"). */
+const loteEhProj=a=>/^projetos/.test(semAc(a||"").trim());
+function lotePodeUsar(){return !!(S.perfil&&!S.owner&&!S.offline&&S.me&&!(S.cur&&S.cur.uid!==S.me&&!S.cur.compart))&&Object.values(S.perfil.obras||{}).some(i=>!i.reg&&(i.areas||[]).some(loteEhProj))}
+function loteObras(){const P=(S.perfil&&S.perfil.obras)||{};return (S.selIds||[]).filter(o=>{const i=P[o]||{};return !i.reg&&(i.areas||[]).some(loteEhProj)})}
+function renderLote(res){const box=$("#lote-box");const P=S.perfil.obras||{};const L=loteObras();S.loteSel=S.loteSel||new Set();
+  const lin=L.map(o=>{const d=orcVis(o)||{};const st=d.status||"não iniciado";const tr=travado(st);const tt=d.totais||{};const r=res&&res.get(o);
+    return `<tr><td><input type="checkbox" data-lote="${esc(o)}" ${tr?"disabled":""} ${!tr&&S.loteSel.has(o)?"checked":""} aria-label="Marcar ${esc(o)}"></td><td>${esc(obraLbl(o,P[o]||{}))}</td><td><span class="pill ${esc(d.status||"")}">${esc(st)}</span></td>${YEARS.map(y=>`<td class="num">${f0(+tt[y]||0)}</td>`).join("")}<td>${r?`<span class="${r[0]==="ok"?"lote-ok":"lote-x"}">${esc(r[1])}</span>`:""}</td></tr>`}).join("");
+  const n=L.filter(o=>S.loteSel.has(o)&&!travado((orcVis(o)||{}).status)).length;
+  box.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2 style="margin:0">Enviar várias obras para a Controladoria</h2><button class="btn sm" id="lote-x">Fechar</button></div>
+    <p class="desc">Marque as obras e clique em Enviar. Cada obra passa pelas mesmas conferências do envio normal (subitem “Detalhe” sem nome, justificativa do espelho, sem valor). As que tiverem pendência ficam de fora e o motivo aparece na última coluna. Depois de enviada, só a Controladoria reabre. Obras já enviadas ou validadas não podem ser marcadas.</p>
+    <div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap"><button class="btn sm" id="lote-todas">Marcar todas não enviadas</button><button class="btn sm" id="lote-nenhuma">Desmarcar</button><span style="flex:1"></span><span class="muted" id="lote-msg" style="font-size:12px"></span><button class="btn primary" id="lote-env" ${n?"":"disabled"}>Enviar ${n} obra(s)</button></div>
+    <div class="tbl-box"><table class="list"><thead><tr><th></th><th>Obra</th><th>Situação</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th>Resultado</th></tr></thead><tbody>${lin}</tbody></table></div>`;
+  box.hidden=false}
+async function loteEnviar(){const ids=loteObras().filter(o=>S.loteSel.has(o)&&!travado((orcVis(o)||{}).status));if(!ids.length)return;const msg=$("#lote-msg");const btn=$("#lote-env");btn.disabled=true;const res=new Map();let ok=0;
+  for(let i=0;i<ids.length;i++){const o=ids[i];msg.textContent=`Enviando ${i+1} de ${ids.length}…`;
+    try{await flush();await openObra(S.me,o,false);const c=S.cur;
+      if(!c.editable||travado(c.doc.status)){res.set(o,["x","já enviada ou travada"]);continue}
+      const sn=subsSemNome();if(sn.length){res.set(o,["x",`${sn.length} subitem(ns) “Detalhe” sem nome`]);continue}
+      const fo=faltandoObs();if(fo.length){res.set(o,["x",`${fo.length} justificativa(s) do espelho faltando`]);continue}
+      const t=docTotals(c.doc,c.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));if(!YEARS.some(y=>+t[y]))
+        {res.set(o,["x","sem valor preenchido"]);continue}
+      const prev=c.doc.status;c.doc.status="enviado";c.doc.enviadoEm=nowISO();c.doc.validadoEm=null;c.doc.validadoPor=null;
+      try{const pl=await gravarOrc(c,payload());await saveVersion(c.uid,c.o,pl,"Envio (várias obras)").catch(()=>{});c.dirty=false;ok++;S.loteSel.delete(o);res.set(o,["ok","enviada"])}
+      catch(err){c.doc.status=prev;c.doc.enviadoEm=null;res.set(o,["x","não foi possível gravar; tente de novo"])}}
+    catch(e){res.set(o,["x","não abriu: "+(e&&e.message||e)])}}
+  try{await loadMine()}catch(e){}
+  renderLote(res);$("#lote-msg").textContent=`${ok} de ${ids.length} obra(s) enviada(s).`;toast(`${ok} obra(s) enviada(s) à Controladoria${ok<ids.length?` · ${ids.length-ok} ficaram de fora (veja o motivo)`:""}`)}
+document.addEventListener("click",e=>{const t=e.target;if(t.id==="btn-lote"){S.loteSel=new Set();renderLote();$("#lote-box").scrollIntoView({block:"start"});return}
+  if(!t.closest||!t.closest("#lote-box"))return;
+  if(t.id==="lote-x"){$("#lote-box").hidden=true;return}
+  if(t.id==="lote-todas"){loteObras().forEach(o=>{if(!travado((orcVis(o)||{}).status))S.loteSel.add(o)});renderLote();return}
+  if(t.id==="lote-nenhuma"){S.loteSel.clear();renderLote();return}
+  if(t.id==="lote-env"){if(!t.dataset.arm){t.dataset.arm=1;t.textContent=`Confirmar envio de ${loteObras().filter(o=>S.loteSel.has(o)).length} obra(s)`;setTimeout(()=>{if(t.isConnected&&t.dataset.arm){delete t.dataset.arm;renderLote()}},6000);return}loteEnviar();return}
+  if(t.dataset&&t.dataset.lote){t.checked?S.loteSel.add(t.dataset.lote):S.loteSel.delete(t.dataset.lote);const n=loteObras().filter(o=>S.loteSel.has(o)).length;const b=$("#lote-env");if(b){b.disabled=!n;delete b.dataset.arm;b.textContent=`Enviar ${n} obra(s)`}}});
 function restoreSend(){$("#send-box").innerHTML=`<button class="btn primary" id="btn-send">Enviar para a Controladoria</button>`;renderStatus()}
 
 function travado(st){return st==="enviado"||st==="validado"}
