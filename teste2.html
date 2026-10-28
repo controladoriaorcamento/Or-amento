@@ -871,7 +871,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
         <div class="cad-acts"><button class="btn primary" id="cadg-add">+ Nova linha</button><label class="btn" for="cadg-file">Importar aba 3 (Excel)</label><input type="file" id="cadg-file" accept=".xlsx,.xls" hidden><button class="btn" id="cadg-sugs" hidden>Usar as sugestões</button><button class="btn" id="cadg-xlsx">Baixar em Excel</button></div></div>
       <p class="muted" id="cadg-origem" style="font-size:12px;margin:6px 0 0"></p>
       <p class="muted" style="font-size:12px;margin:4px 0 6px">Uma linha por gerente × departamento × empresa/obra, como na aba 3. “Todas” vale para todas as obras da empresa que têm insumo daquele departamento. <span id="cadg-n"></span></p>
-      <div class="tbl-box cad-box"><table class="list" id="cadg-tbl"></table></div>
+      <div id="cadg-grupos" class="cp-list"></div><table class="list" id="cadg-tbl" hidden></table>
     </div>
 
     <div class="cad-save" id="cad-save" hidden><b id="cad-save-n"></b><span class="muted" id="cad-save-msg"></span><span style="flex:1"></span><button class="btn" id="cad-desc">Descartar</button><button class="btn primary" id="cad-salvar">Salvar</button></div>
@@ -4023,21 +4023,33 @@ function cadRenderGer0(emps){const C=S.cad;const R=C.ger;const ar=cadAreas();
   $("#cad-kpi").innerHTML=cadKpi("Pessoas com e-mail",cadN(pes.size),`${R.length} linha(s) no cadastro`)+cadKpi("Acessam pelo link",cadN(link.size),`${cadN(pes.size-link.size)} recebem formulário offline`)+cadKpi("Departamentos",cadN(new Set(R.map(r=>r.dep).filter(Boolean)).size),"quem planeja")+cadKpi("Linhas com pendência",`<span style="color:${prob?"var(--warn)":"var(--good)"}">${cadN(prob)}</span>`,"veja a coluna Situação")+cadKpi("Áreas de obra sem gerente",`<span style="color:${falta?"var(--bad)":"var(--good)"}">${cadN(falta)}</span>`,"obras ativas no app");
   const sd=$("#cadg-dep"),se=$("#cadg-emp");const dv=sd.value,ev=se.value;sd.innerHTML=cadOpts(ar.map(a=>[a,a]),dv,"Todos os departamentos");se.innerHTML=cadOpts(emps.map(([e,n])=>[e,`${e} – ${n}`]),ev,"Todas as empresas");
   $("#cadg-origem").textContent=C.gerOrigem||"";{const ns=R.filter(r=>r.sug&&!r.email).length;const bs=$("#cadg-sugs");bs.hidden=!ns;bs.textContent=`Usar as ${ns} sugestões`}
-  const F=cadGerFiltradas();const MAX=150;$("#cadg-n").textContent=`${F.length} de ${R.length} linha(s)${F.length>MAX?` · mostrando ${MAX}, use os filtros`:""}`;
+  const F=cadGerFiltradas();
   const empOpts=sel=>`<option value="Todas"${cadTodas(sel)?" selected":""}>Todas</option>`+(sel&&!cadTodas(sel)&&!emps.some(x=>x[0]===String(sel))?`<option selected>${esc(sel)}</option>`:"")+cadOpts(emps.map(([e,n])=>[e,`${e} – ${n}`]),sel);
   const obraOpts=(e,sel)=>{const L=cadTodas(e)?[]:(S.cat.obras||[]).concat(C.novas).filter(c=>String(c[6])===String(e)).sort((a,b)=>cadNum(a[1],b[1]));
     return `<option value="Todas"${cadTodas(sel)?" selected":""}>Todas</option>`+(sel&&!cadTodas(sel)&&!L.some(c=>String(c[1])===String(sel))?`<option selected>${esc(sel)}</option>`:"")+cadOpts(L.map(c=>[c[1],`${c[1]} – ${c[2]||""}`]),sel)};
   const inp=(i,k,v,ph,w)=>`<input class="cad-in" data-cg="${i}" data-k="${k}" value="${esc(v||"")}" placeholder="${ph||""}" style="width:${w||140}px" aria-label="${ph||k}">`;
-  $("#cadg-tbl").innerHTML=`<thead><tr><th>Departamento (quem planeja)</th><th>Empresa</th><th>Obra</th><th>Nome do gerente</th><th>E-mail</th><th>Cargo</th><th title="Marcado = acessa pelo link do aplicativo (“com Claude”). Desmarcado = recebe o formulário offline">Usa o app</th><th>Regional</th><th>Gerente Regional</th><th>E-mail do Regional</th><th>Situação</th><th></th></tr></thead><tbody>${F.slice(0,MAX).map(([r,i])=>{const s=st[i];
+  const TH=`<thead><tr><th>Departamento (quem planeja)</th><th>Empresa</th><th>Obra</th><th>Nome do gerente</th><th>E-mail</th><th>Cargo</th><th title="Marcado = acessa pelo link do aplicativo (“com Claude”). Desmarcado = recebe o formulário offline">Usa o app</th><th>Regional</th><th>Gerente Regional</th><th>E-mail do Regional</th><th>Situação</th><th></th></tr></thead>`;
+  const row=([r,i])=>{const s=st[i];
     return `<tr data-row="${i}"><td><select class="cad-in" data-cg="${i}" data-k="dep" aria-label="Departamento">${r.dep&&!ar.includes(r.dep)?`<option>${esc(r.dep)}</option>`:""}${cadOpts(ar.map(a=>[a,a]),r.dep,"— escolha —")}</select></td>
     <td><input class="cad-in" data-cg="${i}" data-k="emp" value="${esc(r.emp||"")}" list="cadg-dl-emp" style="width:90px" aria-label="Empresa" title="${esc((emps.find(x=>x[0]===String(r.emp))||[,""])[1])}"></td><td><input class="cad-in" data-cg="${i}" data-k="obra" value="${esc(r.obra||"")}" list="cadg-dl-o-${esc(String(r.emp||""))}" style="width:90px" aria-label="Obra" title="${esc(cadTodas(r.obra)?"todas as obras da empresa":((cadObraDe(String(r.emp)+"-"+String(r.obra))||[])[2]||""))}"></td>
     <td>${inp(i,"nome",r.nome,"Nome",150)}</td><td>${inp(i,"email",r.email,r.sug&&!r.email?"sugestão: "+r.sug.email:"nome@empresa.com.br",200)}</td><td>${inp(i,"cargo",r.cargo,"Cargo",120)}</td>
     <td style="text-align:center"><input type="checkbox" data-cg="${i}" data-k="link"${cadLink(r)?" checked":""} aria-label="Usa o app pelo link"></td>
     <td>${inp(i,"reg",r.reg,"Regional",110)}</td><td>${inp(i,"regNome",r.regNome,"Nome",130)}</td><td>${inp(i,"regEmail",r.regEmail,"e-mail",170)}</td>
     <td class="cad-st"><span class="pill ${s[0]}">${esc(s[1])}</span>${s[2]?` <span class="muted" style="font-size:11px">${s[2]} obra(s)</span>`:""}${r.sug&&!r.email?`<div class="cad-sug">Sugestão: ${esc(r.sug.nome||r.sug.email)} <button class="btn sm" data-cg-sug="${i}">Usar</button></div>`:""}</td>
-    <td style="white-space:nowrap"><button class="btn sm" data-cg-dup="${i}" title="Duplicar linha" aria-label="Duplicar linha">⧉</button> <button class="btn sm danger" data-cg-del="${i}" title="Excluir linha" aria-label="Excluir linha">✕</button></td></tr>`}).join("")}</tbody>`;
-  {const vis=[...new Set(F.slice(0,MAX).map(([r])=>String(r.emp||"")).filter(e=>e&&!cadTodas(e)))];const byE=new Map();(S.cat.obras||[]).concat(C.novas).forEach(c=>{const k=String(c[6]);if(!vis.includes(k))return;(byE.get(k)||byE.set(k,[]).get(k)).push(c)});
-    let dl=$("#cadg-dls");if(!dl){dl=document.createElement("div");dl.id="cadg-dls";dl.hidden=true;$("#cadg-tbl").after(dl)}
+    <td style="white-space:nowrap"><button class="btn sm" data-cg-dup="${i}" title="Duplicar linha" aria-label="Duplicar linha">⧉</button> <button class="btn sm danger" data-cg-del="${i}" title="Excluir linha" aria-label="Excluir linha">✕</button></td></tr>`};
+  /* 28/10: agrupado por empresa, como em Pendências */
+  const GR=new Map();F.forEach(x=>{const e=String(x[0].emp||"");if(!GR.has(e))GR.set(e,[]);GR.get(e).push(x)});
+  C.cgEmpAb=C.cgEmpAb||new Set();const auto=GR.size<=3;const enome=new Map(emps);
+  const ord=[...GR.keys()].sort((a,b)=>(a?1:0)-(b?1:0)||(cadTodas(b)?1:0)-(cadTodas(a)?1:0)||cadNum(a,b));const SHOWN=[];
+  $("#cadg-n").textContent=`${cadN(F.length)} de ${cadN(R.length)} linha(s) em ${cadN(GR.size)} empresa(s)`;
+  $("#cadg-grupos").innerHTML=F.length?ord.map(e=>{const L=GR.get(e);const ab=auto||!e||C.cgEmpAb.has(e);if(ab)SHOWN.push(...L);
+    const pend=L.filter(([r,i])=>st[i][1]!=="ok").length;const porDep=new Map();L.forEach(([r])=>{if(!r.dep)return;const n=r.nome||r.email;if(!n)return;const S0=porDep.get(r.dep)||new Set();S0.add(n);porDep.set(r.dep,S0)});
+    const resumo=[...porDep.entries()].sort((a,b)=>a[0].localeCompare(b[0],"pt-BR")).map(([d,S0])=>`<span class="cad-chip" title="${esc([...S0].join(", "))}">${esc(d)}: ${esc([...S0].slice(0,2).join(", "))}${S0.size>2?` +${S0.size-2}`:""}</span>`).join("");
+    const tit=!e?"Sem empresa (linhas novas)":cadTodas(e)?"Todas as empresas":`<span class="cad-cod">${esc(e)}</span> <b>${esc(enome.get(e)||"")}</b>`;
+    return `<section class="cp-emp"><button type="button" class="cp-emp-h" data-cg-emp="${esc(e)}" aria-expanded="${ab}"><b>${ab?"▾":"▸"}</b>${tit}<span class="muted">· ${L.length} linha(s)${pend?` · <span style="color:var(--warn)">${pend} com pendência</span>`:""}</span></button>
+      <div style="padding:0 12px 6px;display:flex;flex-wrap:wrap;gap:2px">${resumo}</div>${ab?`<div class="tbl-box"><table class="list">${TH}<tbody>${L.map(row).join("")}</tbody></table></div>`:""}</section>`}).join(""):`<p class="muted">Nenhuma linha com esses filtros.</p>`;
+  {const vis=[...new Set(SHOWN.map(([r])=>String(r.emp||"")).filter(e=>e&&!cadTodas(e)))];const byE=new Map();(S.cat.obras||[]).concat(C.novas).forEach(c=>{const k=String(c[6]);if(!vis.includes(k))return;(byE.get(k)||byE.set(k,[]).get(k)).push(c)});
+    let dl=$("#cadg-dls");if(!dl){dl=document.createElement("div");dl.id="cadg-dls";dl.hidden=true;$("#cadg-grupos").after(dl)}
     dl.innerHTML=`<datalist id="cadg-dl-emp"><option value="Todas">${emps.map(([e,n])=>`<option value="${esc(e)}">${esc(n)}</option>`).join("")}</datalist>`+vis.map(e=>`<datalist id="cadg-dl-o-${esc(e)}"><option value="Todas">${(byE.get(e)||[]).sort((a,b)=>cadNum(a[1],b[1])).map(c=>`<option value="${esc(c[1])}">${esc(c[2]||"")}</option>`).join("")}</datalist>`).join("")}
   cadBarra()}
 function cadGerAoa(){return [CAD_H,...S.cad.ger.map(r=>[r.dep||"",r.emp||"",r.obra||"",r.nome||"",r.email||"",r.cargo||"",r.obs||"",r.reg||"",r.regNome||"",r.regEmail||""])]}
@@ -4421,6 +4433,7 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest||!t.c
     if(lote==="limpar")C.sel.clear();cadRenderObras();return}
   if(t.id==="cn-add"){cadNovaObra();return}
   if(t.id==="cq-trocar"){cadTrocar();return}
+  {const bh=t.closest&&t.closest("[data-cg-emp]");if(bh){const e2=bh.dataset.cgEmp;C.cgEmpAb=C.cgEmpAb||new Set();C.cgEmpAb.has(e2)?C.cgEmpAb.delete(e2):C.cgEmpAb.add(e2);cadRenderGer();return}}
   if(t.id==="cadg-add"){C.ger.unshift({dep:$("#cadg-dep").value||"",emp:$("#cadg-emp").value||"",obra:"Todas",nome:"",email:"",cargo:"",obs:"com Claude",reg:"",regNome:"",regEmail:""});C.gerDirty=true;$("#cadg-q").value="";$("#cadg-pend").checked=false;cadRenderGer();const f=document.querySelector('#cadg-tbl [data-k="nome"]');if(f)f.focus();return}
   b=t.closest("[data-cg-sug]");if(b){const r=C.ger[+b.dataset.cgSug];if(r&&r.sug){Object.assign(r,r.sug);delete r.sug;C.gerDirty=true;cadRenderGer()}return}
   if(t.id==="cadg-sugs"){C.ger.forEach(r=>{if(r.sug&&!r.email){Object.assign(r,r.sug);delete r.sug}});C.gerDirty=true;cadRenderGer();return}
