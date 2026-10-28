@@ -1066,7 +1066,7 @@ function docTotals(doc,lines){const t={};YEARS.forEach(y=>t[y]=Math.round(sum(li
 /* ---------- inicialização ---------- */
 async function boot(){
   const [db,user,dl]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("downloads")]);
-  S.db=db;S.user=user;S.dl=dl;
+  S.db=cadMarcarDb(db);S.user=user;S.dl=dl;
   $("#v-loading").hidden=true;
   if(!db||!user){$("#v-nodb").hidden=false;return}
   S.me=await user.id();
@@ -2404,6 +2404,9 @@ function sendFlow(){
 function restoreSend(){$("#send-box").innerHTML=`<button class="btn primary" id="btn-send">Enviar para a Controladoria</button>`;renderStatus()}
 
 function travado(st){return st==="enviado"||st==="validado"}
+/* 28/10: marca da versão do site nas gravações de cadastro. O banco recusa gravação de página antiga (aberta antes da correção). */
+const CLI_VER="2026-10-28c";const CLI_GATE=/^(restrito\/(catalogo|cad_gerentes|pessoas|depara|areasobra|cad_resolvidas)|regras\/(depara|fora_app|regional_obra|insumos_fora))$/;
+function cadMarcarDb(db){if(!db||!db.doc)return db;const o=Object.create(db);o.doc=p=>{const d=db.doc(p);if(!CLI_GATE.test(p))return d;return {...d,set:v=>d.set({...v,_cli:CLI_VER}),update:v=>d.update({...v,_cli:CLI_VER})}};return o}
 async function quemSou(){try{const m=await S.user.me();return (m&&m.name)||"Controladoria"}catch(e){return "Controladoria"}}
 $("#btn-validar").addEventListener("click",async()=>{const b=$("#btn-validar");
   if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar validação (trava a obra)";setTimeout(()=>{delete b.dataset.arm;b.textContent="Validar e travar"},6000);return}
@@ -4080,7 +4083,7 @@ async function cadImportar(files){const C=S.cad;const out=$("#cad-imp-res");out.
 const cadEstIdx=()=>(S.cad.estr&&S.cad.estr.idx)||S.estIdx||null;
 async function cadEstObra(e,o){const C=S.cad;if(C.estr)return (C.estr.E[e]||{})[o]||[];const d=await estEmpresa(e);return (d&&d.o&&d.o[o])||[]}
 /* lista de obras novas (calculada da estrutura, então não some se você fechar a página antes de confirmar) */
-async function cadPendPrep(){const C=S.cad;if(C.pend)return;try{await cadRegTab()}catch(e){}if(!C.estr)await carregarEstIdx();const IX=cadEstIdx();C.pend=new Map();if(!IX||!IX.eo)return;
+async function cadPendPrep(){const C=S.cad;if(C.pend)return;try{C.eu=String(await quemSou()).toLowerCase()}catch(e){C.eu=""}try{await cadRegTab()}catch(e){}if(!C.estr)await carregarEstIdx();const IX=cadEstIdx();C.pend=new Map();if(!IX||!IX.eo)return;
   const ids=Object.keys(IX.eo).filter(id=>!S.catMap.has(id)&&!(C.sit&&C.sit.get(id)===1));if(!ids.length)return;
   /* desempenho: busca a estrutura das empresas em paralelo (8 por vez) em vez de uma por uma */
   if(!C.estr){const emps=[...new Set(ids.map(id=>id.split("-")[0]))];for(let i=0;i<emps.length;i+=8)await Promise.all(emps.slice(i,i+8).map(e=>estEmpresa(e)))}
@@ -4098,7 +4101,7 @@ async function cadPendPrep(){const C=S.cad;if(C.pend)return;try{await cadRegTab(
     else if(porGrupo[grupo]){base=top(porGrupo[grupo]);motivo=`${porGrupo[grupo][base]} obra(s) do grupo ${grupo} usam esta base`}
     else{let b="",best=0;tipos.forEach(tp=>{let n=0;si.forEach(k=>{if(TS[tp].has(k))n++});const sc=n/Math.max(1,TS[tp].size+si.size-n);if(sc>best){best=sc;b=tp}});if(best>=.3){base=b;motivo=`estrutura parecida com a base`}}
     const lin=new Map();at.forEach(x=>{const k=`${x[0]}|${x[3]}|${x[4]}`;if(!lin.has(k))lin.set(k,{key:k,P:x[0],S:x[3],I:x[4]})});
-    const p={id,e,o,en,on,reg,grupo,linhas,si,lin:[...lin.values()],base,semBase,motivo,st:"",resp:{},extra:{},escolha:{}};{const lg=((C.resolv&&C.resolv.itens)||[]).filter(x=>x.id===id).pop();if(lg){p.jaFeita=lg;if(lg.base==="ERP"){p.base="";p.semBase=true}else if(lg.base&&(T.tipos||{})[lg.base]){p.base=lg.base;p.semBase=false}if(lg.reg)p.reg=lg.reg;p.motivo=`já tinha sido confirmada por ${lg.por} em ${fmtDate(lg.em)}, mas não ficou gravada (salvamento ao mesmo tempo). Confira e confirme de novo`}};cadPendCalc(p);C.pend.set(id,p)}}
+    const p={id,e,o,en,on,reg,grupo,linhas,si,lin:[...lin.values()],base,semBase,motivo,st:"",resp:{},extra:{},escolha:{}};{const LL=((C.resolv&&C.resolv.itens)||[]).filter(x=>x.id===id);const lg=LL.filter(x=>String(x.por||"").toLowerCase()===C.eu).pop()||LL.pop();if(lg){p.jaFeita=lg;if(lg.base==="ERP"){p.base="";p.semBase=true}else if(lg.base&&(T.tipos||{})[lg.base]){p.base=lg.base;p.semBase=false}if(lg.reg)p.reg=lg.reg;p.motivo=`já tinha sido confirmada por ${lg.por} em ${fmtDate(lg.em)}, mas não ficou gravada (salvamento ao mesmo tempo). Confira e confirme de novo`}};cadPendCalc(p);if(p.jaFeita)cadReaplicar(p);C.pend.set(id,p)}}
 function cadParecido(p){const {TS}=S.cad.pendCtx;if(!p.base||!TS[p.base]||!p.si.size)return null;let n=0;p.si.forEach(k=>{if(TS[p.base].has(k))n++});return Math.round(100*n/p.si.size)}
 /* áreas e responsáveis sugeridos para a base escolhida */
 function cadPendCalc(p){const {TL,TS,cnt,cntS,top}=S.cad.pendCtx;const A={};let fora=0;
@@ -4138,6 +4141,12 @@ function cadSugRegional2(p){const R=S.cad.regTab;if(!R)return {nome:"",email:"",
     ||(p.reg?conta(cats.filter(c=>c[1]===p.o&&cadRegDaEmp(c[6])===p.reg).map(c=>c[0]),(c,n)=>`Regional desta obra em ${c} de ${n} empresa(s) da ${p.reg}`):null)||{nome:"",email:"",fonte:""}}
 async function cadRegTab(){const C=S.cad;if(C.regTab)return;const sb=window.ORC_SB;if(!sb||!sb.from)return;const M=new Map();
   for(let f=0;;f+=1000){const {data,error}=await sb.from("regionais").select("email,obra_id,nome").order("obra_id").order("email").range(f,f+999);if(error)return;data.forEach(r=>{const L=M.get(r.obra_id)||[];L.push({email:String(r.email).toLowerCase(),nome:r.nome||""});M.set(r.obra_id,L)});if(data.length<1000)break}C.regTab=M}
+/* obra que já tinha sido decidida e se perdeu: volta com a mesma decisão (responsáveis pelo nome registrado) e já marcada; é só Salvar */
+function cadReaplicar(p){const lg=p.jaFeita;const C=S.cad;const porNome=new Map();(S.pessoas||[]).forEach(x=>{if(x.nome)porNome.set(semAc(x.nome).trim(),String(x.email).toLowerCase())});
+  if(C.regTab)C.regTab.forEach(L=>L.forEach(x=>{if(x.nome&&!porNome.has(semAc(x.nome).trim()))porNome.set(semAc(x.nome).trim(),x.email)}));
+  const acha=v=>{v=String(v||"").trim();if(!v)return null;if(cadValido(v))return v.toLowerCase();return porNome.get(semAc(v))||null};
+  [[CAD_GA,lg.ga],[CAD_CTRL,lg.ctrl],["_reg",lg.rg]].forEach(([d,v])=>{const em=acha(v);if(em)p.resp[d]={nome:cadValido(v)?(p.resp[d]&&p.resp[d].nome)||"":v,email:em,fonte:"decisão registrada em "+fmtDate(lg.em),mexeu:true}});
+  if(lg.st==="ok"||lg.st==="pausa"){if(!cadPendAplicar(p,lg.st,true))p.motivo+=" · precisa de ajuste antes de confirmar"}}
 function cadPendBloqueio(p){const L=[];if(!p.base&&!p.semBase)L.push("escolher a base modelo");if(!p.reg)L.push("informar a Regional");if(p.semArea)L.push(`dizer quem planeja ${p.semArea} insumo(s) fora do modelo`);return L}
 function cadPendAplicar(p,modo,quieto){const C=S.cad;cadPendDesfazer(p);const bl=cadPendBloqueio(p);if(modo==="ok"&&bl.length){if(!quieto)toast("Antes de confirmar: "+bl.join(", ")+".");return false}
   const c=[p.id,p.o,p.on,p.base,0,0,p.e,p.en,0];C.novas.push(c);C.aoNovas[p.id]=Object.keys(p.areas).sort();if(p.reg)C.reg.set(p.id,p.reg);
