@@ -3715,6 +3715,11 @@ function montarAcessos(rows){
   const lista=[...pess.values()].map(p=>{const ids=Object.keys(p.acc);const deps=[...new Set(Object.values(p.acc).flat())];return {...p,ids,area:deps.length===1?deps[0]:deps.join(" / ")}}).filter(p=>p.ids.length);
   return {lista,semEmail,regs:[...regs.values()],regObra,temReg};
 }
+/* 28/10 HOTFIX: pelo app os Regionais são MESCLADOS (só as obras com Regional nas linhas mudam); a planilha continua substituindo tudo */
+async function regionaisMesclados(novos){const sb=window.ORC_SB;if(!sb||!sb.from)throw new Error("não consegui ler os Regionais atuais");const atual=[];
+  for(let f=0;;f+=1000){const {data,error}=await sb.from("regionais").select("email,obra_id,regional,nome").order("obra_id").order("email").range(f,f+999);if(error)throw new Error(error.message);atual.push(...data);if(data.length<1000)break}
+  const ob=new Set(novos.map(r=>r.obra_id));const out=atual.filter(r=>!ob.has(r.obra_id)).concat(novos);
+  if(atual.length&&out.length<atual.length*0.8)throw new Error(`a lista de Regionais cairia de ${atual.length} para ${out.length}; nada foi alterado`);return out}
 async function carregarAcessos(rows,arquivo){
   if(!S.areasObra){try{const d=await S.db.doc("restrito/areasobra").get();S.areasObra=d.exists?d.data().m:null}catch(e){S.areasObra=null}}
   const {lista,semEmail,regs,regObra,temReg}=montarAcessos(rows);
@@ -3725,7 +3730,7 @@ async function carregarAcessos(rows,arquivo){
   if(window.ORC_HOOKS&&window.ORC_HOOKS.acessos){try{await window.ORC_HOOKS.acessos(lista)}catch(e){toast("Acessos salvos no painel, mas a tabela de acessos do servidor não foi atualizada: "+(e.message||e))}}
   /* Gerentes Regionais (colunas do Regional na aba 3). Sem nenhum e-mail de Regional na planilha, a lista atual é mantida. */
   let msgReg="";
-  if(temReg&&regs.length&&window.ORC_HOOKS&&window.ORC_HOOKS.regionais){try{await window.ORC_HOOKS.regionais(regs);msgReg=` · ${new Set(regs.map(x=>x.email)).size} Gerente(s) Regional(is) em ${new Set(regs.map(x=>x.obra_id)).size} obra(s)`}catch(e){msgReg=" · ATENÇÃO: Regionais não atualizados ("+(e.message||e)+")"}}
+  if(temReg&&regs.length&&window.ORC_HOOKS&&window.ORC_HOOKS.regionais){try{await window.ORC_HOOKS.regionais(arquivo==="Cadastros no app"?await regionaisMesclados(regs):regs);msgReg=` · ${new Set(regs.map(x=>x.email)).size} Gerente(s) Regional(is) em ${new Set(regs.map(x=>x.obra_id)).size} obra(s)`}catch(e){msgReg=" · ATENÇÃO: Regionais não atualizados ("+(e.message||e)+")"}}
   else if(temReg)msgReg=" · nenhum e-mail de Regional na planilha (lista de Regionais mantida)";
   if(Object.keys(regObra).length){try{const rd=await S.db.doc("regras/regional_obra").get();const m={...((rd.exists&&rd.data().m)||{}),...regObra};await S.db.doc("regras/regional_obra").set({m,arquivo,atualizadoEm:nowISO()});S.regObra=m}catch(e){}}
   renderPessoas();await loadDepara();
