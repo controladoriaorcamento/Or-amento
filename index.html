@@ -360,6 +360,17 @@ tr.cf-form td{background:var(--accent-soft)}
 .cad-h3{font-size:14px;margin:16px 0 6px}
 #cx-card[hidden]{display:none}
 #pz-sbox[hidden]{display:none}
+.cp-emp{border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
+.cp-emp-h{display:flex;width:100%;gap:8px;align-items:center;padding:8px 12px;border:0;background:none;cursor:pointer;font:inherit;text-align:left;flex-wrap:wrap}
+.cp-emp-h:hover{background:var(--accent-soft)}
+.cp-emp .tbl-box{margin:0 8px 8px}
+table.cp-tab td{padding:4px 6px;vertical-align:middle}table.cp-tab td.cp-acts{white-space:nowrap;text-align:right}
+tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!important;background:var(--bg)}
+.cp-esc{border:1px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:13px;display:grid;gap:6px}
+.cp-esc-l{display:flex;flex-wrap:wrap;gap:4px 14px;max-height:160px;overflow:auto}.cp-esc-l label{display:flex;gap:4px;align-items:center;white-space:nowrap}
+.cp-resbox{margin-top:12px}.cp-resbox summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.cad-col>h2.cad-col-h{cursor:pointer;user-select:none}.cad-col>h2.cad-col-h::before{content:"▾ ";color:var(--muted)}
+.cad-col.fechado>h2.cad-col-h::before{content:"▸ "}.cad-col.fechado>*:not(h2){display:none!important}
 </style>
 
 <header class="top"><div class="top-in">
@@ -793,15 +804,16 @@ tr.cf-form td{background:var(--accent-soft)}
         <p class="desc">Tudo aqui foi replicado do modelo padrão e espera a sua confirmação. Confira a base, quem planeja e os responsáveis, ajuste se precisar e clique em <b>Confirmar</b>. “Não planejar agora” guarda a obra como Pausada e ela para de aparecer aqui.</p>
         <div class="cad-fbar"><div><label class="lbl" for="cp-q">Buscar</label><input type="search" id="cp-q" placeholder="Empresa ou obra"></div>
           <div><label class="lbl" for="cp-reg">Regional</label><select id="cp-reg"></select></div><div><label class="lbl" for="cp-grupo">Grupo da obra</label><select id="cp-grupo"></select></div>
-          <div><label class="lbl" for="cp-st">Mostrar</label><select id="cp-st"><option value="aguardando">Aguardando confirmação</option><option value="feitas">Já decididas (falta Salvar)</option><option value="todas">Todas</option></select></div>
+          <div><label class="lbl" for="cp-st">Mostrar</label><select id="cp-st"><option value="todas">Todas as pendentes</option><option value="aguardando">Aguardando confirmação</option><option value="feitas">Já decididas (falta Salvar)</option></select></div>
           <span class="muted" id="cp-n" style="align-self:end;font-size:12px"></span></div>
         <div class="cad-selbar"><b>Para as obras listadas:</b><button class="btn sm" data-cp-lote="ok">Confirmar com as sugestões</button><button class="btn sm" data-cp-lote="pausa">Não planejar agora</button><span class="muted" style="font-size:12px">Use os filtros antes (ex.: grupo GERENCIAIS/INTERNAS → não planejar).</span></div>
-        <div id="cp-list" class="cp-list"></div></div>
-      <div class="card" id="cx-card" hidden><h2>Insumos que não estão em nenhum modelo</h2>
+        <div id="cp-list" class="cp-list"></div>
+        <details class="cp-resbox" id="cp-resbox"><summary>Resolvidas hoje (<span id="cp-res-n">0</span>)</summary><p class="muted" style="font-size:12px;margin:6px 0">Obras já salvas: saem da lista acima e ficam registradas aqui com o que foi definido. Para mudar algo, use “Ver em Empresas e obras”.</p><div class="tbl-box cad-box" style="max-height:40vh"><table class="list" id="cp-res"></table></div></details></div>
+      <div class="card cad-col fechado" id="cx-card" hidden><h2 class="cad-col-h">Insumos que não estão em nenhum modelo</h2>
         <p class="desc">Esses insumos aparecem nas obras novas, mas não estão em nenhuma base modelo e nunca foram planejados em outra obra. Decida aqui uma vez e vale para todas as obras novas que têm o insumo. Se escolher “Ninguém planeja”, ele fica fora do app.</p>
         <div class="cad-fbar"><div><label class="lbl" for="cx-q">Buscar</label><input id="cx-q" type="search" placeholder="código ou descrição"></div><label style="align-self:end;font-size:13px"><input type="checkbox" id="cx-falta" checked> só sem decisão</label><span class="muted" id="cx-n" style="align-self:end;font-size:12px"></span><span style="flex:1"></span><button class="btn" id="cx-ning" style="align-self:end">Os listados sem decisão: ninguém planeja</button></div>
         <div class="tbl-box cad-box" style="max-height:45vh"><table class="list" id="cx-tbl"></table></div></div>
-      <div class="card"><h2>Padronizar nomes e Regionais</h2>
+      <div class="card cad-col fechado"><h2 class="cad-col-h">Padronizar nomes e Regionais</h2>
         <p class="desc">Compara o nome da empresa, o nome da obra e a Regional do app com a Base da Estrutura (sem espaços repetidos). Os filtros do app usam esses nomes, então vale deixar tudo igual ao ERP.</p>
         <div class="cad-fbar"><div><label class="lbl" for="pz-campo">Mostrar</label><select id="pz-campo"></select></div><span class="muted" id="pz-n" style="align-self:end;font-size:12px"></span><span style="flex:1"></span><button class="btn" id="pz-todos" style="align-self:end">Usar a da estrutura em todos os listados</button></div>
         <p id="pz-var" class="cad-res"></p>
@@ -812,7 +824,7 @@ tr.cf-form td{background:var(--accent-soft)}
         <h3 class="cad-h3">Gerentes e e-mails</h3>
         <div class="cad-fbar"><span class="muted" id="pz-pn" style="align-self:center;font-size:12px"></span><span style="flex:1"></span><button class="btn" id="pz-ptodos">Corrigir espaços, maiúsculas e nomes de todos</button></div>
         <div class="tbl-box cad-box" style="max-height:40vh"><table class="list" id="pz-ptbl"></table></div></div>
-      <div class="card"><h2>Falta preencher nas obras do app</h2>
+      <div class="card cad-col fechado"><h2 class="cad-col-h">Falta preencher nas obras do app</h2>
         <p class="desc">Obras ativas que ainda não têm Gerente Administrativo, responsável pela Controladoria, Gerente Regional ou gerente em alguma área. Clique no que falta para preencher; dá para aplicar em todas as obras da empresa de uma vez.</p>
         <div class="cad-fbar"><div><label class="lbl" for="cf-o">O que falta</label><select id="cf-o"></select></div><div><label class="lbl" for="cf-emp">Empresa</label><select id="cf-emp"></select></div>
           <div><label class="lbl" for="cf-q">Buscar</label><input type="search" id="cf-q" placeholder="Obra ou empresa"></div><span class="muted" id="cf-n" style="align-self:end;font-size:12px"></span></div>
@@ -3853,7 +3865,7 @@ async function abrirCadastros(){
   const v=$("#v-cad");if(!v)return;S.cad=S.cad||cadNovo();$("#cad-msg").textContent="Carregando cadastros…";
   await loadCat();
   const ler=async p=>{const d=await S.db.doc(p).get();return d.exists?d.data():null};/* erro de leitura interrompe: nunca abrir com listas vazias por falha de rede */
-  const [ao,fo,ro,pp,cg]=await Promise.all([ler("restrito/areasobra"),ler("regras/fora_app"),ler("regras/regional_obra"),ler("restrito/pessoas"),ler("restrito/cad_gerentes")]);
+  const [ao,fo,ro,pp,cg,rv]=await Promise.all([ler("restrito/areasobra"),ler("regras/fora_app"),ler("regras/regional_obra"),ler("restrito/pessoas"),ler("restrito/cad_gerentes"),ler("restrito/cad_resolvidas")]);S.cad.resolv=rv||{itens:[]};
   S.areasObra=(ao&&ao.m)||{};S.foraApp=(fo&&fo.m)||{};S.regObra=(ro&&ro.m)||null;S.pessoas=(pp&&pp.lista)||[];
   const C=S.cad;C.gerDoc=cg;
   if(!C.ger){if(cg&&Array.isArray(cg.linhas)){C.ger=cg.linhas.map(r=>({...r}));C.gerOrigem=`Cadastro salvo em ${fmtDate(cg.atualizadoEm)}${cg.por?" por "+cg.por:""}.`}
@@ -4094,11 +4106,11 @@ function cadPendCalc(p){const {TL,TS,cnt,cntS,top}=S.cad.pendCtx;const A={};let 
   if(!p.resp._reg||!p.resp._reg.mexeu)p.resp._reg=cadSugRegional(p.e,p.reg)}
 const cadValido=v=>CAD_EMAIL.test(String(v||"").trim().toLowerCase());
 function cadRegDaEmp(e){const C=S.cad;const IX=cadEstIdx();if(C._regEmpIx!==IX){C._regEmpIx=IX;C._regEmp=new Map();if(IX)Object.entries(IX.eo).forEach(([id,v])=>{const k=id.split("-")[0];if(!C._regEmp.has(k))C._regEmp.set(k,v[1])})}return C._regEmp.get(String(e))||""}
-function cadSugPessoa(dep,e,reg){const f={},g={};(S.cad.ger||[]).forEach(r=>{if(r.dep!==dep||!cadValido(r.email))return;const k=r.email.trim().toLowerCase();
+function cadSugPessoa(dep,e,reg){const f={},g={};(S.cad.ger||[]).forEach(r=>{if(r.orig||r.dep!==dep||!cadValido(r.email))return;/* r.orig: linha ainda não salva de outra obra nova → não vira sugestão escondida */const k=r.email.trim().toLowerCase();
     if(String(r.emp)===String(e)){f[k]=f[k]||{n:0,r};f[k].n++}else if(reg&&cadRegDaEmp(r.emp)===reg){g[k]=g[k]||{n:0,r};g[k].n++}});
   const a=Object.values(f).sort((x,y)=>y.n-x.n)[0],b=Object.values(g).sort((x,y)=>y.n-x.n)[0];const w=a||b;
   return w?{nome:w.r.nome||"",email:w.r.email.trim(),fonte:a?"já faz isso nesta empresa":"já faz isso na "+reg}:{nome:"",email:"",fonte:""}}
-function cadSugRegional(e,reg){const f={};(S.cad.ger||[]).forEach(r=>{if(!cadValido(r.regEmail))return;const ok=String(r.emp)===String(e)?2:(reg&&cadRegDaEmp(r.emp)===reg?1:0);if(!ok)return;const k=r.regEmail.trim().toLowerCase();f[k]=f[k]||{n:0,s:ok,r};f[k].n+=ok})
+function cadSugRegional(e,reg){const f={};(S.cad.ger||[]).forEach(r=>{if(r.orig||!cadValido(r.regEmail))return;const ok=String(r.emp)===String(e)?2:(reg&&cadRegDaEmp(r.emp)===reg?1:0);if(!ok)return;const k=r.regEmail.trim().toLowerCase();f[k]=f[k]||{n:0,s:ok,r};f[k].n+=ok})
   const w=Object.values(f).sort((x,y)=>y.s-x.s||y.n-x.n)[0];return w?{nome:w.r.regNome||"",email:w.r.regEmail.trim(),fonte:w.s===2?"já é o Regional desta empresa":"Regional da "+reg}:{nome:"",email:"",fonte:""}}
 function cadPendBloqueio(p){const L=[];if(!p.base)L.push("escolher a base modelo");if(!p.reg)L.push("informar a Regional");if(p.semArea)L.push(`dizer quem planeja ${p.semArea} insumo(s) fora do modelo`);return L}
 function cadPendAplicar(p,modo,quieto){const C=S.cad;cadPendDesfazer(p);const bl=cadPendBloqueio(p);if(modo==="ok"&&bl.length){if(!quieto)toast("Antes de confirmar: "+bl.join(", ")+".");return false}
@@ -4117,13 +4129,29 @@ function cadPendFiltradas(){const C=S.cad;const q=semAc($("#cp-q").value||"").tr
 function cadPessoaIn(p,d,rot){const r=p.resp[d]||{};const k=esc(p.id)+"|"+esc(d);return `<div class="cp-pes${r.email&&cadValido(r.email)?"":" falta"}"><span class="lbl">${esc(rot||d)}</span>
   <input class="cad-in" data-cp-pes="${k}" data-f="nome" value="${esc(r.nome||"")}" placeholder="Nome" aria-label="Nome ${esc(rot||d)}"><input class="cad-in" data-cp-pes="${k}" data-f="email" value="${esc(r.email||"")}" placeholder="e-mail" aria-label="E-mail ${esc(rot||d)}">
   ${r.fonte?`<small class="cp-src">${r.mexeu?"editado":"sugestão: "+esc(r.fonte)}</small>`:`<small class="cp-src falta">sem sugestão, preencher</small>`}</div>`}
+/* ---------- alcance: ao mudar um responsável/Regional numa obra, perguntar se vale para as outras obras novas da empresa ---------- */
+const cadEscRot=d=>d===CAD_GA?"Gerente Administrativo":d===CAD_CTRL?"Responsável Controladoria":d==="_reg"?"Gerente Regional":d==="_regional"?"Regional":d;
+function cadEscIrmas(p){return [...(S.cad.pend||new Map()).values()].filter(x=>x.e===p.e&&x.id!==p.id).sort((a,b)=>cadNum(a.id,b.id))}
+function cadEscopoBox(p){const E=S.cad.cpEscopo;if(!E||E.id!==p.id)return "";const L=cadEscIrmas(p);if(!L.length)return "";
+  const r=E.d==="_regional"?null:(p.resp[E.d]||{});const val=E.d==="_regional"?esc(p.reg||"(vazio)"):esc([r.nome,r.email].filter(Boolean).join(" · ")||"(vazio)");
+  return `<div class="cp-esc"><div><b>${esc(cadEscRot(E.d))}: ${val}</b> foi definido só nesta obra (${esc(p.o)}). Aplicar também nas outras obras novas da empresa ${esc(p.e)}?</div>
+    <div class="cp-esc-l">${L.map(x=>`<label><input type="checkbox" data-cp-esc-o="${esc(x.id)}" ${x.st?"":"checked"}> <span class="cad-cod">${esc(x.o)}</span> ${esc(x.on)}${x.st?" <span class=\"muted\">(já decidida)</span>":""}</label>`).join("")}</div>
+    <div class="row" style="gap:6px"><button class="btn primary sm" data-cp-esc-ok="${esc(p.id)}">Aplicar nas marcadas</button><button class="btn sm" data-cp-esc-nao="1">Só nesta obra</button></div></div>`}
+function cadEscopoAplicar(p){const C=S.cad;const E=C.cpEscopo;if(!E)return;const ids=[...document.querySelectorAll("[data-cp-esc-o]")].filter(i=>i.checked).map(i=>i.dataset.cpEscO);let n=0;
+  ids.forEach(id=>{const x=C.pend.get(id);if(!x)return;if(E.d==="_regional")x.reg=p.reg;else{const r=p.resp[E.d]||{};x.resp[E.d]={...r,fonte:"aplicado da obra "+p.o,mexeu:true}}if(x.st)cadPendAplicar(x,x.st,true);n++});
+  C.cpEscopo=null;toast(n?`${cadEscRot(E.d)} aplicado em ${n} obra(s): ${ids.map(id=>id.split("-").slice(1).join("-")).join(", ")}`:"Nada aplicado: nenhuma obra marcada");cadRenderPend()}
+/* ---------- resolvidas: o que já foi salvo sai da lista e fica registrado aqui ---------- */
+function cadRenderResolvidas(){const C=S.cad;const tb=$("#cp-res");if(!tb)return;const hoje=new Date().toLocaleDateString("pt-BR");
+  const L=((C.resolv&&C.resolv.itens)||[]).filter(x=>new Date(x.em).toLocaleDateString("pt-BR")===hoje).slice().reverse();$("#cp-res-n").textContent=L.length;
+  tb.innerHTML=L.length?`<thead><tr><th>Hora</th><th>Empresa / obra</th><th>Resultado</th><th>Base</th><th>Gerente Adm.</th><th>Controladoria</th><th>Gerente Regional</th><th>Regional</th><th>Por</th><th></th></tr></thead><tbody>${L.map(x=>`<tr><td>${esc(new Date(x.em).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}))}</td><td><span class="cad-cod">${esc(x.id)}</span> ${esc(x.on||"")}<br><span class="muted" style="font-size:12px">${esc(x.en||"")}</span></td><td>${x.st==="pausa"?'<span class="pill vazio">Pausada</span>':'<span class="pill enviado">Confirmada</span>'}</td><td class="cad-cod">${esc(x.base||"—")}</td><td>${esc(x.ga||"—")}</td><td>${esc(x.ctrl||"—")}</td><td>${esc(x.rg||"—")}</td><td>${esc(x.reg||"—")}</td><td>${esc(x.por||"")}</td><td><button class="btn sm" data-cp-ver="${esc(x.id)}">Ver em Empresas e obras</button></td></tr>`).join("")}</tbody>`:`<tbody><tr><td class="muted">Nada salvo hoje ainda.</td></tr></tbody>`}
 function cadRenderPend(){const C=S.cad;const sr=$("#cp-reg"),sg=$("#cp-grupo");const P=[...(C.pend||new Map()).values()];
   const rv=sr.value,gv=sg.value;sr.innerHTML=cadOpts([...new Set(P.map(p=>p.reg).filter(Boolean))].sort().map(x=>[x,x]),rv,"Todas as Regionais");sg.innerHTML=cadOpts([...new Set(P.map(p=>p.grupo).filter(Boolean))].sort().map(x=>[x,x]),gv,"Todos os grupos");
   const ag=P.filter(p=>!p.st),ok=P.filter(p=>p.st==="ok"),pa=P.filter(p=>p.st==="pausa"),sb=ag.filter(p=>!p.base);
-  const F=cadPendFiltradas();C.cpVis=F.map(p=>p.id);const MAX=60;
-  $("#cp-n").textContent=`${F.length} obra(s)${F.length>MAX?` · mostrando ${MAX}, use os filtros`:""}`;
+  const F=cadPendFiltradas();C.cpVis=F.map(p=>p.id);
+  const GR=new Map();F.forEach(p=>{if(!GR.has(p.e))GR.set(p.e,[]);GR.get(p.e).push(p)});
+  $("#cp-n").textContent=`${cadN(F.length)} obra(s) em ${cadN(GR.size)} empresa(s)`;
   const bases=Object.keys(T.tipos||{}).sort(cadNum);const AR=cadAreas();
-  $("#cp-list").innerHTML=F.length?F.slice(0,MAX).map(p=>{const A=Object.entries(p.areas).sort((a,b)=>b[1]-a[1]);const outras=A.map(([d])=>d).filter(d=>d!==CAD_GA&&d!==CAD_CTRL);
+  const card=p=>{const A=Object.entries(p.areas).sort((a,b)=>b[1]-a[1]);const outras=A.map(([d])=>d).filter(d=>d!==CAD_GA&&d!==CAD_CTRL);
     const k=esc(p.id);return `<article class="cp-card ${p.st?"cp-"+p.st:""}">
     <header><div><span class="cad-cod">${esc(p.e)}</span> ${esc(p.en)}<br><b><span class="cad-cod">${esc(p.o)}</span> ${esc(p.on)}</b></div>
       <div class="cp-tags"><span class="cad-chip">${esc(p.reg||"sem Regional")}</span><span class="cad-chip">${esc(p.grupo||"sem grupo")}</span><span class="cad-chip">${cadN(p.linhas)} linhas</span>${p.st==="ok"?'<span class="pill enviado">Confirmada</span>':p.st==="pausa"?'<span class="pill vazio">Não planejar agora</span>':'<span class="pill rascunho">Aguardando confirmação</span>'}</div></header>
@@ -4138,7 +4166,16 @@ function cadRenderPend(){const C=S.cad;const sr=$("#cp-reg"),sg=$("#cp-grupo");c
     ${p.extras.length?`<details class="cp-mais"${p.semArea?" open":""}><summary>Insumos fora do modelo (${p.extras.length}): confira quem planeja</summary><div class="tbl-box"><table class="list"><thead><tr><th>Serviço</th><th>Insumo</th><th>Descrição</th><th>Quem planeja</th></tr></thead><tbody>${p.extras.slice(0,200).map(x=>`<tr><td><span class="cad-cod">${esc(x.S)}</span> ${esc(x.sd)}</td><td class="cad-cod">${esc(x.I||"—")}</td><td>${esc(x.d)}</td><td><select class="cad-in${x.area?"":" cp-req"}" data-cp-ext="${k}|${esc(x.key)}" aria-label="Quem planeja">${cadOptsExt(x.area,AR)}</select>${x.sug&&x.area===x.sug?` <small class="cp-src">${x.porSv?"sugestão pelo serviço":"sugestão pelo insumo"}</small>`:""}</td></tr>`).join("")}</tbody></table></div></details>`:""}
     <div class="cp-pessoas">${cadPessoaIn(p,CAD_GA)}${cadPessoaIn(p,CAD_CTRL,"Responsável Controladoria")}${cadPessoaIn(p,"_reg","Gerente Regional")}</div>
     ${outras.length?`<details class="cp-mais"><summary>Outros departamentos (${outras.length}): ${outras.filter(d=>!(p.resp[d]&&cadValido(p.resp[d].email))).length} sem sugestão</summary><div class="cp-pessoas">${outras.map(d=>cadPessoaIn(p,d)).join("")}</div></details>`:""}
-    <footer>${p.st?`<button class="btn sm" data-cp-desf="${k}">Desfazer</button>`:`<button class="btn primary sm" data-cp-ok="${k}">Confirmar</button><button class="btn sm" data-cp-pausa="${k}" title="Entra no cadastro como Pausada e para de aparecer aqui">Não planejar agora</button>`}</footer></article>`}).join(""):`<p class="muted">${P.length?"Nenhuma obra com esses filtros.":"Nenhuma obra nova. Suba a Base da Estrutura quando ela mudar."}</p>`;
+    <footer>${p.st?`<button class="btn sm" data-cp-desf="${k}">Desfazer</button>`:`<button class="btn primary sm" data-cp-ok="${k}">Confirmar</button><button class="btn sm" data-cp-pausa="${k}" title="Entra no cadastro como Pausada e para de aparecer aqui">Não planejar agora</button>`}</footer>${cadEscopoBox(p)}</article>`};
+  C.cpEmpAb=C.cpEmpAb||new Set();const auto=GR.size<=3;if(F.length===1)C.cpAberta=F[0].id;
+  const sit=p=>p.st==="ok"?'<span class="pill enviado">Confirmada</span>':p.st==="pausa"?'<span class="pill vazio">Não planejar</span>':'<span class="pill rascunho">Aguardando</span>';
+  const nm=(p,d)=>{const r=p.resp[d]||{};return r.nome||r.email?esc(r.nome||r.email):'<span class="muted">—</span>'};
+  const row=p=>{const k=esc(p.id);const ab=C.cpAberta===p.id;return `<tr class="${ab?"cp-row-ab":""}"><td class="cad-cod">${esc(p.o)}</td><td>${esc(p.on)}</td><td class="cad-cod">${esc(p.base||"—")}</td><td>${nm(p,CAD_GA)}</td><td>${nm(p,CAD_CTRL)}</td><td>${nm(p,"_reg")}</td><td>${esc(p.reg||"—")}</td><td>${sit(p)}</td>
+    <td class="cp-acts"><button class="btn sm" data-cp-abrir="${k}">${ab?"Fechar":"Abrir"}</button> ${p.st?`<button class="btn sm" data-cp-desf="${k}">Desfazer</button>`:`<button class="btn primary sm" data-cp-ok="${k}">Confirmar</button> <button class="btn sm" data-cp-pausa="${k}">Não planejar</button>`}</td></tr>${ab?`<tr class="cp-det"><td colspan="9">${card(p)}</td></tr>`:""}`};
+  $("#cp-list").innerHTML=F.length?[...GR.entries()].map(([e,L])=>{const ab=auto||C.cpEmpAb.has(e);const nOk=L.filter(p=>p.st==="ok").length,nPa=L.filter(p=>p.st==="pausa").length;
+    return `<section class="cp-emp"><button type="button" class="cp-emp-h" data-cp-emp="${esc(e)}" aria-expanded="${ab}"><b>${ab?"▾":"▸"}</b><span class="cad-cod">${esc(e)}</span><b>${esc(L[0].en)}</b><span class="muted">· ${L.length} obra(s) nova(s)${nOk?` · ${nOk} confirmada(s)`:""}${nPa?` · ${nPa} sem planejar`:""}${nOk||nPa?" · falta Salvar":""}</span></button>
+    ${ab?`<div class="tbl-box"><table class="list cp-tab"><thead><tr><th>Obra</th><th>Descrição</th><th>Base</th><th>Gerente Adm.</th><th>Controladoria</th><th>Gerente Regional</th><th>Regional</th><th>Situação</th><th></th></tr></thead><tbody>${L.map(row).join("")}</tbody></table></div>`:""}</section>`}).join(""):`<p class="muted">${P.length?"Nenhuma obra com esses filtros.":"Nenhuma obra nova. Suba a Base da Estrutura quando ela mudar."}</p>`;
+  cadRenderResolvidas();
   {const regs=[...new Set(Object.values(S.regObra||{}).concat([...C.reg.values()],P.map(p=>p.reg)).filter(Boolean))].sort();$("#cad-regs").innerHTML=regs.map(x=>`<option value="${esc(x)}">`).join("")}
   cadRenderFalta(ag.length,sb.length,ok.length,pa.length);cadRenderExtras();cadRenderPadrao();cadBarra();cadTabPend()}
 /* ---------- insumos fora de qualquer modelo: decide uma vez por insumo para todas as obras novas ---------- */
@@ -4233,7 +4270,12 @@ function cadFaltaAplicar(){const C=S.cad;const {id,d}=C.cfAberto;const x=(C.falt
 function cadTabPend(){const t=$("#tab-pend");if(!t||!S.cad||!S.cad.pend)return;const n=[...S.cad.pend.values()].filter(p=>!p.st).length+((S.cad.faltas||[]).length?1:0);
   t.textContent=n?`Pendências (${[...S.cad.pend.values()].filter(p=>!p.st).length} novas)`:"Pendências"}
 document.addEventListener("click",e=>{const t=e.target;if(!t.closest||!t.closest("#cad-pend")||!S.cad)return;const C=S.cad;const P=id=>C.pend&&C.pend.get(id);
-  let b=t.closest("[data-cp-ok]");if(b){const p=P(b.dataset.cpOk);if(p&&cadPendAplicar(p,"ok"))cadRenderPend();return}
+  let b=t.closest("[data-cp-emp]");if(b){const e2=b.dataset.cpEmp;C.cpEmpAb=C.cpEmpAb||new Set();C.cpEmpAb.has(e2)?C.cpEmpAb.delete(e2):C.cpEmpAb.add(e2);cadRenderPend();return}
+  b=t.closest("[data-cp-abrir]");if(b){const id=b.dataset.cpAbrir;C.cpAberta=C.cpAberta===id?null:id;if(C.cpEscopo&&C.cpEscopo.id!==C.cpAberta)C.cpEscopo=null;cadRenderPend();return}
+  b=t.closest("[data-cp-esc-ok]");if(b){const p=P(b.dataset.cpEscOk);if(p)cadEscopoAplicar(p);return}
+  if(t.dataset&&t.dataset.cpEscNao){C.cpEscopo=null;cadRenderPend();return}
+  b=t.closest("[data-cp-ver]");if(b){const id=b.dataset.cpVer;cadMostrar("obras");const q=$("#co-q");if(q){q.value=id;const st=$("#co-st");if(st)st.value="todas";cadRenderObras()}return}
+  b=t.closest("[data-cp-ok]");if(b){const p=P(b.dataset.cpOk);if(p&&cadPendAplicar(p,"ok"))cadRenderPend();return}
   b=t.closest("[data-cp-pausa]");if(b){const p=P(b.dataset.cpPausa);if(p&&cadPendAplicar(p,"pausa"))cadRenderPend();return}
   b=t.closest("[data-cp-desf]");if(b){const p=P(b.dataset.cpDesf);if(p){cadPendDesfazer(p);cadRenderPend()}return}
   if(t.dataset&&t.dataset.cpLote){const L=(C.cpVis||[]).map(P).filter(p=>p&&!p.st);let n=0;L.forEach(p=>{if(cadPendAplicar(p,t.dataset.cpLote,true))n++});toast(`${n} obra(s) ${t.dataset.cpLote==="ok"?"confirmadas":"marcadas para não planejar"}${t.dataset.cpLote==="ok"&&n<L.length?` · ${L.length-n} precisam de ajuste (base, Regional ou quem planeja) e ficaram aguardando`:""}`);cadRenderPend();return}
@@ -4252,10 +4294,11 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.closest||!t.closes
   if(t.dataset.cpBase){const p=C.pend.get(t.dataset.cpBase);if(p){const st=p.st;p.base=t.value;p.motivo="escolhida por você";cadPendCalc(p);if(st)cadPendAplicar(p,st);cadRenderPend()}return}
   if(t.dataset.cx){cadDecidir([t.dataset.cx],t.value);cadRenderPend();return}
   if(t.id==="cx-falta"){cadRenderExtras();return}
-  if(t.dataset.cpReg){const p=C.pend.get(t.dataset.cpReg);if(p){p.reg=cadLimpo(t.value);if(p.st)cadPendAplicar(p,p.st);cadRenderPend()}return}
+  if(t.dataset.cpReg){const p=C.pend.get(t.dataset.cpReg);if(p){p.reg=cadLimpo(t.value);if(p.st)cadPendAplicar(p,p.st);C.cpEscopo=cadEscIrmas(p).length?{id:p.id,d:"_regional"}:null;cadRenderPend()}return}
   if(t.dataset.cpExt){const [id,...kk]=t.dataset.cpExt.split("|");const p=C.pend.get(id);if(p){p.escolha[kk.join("|")]=t.value;cadPendCalc(p);if(p.st)cadPendAplicar(p,p.st);cadRenderPend()}return}
-  if(t.dataset.cpPes){const [id,d]=t.dataset.cpPes.split("|");const p=C.pend.get(id);if(!p)return;const r=p.resp[d]=p.resp[d]||{};r[t.dataset.f]=t.value.trim();r.mexeu=true;if(p.st)cadPendAplicar(p,p.st);cadRenderPend();return}
+  if(t.dataset.cpPes){const [id,d]=t.dataset.cpPes.split("|");const p=C.pend.get(id);if(!p)return;const r=p.resp[d]=p.resp[d]||{};r[t.dataset.f]=t.value.trim();r.mexeu=true;if(p.st)cadPendAplicar(p,p.st);C.cpEscopo=cadEscIrmas(p).length?{id:p.id,d}:null;cadRenderPend();return}
   if(["cp-reg","cp-grupo","cp-st","cf-o","cf-emp","pz-campo"].includes(t.id)){cadRenderPend();return}});
+document.addEventListener("click",e=>{const h=e.target.closest&&e.target.closest("#cad-pend h2.cad-col-h");if(h)h.parentElement.classList.toggle("fechado")});
 document.addEventListener("input",e=>{const t=e.target;if((t.id==="cp-q"||t.id==="cf-q")&&S.cad)cadRenderPend();if(t.id==="cx-q"&&S.cad)cadRenderExtras()});
 {const tp=$("#tab-pend");if(tp)tp.addEventListener("click",async()=>{await flush();S.cad=S.cad||cadNovo();S.cad.aba="pend";if(S.tab==="cad")cadMostrar("pend");else showTab("cad")})}
 
@@ -4271,6 +4314,7 @@ async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$(
       const idx={...C.estr.idx,arquivo:C.estr.arquivo,atualizadoEm:em};await S.db.doc("restrito/estr_idx").set(idx);S.estIdx=idx;S.estE={};S.estAp=null;feito.push("estrutura do ERP");C.estr=null}
     /* 1) catálogo: obras novas e ativa/inativa */
     const novasAgora=new Set(C.novas.map(c=>c[0]));
+    const pp2=(p,d)=>{const r=p.resp[d]||{};return r.nome||r.email||""};const resolvidas=[...(C.pend||new Map()).values()].filter(p=>p.st&&novasAgora.has(p.id)).map(p=>({id:p.id,e:p.e,en:p.en,o:p.o,on:p.on,st:p.st,base:p.base||"",reg:p.reg||"",ga:p.st==="ok"?pp2(p,CAD_GA):"",ctrl:p.st==="ok"?pp2(p,CAD_CTRL):"",rg:p.st==="ok"?pp2(p,"_reg"):"",por,em}));
     if(C.cat.size||C.novas.length||C.nomes.size){msg.textContent="Gravando empresas e obras…";const cat=cadClone(S.cat);const novasIds=new Set(C.novas.map(c=>c[0]));
       cat.obras=cat.obras.concat(C.novas.filter(c=>!cat.obras.some(x=>x[0]===c[0])).map(c=>c.slice()));cat.obras.forEach(c=>{if(C.cat.has(c[0]))c[8]=C.cat.get(c[0])?1:0;const nm=C.nomes.get(c[0]);if(nm){if(nm.en!=null)c[7]=nm.en;if(nm.on!=null)c[2]=nm.on}});cat.atualizadoEm=em;
       await S.db.doc("restrito/catalogo").set(cat);S.cat=cat;S.catMap=new Map(cat.obras.map(c=>[c[0],c]));
@@ -4299,7 +4343,9 @@ async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$(
       const regAntes=cadClone(S.regObra)||{};await carregarAcessos(cadGerAoa(),"Cadastros no app");
       /* a Regional da obra é cuidada aqui no app: a coluna Regional das linhas de gerente só completa obras que ainda não têm */
       {const m={...(S.regObra||{}),...regAntes};if(JSON.stringify(m)!==JSON.stringify(S.regObra||{})){await S.db.doc("regras/regional_obra").set({m,arquivo:"Cadastros no app",atualizadoEm:nowISO()});S.regObra=m}}C.gerMsg=($("#pl-msg")&&$("#pl-msg").textContent)||"";C.gerOrigem=`Cadastro salvo em ${fmtDate(em)} por ${por}.`;C.gerDirty=false;feito.push("gerentes")}
-    msg.textContent="";$("#cad-imp-res").hidden=true;C.pend=null;C.cfAberto=null;toast("Salvo: "+feito.join(" · "));$("#cad-msg").textContent=`Salvo em ${fmtDate(em)}: ${feito.join(" · ")}.${C.gerMsg?" "+C.gerMsg:""}`;C.gerMsg="";
+    /* registro das obras resolvidas (só depois de tudo gravado) */
+    if(resolvidas.length){try{const at=await S.db.doc("restrito/cad_resolvidas").get();const it=((at.exists&&at.data().itens)||[]).concat(resolvidas).slice(-2000);await S.db.doc("restrito/cad_resolvidas").set({itens:it,atualizadoEm:em});C.resolv={itens:it}}catch(e){toast("Salvo, mas o registro de Resolvidas não foi gravado: "+(e.message||e))}}
+    msg.textContent="";$("#cad-imp-res").hidden=true;C.pend=null;C.cpAberta=null;C.cpEscopo=null;C.cfAberto=null;toast("Salvo: "+feito.join(" · "));$("#cad-msg").textContent=`Salvo em ${fmtDate(em)}: ${feito.join(" · ")}.${C.gerMsg?" "+C.gerMsg:""}`;C.gerMsg="";
   }catch(e){msg.textContent="Não foi possível salvar: "+(e&&e.message||e)+". O que já foi gravado está indicado acima."; if(feito.length)$("#cad-msg").textContent="Gravado antes do erro: "+feito.join(" · ")}
   btn.disabled=false;cadMostrar(C.aba)}
 function cadDescartar(){const b=$("#cad-desc");if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar descartar";setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent="Descartar"}},5000);return}
