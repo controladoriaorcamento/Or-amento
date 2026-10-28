@@ -3934,8 +3934,8 @@ async function abrirCadastros(){
   const [ao,fo,ro,pp,cg,rv,ifo]=await Promise.all([ler("restrito/areasobra"),ler("regras/fora_app"),ler("regras/regional_obra"),ler("restrito/pessoas"),ler("restrito/cad_gerentes"),ler("restrito/cad_resolvidas"),ler("regras/insumos_fora")]);S.cad.resolv=rv||{itens:[]};S.insFora=(ifo&&ifo.m)||{};
   S.areasObra=(ao&&ao.m)||{};S.foraApp=(fo&&fo.m)||{};S.regObra=(ro&&ro.m)||null;S.pessoas=(pp&&pp.lista)||[];
   const C=S.cad;C.gerDoc=cg;
-  if(!C.ger){if(cg&&Array.isArray(cg.linhas)){C.ger=cg.linhas.map(r=>({...r}));C.gerOrigem=`Cadastro salvo em ${fmtDate(cg.atualizadoEm)}${cg.por?" por "+cg.por:""}.`}
-    else{C.ger=cadGerDosAcessos();C.gerOrigem=C.ger.length?"Lista montada a partir dos acessos já liberados. Para trazer também os Gerentes Regionais, importe a aba 3 da planilha uma vez.":"Nenhum gerente cadastrado ainda. Importe a aba 3 da planilha ou inclua linha por linha."}}
+  if(!C.ger){if(cg&&Array.isArray(cg.linhas)){C.ger=cg.linhas.map(r=>({...r}));C.gerBase=cg.linhas.map(r=>({...r}));C.gerOrigem=`Cadastro salvo em ${fmtDate(cg.atualizadoEm)}${cg.por?" por "+cg.por:""}.`}
+    else{C.ger=cadGerDosAcessos();C.gerBase=C.ger.map(r=>({...r}));C.gerOrigem=C.ger.length?"Lista montada a partir dos acessos já liberados. Para trazer também os Gerentes Regionais, importe a aba 3 da planilha uma vez.":"Nenhum gerente cadastrado ainda. Importe a aba 3 da planilha ou inclua linha por linha."}}
   $("#cad-msg").textContent="";cadMostrar(C.aba);
 }
 /* primeira vez: monta as linhas a partir de restrito/pessoas, juntando em "Todas" quando a pessoa tem todas as obras da empresa daquela área */
@@ -4161,7 +4161,7 @@ async function cadPendPrep(){const C=S.cad;if(C.pend)return;try{await cadRegTab(
     else if(porGrupo[grupo]){base=top(porGrupo[grupo]);motivo=`${porGrupo[grupo][base]} obra(s) do grupo ${grupo} usam esta base`}
     else{let b="",best=0;tipos.forEach(tp=>{let n=0;si.forEach(k=>{if(TS[tp].has(k))n++});const sc=n/Math.max(1,TS[tp].size+si.size-n);if(sc>best){best=sc;b=tp}});if(best>=.3){base=b;motivo=`estrutura parecida com a base`}}
     const lin=new Map();at.forEach(x=>{const k=`${x[0]}|${x[3]}|${x[4]}`;if(!lin.has(k))lin.set(k,{key:k,P:x[0],S:x[3],I:x[4]})});
-    const p={id,e,o,en,on,reg,grupo,linhas,si,lin:[...lin.values()],base,semBase,motivo,st:"",resp:{},extra:{},escolha:{}};cadPendCalc(p);C.pend.set(id,p)}}
+    const p={id,e,o,en,on,reg,grupo,linhas,si,lin:[...lin.values()],base,semBase,motivo,st:"",resp:{},extra:{},escolha:{}};{const lg=((C.resolv&&C.resolv.itens)||[]).filter(x=>x.id===id).pop();if(lg){p.jaFeita=lg;if(lg.base==="ERP"){p.base="";p.semBase=true}else if(lg.base&&(T.tipos||{})[lg.base]){p.base=lg.base;p.semBase=false}if(lg.reg)p.reg=lg.reg;p.motivo=`já tinha sido confirmada por ${lg.por} em ${fmtDate(lg.em)}, mas não ficou gravada (salvamento ao mesmo tempo). Confira e confirme de novo`}};cadPendCalc(p);C.pend.set(id,p)}}
 function cadParecido(p){const {TS}=S.cad.pendCtx;if(!p.base||!TS[p.base]||!p.si.size)return null;let n=0;p.si.forEach(k=>{if(TS[p.base].has(k))n++});return Math.round(100*n/p.si.size)}
 /* áreas e responsáveis sugeridos para a base escolhida */
 function cadPendCalc(p){const {TL,TS,cnt,cntS,top}=S.cad.pendCtx;const A={};let fora=0;
@@ -4470,8 +4470,13 @@ document.addEventListener("input",e=>{const t=e.target;if((t.id==="cp-q"||t.id==
 async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$("#cad-save-msg");btn.disabled=true;const feito=[];
   try{const por=await quemSou();const em=nowISO();
     /* trava de segurança: relê do banco o que será regravado; se a leitura falhar, nada é gravado */
-    msg.textContent="Conferindo dados atuais…";{const ld=async p=>{const d=await S.db.doc(p).get();return d.exists?d.data():null};const [aoF,foF,dpF]=await Promise.all([ld("restrito/areasobra"),ld("regras/fora_app"),ld("regras/depara")]);
+    msg.textContent="Conferindo dados atuais…";{const ld=async p=>{const d=await S.db.doc(p).get();return d.exists?d.data():null};const [aoF,foF,dpF,catF,cgF,rdF]=await Promise.all([ld("restrito/areasobra"),ld("regras/fora_app"),ld("regras/depara"),ld("restrito/catalogo"),ld("restrito/cad_gerentes"),ld("restrito/depara")]);
       S.areasObra=(aoF&&aoF.m)||{};S.foraApp=(foF&&foF.m)||{};if(dpF)S.dpR=dpF;
+      /* 28/10: várias pessoas salvando ao mesmo tempo. Parte do que está gravado AGORA e aplica só o que ESTA tela mudou (nada de regravar a lista antiga inteira) */
+      if(catF&&Array.isArray(catF.obras)){S.cat=catF;S.catMap=new Map(catF.obras.map(c=>[c[0],c]))}
+      if(rdF&&Array.isArray(rdF.linhas))S.dp=rdF.linhas;
+      if(C.gerDirty&&!C.gerTroca&&C.gerBase&&cgF&&Array.isArray(cgF.linhas)){C.ger=cadGerMesclar(C.gerBase,C.ger,cgF.linhas)}
+
       if((S.cat&&S.cat.obras||[]).length&&!Object.keys(S.areasObra).length)throw new Error("as áreas das obras não foram carregadas do banco");
       if(C.gerDirty&&!(C.ger||[]).some(r=>r.email))throw new Error("a lista de gerentes está vazia; isso removeria todos os acessos");}
     if(C.estr){const E=C.estr.E;const emps=Object.keys(E);let i=0;for(const emp of emps){i++;msg.textContent=`Gravando estrutura: empresa ${i}/${emps.length}…`;await S.db.doc("restrito/estr/"+emp).set({o:E[emp],atualizadoEm:em})}
@@ -4512,7 +4517,7 @@ async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$(
         ant.forEach(a=>rows.filter(r=>r.obra_id===a.obra_id&&r.departamento===a.departamento&&r.de_email===a.para_email).forEach(r=>{if(a.de_email!==r.para_email)rows.push({obra_id:r.obra_id,departamento:r.departamento,de_email:a.de_email,para_email:r.para_email,por})}))}for(let i=0;i<rows.length;i+=500){const r=await sb.from("transferencias").upsert(rows.slice(i,i+500),{onConflict:"obra_id,departamento,de_email,para_email"});if(r.error)throw new Error("a troca de gerente ainda não está ativada no banco ("+r.error.message+"). Gerentes NÃO foram gravados; desfaça a troca ou peça a ativação")}
       feito.push(`${C.transf.length} continuidade(s) de orçamento`);C.transf=[]}
     if(C.gerDirty){msg.textContent="Gravando gerentes e liberando acessos…";const linhas=C.ger.map(({sug,orig,...r})=>({...r}));
-      await S.db.doc("restrito/cad_gerentes").set({linhas,atualizadoEm:em,por});C.gerDoc={linhas,atualizadoEm:em,por};
+      await S.db.doc("restrito/cad_gerentes").set({linhas,atualizadoEm:em,por});C.gerDoc={linhas,atualizadoEm:em,por};C.gerBase=linhas.map(r=>({...r}));C.gerTroca=false;
       const regAntes=cadClone(S.regObra)||{};await carregarAcessos(cadGerAoa(),"Cadastros no app");
       /* a Regional da obra é cuidada aqui no app: a coluna Regional das linhas de gerente só completa obras que ainda não têm */
       {const m={...(S.regObra||{}),...regAntes};if(JSON.stringify(m)!==JSON.stringify(S.regObra||{})){await S.db.doc("regras/regional_obra").set({m,arquivo:"Cadastros no app",atualizadoEm:nowISO()});S.regObra=m}}C.gerMsg=($("#pl-msg")&&$("#pl-msg").textContent)||"";C.gerOrigem=`Cadastro salvo em ${fmtDate(em)} por ${por}.`;C.gerDirty=false;if(C.regRemover)C.regRemover.clear();feito.push("gerentes")}
@@ -4521,6 +4526,13 @@ async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$(
     msg.textContent="";$("#cad-imp-res").hidden=true;C.pend=null;C.cpAberta=null;C.cpEscopo=null;C.cfAberto=null;toast("Salvo: "+feito.join(" · "));$("#cad-msg").textContent=`Salvo em ${fmtDate(em)}: ${feito.join(" · ")}.${C.gerMsg?" "+C.gerMsg:""}`;C.gerMsg="";
   }catch(e){msg.textContent="Não foi possível salvar: "+(e&&e.message||e)+". O que já foi gravado está indicado acima."; if(feito.length)$("#cad-msg").textContent="Gravado antes do erro: "+feito.join(" · ")}
   btn.disabled=false;cadMostrar(C.aba)}
+/* junção de 3 vias das linhas de gerentes: (gravado agora) − (o que esta tela tirou) + (o que esta tela incluiu/alterou) */
+function cadGerMesclar(base,cur,fresh){const key=r=>JSON.stringify(["dep","emp","obra","nome","email","cargo","obs","reg","regNome","regEmail"].map(k=>String(r[k]==null?"":r[k]).trim().toLowerCase()));
+  const cnt=L=>{const m=new Map();L.forEach(r=>{const k=key(r);m.set(k,(m.get(k)||0)+1)});return m};const mb=cnt(base),mc=cnt(cur);
+  const tirar=new Map();mb.forEach((n,k)=>{const d=n-(mc.get(k)||0);if(d>0)tirar.set(k,d)});const ja=new Map();
+  const out=[];fresh.forEach(r=>{const k=key(r);const t=tirar.get(k)||0;if(t>0){tirar.set(k,t-1);return}out.push({...r})});
+  const fc=cnt(out);cur.forEach(r=>{const k=key(r);const nb=mb.get(k)||0;const usados=ja.get(k)||0;if(usados<nb){ja.set(k,usados+1);return}if((fc.get(k)||0)>0){fc.set(k,fc.get(k)-1);return}out.push({...r})});
+  return out}
 function cadDescartar(){const b=$("#cad-desc");if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar descartar";setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent="Descartar"}},5000);return}
   delete b.dataset.arm;b.textContent="Descartar";const aba=S.cad.aba;S.cad=cadNovo();S.cad.aba=aba;abrirCadastros()}
 
@@ -4560,7 +4572,7 @@ document.addEventListener("change",async e=>{const t=e.target;if(!t.closest||!t.
     try{await cadImportar(fs)}catch(err){$("#cad-imp-res").hidden=false;$("#cad-imp-res").textContent="Não consegui ler: "+(err&&err.message||err)}return}
   if(t.id==="cadg-file"){const f=t.files[0];t.value="";if(!f)return;if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
     try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const nm=wb.SheetNames.find(n=>/^\s*3\.?\s*gerentes/i.test(n))||wb.SheetNames.find(n=>/gerentes/i.test(n));if(!nm)throw new Error("aba");
-      const L=cadGerDaPlanilha(XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:""}));C.ger=L;C.gerDirty=true;C.gerOrigem=`Importado de ${f.name} (aba ${nm}): ${L.length} linha(s). Confira e clique em Salvar para aplicar.`;cadRenderGer()}
+      const L=cadGerDaPlanilha(XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:""}));C.ger=L;C.gerDirty=true;C.gerTroca=true;/* importar a aba 3 substitui a lista inteira, como antes */C.gerOrigem=`Importado de ${f.name} (aba ${nm}): ${L.length} linha(s). Confira e clique em Salvar para aplicar.`;cadRenderGer()}
     catch(err){$("#cadg-origem").textContent=err&&err.message==="aba"?"Não encontrei a aba 3. Gerentes nessa planilha.":err&&err.message==="cols"?"A aba 3 não tem as colunas Departamento (quem planeja), Empresa, Obra e E-mail.":"Não consegui ler a planilha."}}
 });
 document.addEventListener("input",e=>{const t=e.target;if(t.id==="co-q")cadRenderObras();if(t.id==="cq-q")cadRenderQuem();if(t.id==="cadg-q")cadRenderGer();
