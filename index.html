@@ -3868,8 +3868,8 @@ function cadGerDosAcessos(){
     [...g.entries()].sort((a,b)=>cadNum(a[0],b[0])).forEach(([k,ids])=>{const [dep,e]=[k.slice(0,k.lastIndexOf("|")),k.slice(k.lastIndexOf("|")+1)];
       const todas=cats.filter(c=>String(c[6])===e&&(AO[c[0]]||[]).includes(dep)).map(c=>c[0]);
       const base={dep,emp:e,nome:p.nome||"",email:p.email,cargo:p.cargo||"",obs:p.semClaude?"":"com Claude",reg:"",regNome:"",regEmail:""};
-      if(todas.length>1&&todas.every(id=>ids.has(id)))out.push({...base,obra:"Todas"});
-      else [...ids].sort(cadNum).forEach(id=>{const c=S.catMap.get(id);out.push({...base,obra:c?String(c[1]):id.split("-").slice(1).join("-"),reg:(S.regObra&&S.regObra[id])||""})})})});
+      const usaTodas=todas.length>1&&todas.every(id=>ids.has(id));if(usaTodas)out.push({...base,obra:"Todas"});/* obras fora do "Todas" (depto sem insumo na base) continuam como linha própria: nenhum acesso se perde */
+      [...ids].filter(id=>!usaTodas||!todas.includes(id)).sort(cadNum).forEach(id=>{const c=S.catMap.get(id);out.push({...base,obra:c?String(c[1]):id.split("-").slice(1).join("-"),reg:(S.regObra&&S.regObra[id])||""})})})});
   return out}
 
 function cadMostrar(aba){const C=S.cad;C.aba=aba;
