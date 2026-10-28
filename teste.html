@@ -1085,7 +1085,7 @@ function docTotals(doc,lines){const t={};YEARS.forEach(y=>t[y]=Math.round(sum(li
 /* ---------- inicialização ---------- */
 async function boot(){
   const [db,user,dl]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("downloads")]);
-  S.db=db;S.user=user;S.dl=dl;
+  S.db=cadMarcarDb(db);S.user=user;S.dl=dl;
   $("#v-loading").hidden=true;
   if(!db||!user){$("#v-nodb").hidden=false;return}
   S.me=await user.id();
@@ -2459,6 +2459,9 @@ document.addEventListener("click",e=>{const t=e.target;if(t.id==="btn-lote"){S.l
 function restoreSend(){$("#send-box").innerHTML=`<button class="btn primary" id="btn-send">Enviar para a Controladoria</button>`;renderStatus()}
 
 function travado(st){return st==="enviado"||st==="validado"}
+/* 28/10: marca da versão do site nas gravações de cadastro. O banco recusa gravação de página antiga (aberta antes da correção). */
+const CLI_VER="2026-10-28c";const CLI_GATE=/^(restrito\/(catalogo|cad_gerentes|pessoas|depara|areasobra|cad_resolvidas)|regras\/(depara|fora_app|regional_obra|insumos_fora))$/;
+function cadMarcarDb(db){if(!db||!db.doc)return db;const o=Object.create(db);o.doc=p=>{const d=db.doc(p);if(!CLI_GATE.test(p))return d;return {...d,set:v=>d.set({...v,_cli:CLI_VER}),update:v=>d.update({...v,_cli:CLI_VER})}};return o}
 async function quemSou(){try{const m=await S.user.me();return (m&&m.name)||"Controladoria"}catch(e){return "Controladoria"}}
 $("#btn-validar").addEventListener("click",async()=>{const b=$("#btn-validar");
   if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmar validação (trava a obra)";setTimeout(()=>{delete b.dataset.arm;b.textContent="Validar e travar"},6000);return}
@@ -4062,38 +4065,43 @@ function cadGOctx(){const cats=(S.cat.obras||[]).concat(S.cad.novas);const byEmp
 function cadGerObras(r,X){const cats=X?X.cats:(S.cat.obras||[]).concat(S.cad.novas);const AO=X?X.AO:cadAO();const e=String(r.emp||"").trim(),o=String(r.obra||"").trim();
   if(!e||!o)return [];let ids=cadTodas(e)?cats.map(c=>c[0]):cadTodas(o)?(X?(X.byEmp.get(e)||[]).slice():cats.filter(c=>String(c[6])===e).map(c=>c[0])):(cadObraDe(e+"-"+o)?[e+"-"+o]:[]);
   if((cadTodas(e)||cadTodas(o))&&r.dep)ids=ids.filter(id=>(AO[id]||[]).includes(r.dep));return ids}
-function cadGerStatus(r){const em=String(r.email||"").trim();const e=String(r.emp||"").trim(),o=String(r.obra||"").trim();
+let _cgsCtx=null;/* desempenho: contexto calculado uma vez por tela */
+function cadGerStatus(r){const X=_cgsCtx||{GX:cadGOctx(),EM:new Set(cadEmpresas().map(x=>x[0]))};const em=String(r.email||"").trim();const e=String(r.emp||"").trim(),o=String(r.obra||"").trim();
   if(!r.dep)return["reaberto","Falta o departamento",0];if(!e||!o)return["reaberto","Falta empresa/obra",0];
-  if(!cadTodas(e)&&!cadEmpresas().some(x=>x[0]===e))return["reaberto","Empresa não encontrada",0];
+  if(!cadTodas(e)&&!X.EM.has(e))return["reaberto","Empresa não encontrada",0];
   if(!cadTodas(e)&&!cadTodas(o)&&!cadObraDe(e+"-"+o))return["reaberto","Obra não encontrada",0];
-  const n=cadGerObras(r).length;if(!em)return["vazio","Sem e-mail (não libera)",n];if(!CAD_EMAIL.test(em.toLowerCase()))return["reaberto","E-mail inválido",n];
+  const n=cadGerObras(r,X.GX).length;if(!em)return["vazio","Sem e-mail (não libera)",n];if(!CAD_EMAIL.test(em.toLowerCase()))return["reaberto","E-mail inválido",n];
   if(!n)return["rascunho","Nenhuma obra com itens desta área",0];
   if(!cadTodas(e)&&!cadTodas(o)&&!(cadAO()[e+"-"+o]||[]).includes(r.dep))return["rascunho","Obra sem itens desta área",n];
   return["enviado","ok",n]}
 const cadLink=r=>/com\s*claude/i.test(String(r.obs||""));
 function cadGerFiltradas(){const q=semAc($("#cadg-q").value||"").trim(),dep=$("#cadg-dep").value,emp=$("#cadg-emp").value,pend=$("#cadg-pend").checked;
   return S.cad.ger.map((r,i)=>[r,i]).filter(([r])=>(!q||semAc(`${r.nome} ${r.email} ${r.cargo} ${r.regNome}`).includes(q))&&(!dep||r.dep===dep)&&(!emp||String(r.emp)===emp)&&(!pend||cadGerStatus(r)[1]!=="ok"))}
-function cadRenderGer(){const C=S.cad;const R=C.ger;const ar=cadAreas();const emps=cadEmpresas();
-  const st=R.map(cadGerStatus);const pes=new Set(R.filter(r=>CAD_EMAIL.test(String(r.email||"").trim().toLowerCase())).map(r=>r.email.trim().toLowerCase()));
+function cadRenderGer(){const emps0=cadEmpresas();_cgsCtx={GX:cadGOctx(),EM:new Set(emps0.map(x=>x[0]))};try{cadRenderGer0(emps0)}finally{_cgsCtx=null}}
+function cadRenderGer0(emps){const C=S.cad;const R=C.ger;const ar=cadAreas();
+  const st=R.map(r=>cadGerStatus(r));const pes=new Set(R.filter(r=>CAD_EMAIL.test(String(r.email||"").trim().toLowerCase())).map(r=>r.email.trim().toLowerCase()));
   const link=new Set(R.filter(r=>cadLink(r)&&r.email).map(r=>r.email.trim().toLowerCase()));const prob=st.filter(s=>s[1]!=="ok").length;
-  const cob=new Set();const GX=cadGOctx();R.forEach((r,i)=>{if(st[i][0]==="reaberto"||!r.email)return;cadGerObras(r,GX).forEach(id=>cob.add(id+"|"+r.dep))});
+  const cob=new Set();const GX=_cgsCtx.GX;R.forEach((r,i)=>{if(st[i][0]==="reaberto"||!r.email)return;cadGerObras(r,GX).forEach(id=>cob.add(id+"|"+r.dep))});
   let falta=0;(S.cat.obras||[]).concat(C.novas).forEach(c=>{const e=cadObraEstado(c);if(e.inat||e.fora)return;const fm=(S.foraApp||{})[c[0]]||{};(GX.AO[c[0]]||[]).forEach(a=>{if(!fm[a]&&!cob.has(c[0]+"|"+a))falta++})});
   $("#cad-kpi").innerHTML=cadKpi("Pessoas com e-mail",cadN(pes.size),`${R.length} linha(s) no cadastro`)+cadKpi("Acessam pelo link",cadN(link.size),`${cadN(pes.size-link.size)} recebem formulário offline`)+cadKpi("Departamentos",cadN(new Set(R.map(r=>r.dep).filter(Boolean)).size),"quem planeja")+cadKpi("Linhas com pendência",`<span style="color:${prob?"var(--warn)":"var(--good)"}">${cadN(prob)}</span>`,"veja a coluna Situação")+cadKpi("Áreas de obra sem gerente",`<span style="color:${falta?"var(--bad)":"var(--good)"}">${cadN(falta)}</span>`,"obras ativas no app");
   const sd=$("#cadg-dep"),se=$("#cadg-emp");const dv=sd.value,ev=se.value;sd.innerHTML=cadOpts(ar.map(a=>[a,a]),dv,"Todos os departamentos");se.innerHTML=cadOpts(emps.map(([e,n])=>[e,`${e} – ${n}`]),ev,"Todas as empresas");
   $("#cadg-origem").textContent=C.gerOrigem||"";{const ns=R.filter(r=>r.sug&&!r.email).length;const bs=$("#cadg-sugs");bs.hidden=!ns;bs.textContent=`Usar as ${ns} sugestões`}
-  const F=cadGerFiltradas();const MAX=400;$("#cadg-n").textContent=`${F.length} de ${R.length} linha(s)${F.length>MAX?` · mostrando ${MAX}, use os filtros`:""}`;
+  const F=cadGerFiltradas();const MAX=150;$("#cadg-n").textContent=`${F.length} de ${R.length} linha(s)${F.length>MAX?` · mostrando ${MAX}, use os filtros`:""}`;
   const empOpts=sel=>`<option value="Todas"${cadTodas(sel)?" selected":""}>Todas</option>`+(sel&&!cadTodas(sel)&&!emps.some(x=>x[0]===String(sel))?`<option selected>${esc(sel)}</option>`:"")+cadOpts(emps.map(([e,n])=>[e,`${e} – ${n}`]),sel);
   const obraOpts=(e,sel)=>{const L=cadTodas(e)?[]:(S.cat.obras||[]).concat(C.novas).filter(c=>String(c[6])===String(e)).sort((a,b)=>cadNum(a[1],b[1]));
     return `<option value="Todas"${cadTodas(sel)?" selected":""}>Todas</option>`+(sel&&!cadTodas(sel)&&!L.some(c=>String(c[1])===String(sel))?`<option selected>${esc(sel)}</option>`:"")+cadOpts(L.map(c=>[c[1],`${c[1]} – ${c[2]||""}`]),sel)};
   const inp=(i,k,v,ph,w)=>`<input class="cad-in" data-cg="${i}" data-k="${k}" value="${esc(v||"")}" placeholder="${ph||""}" style="width:${w||140}px" aria-label="${ph||k}">`;
   $("#cadg-tbl").innerHTML=`<thead><tr><th>Departamento (quem planeja)</th><th>Empresa</th><th>Obra</th><th>Nome do gerente</th><th>E-mail</th><th>Cargo</th><th title="Marcado = acessa pelo link do aplicativo (“com Claude”). Desmarcado = recebe o formulário offline">Usa o app</th><th>Regional</th><th>Gerente Regional</th><th>E-mail do Regional</th><th>Situação</th><th></th></tr></thead><tbody>${F.slice(0,MAX).map(([r,i])=>{const s=st[i];
     return `<tr data-row="${i}"><td><select class="cad-in" data-cg="${i}" data-k="dep" aria-label="Departamento">${r.dep&&!ar.includes(r.dep)?`<option>${esc(r.dep)}</option>`:""}${cadOpts(ar.map(a=>[a,a]),r.dep,"— escolha —")}</select></td>
-    <td><select class="cad-in" data-cg="${i}" data-k="emp" style="max-width:190px" aria-label="Empresa">${empOpts(r.emp)}</select></td><td><select class="cad-in" data-cg="${i}" data-k="obra" style="max-width:190px" aria-label="Obra">${obraOpts(r.emp,r.obra)}</select></td>
+    <td><input class="cad-in" data-cg="${i}" data-k="emp" value="${esc(r.emp||"")}" list="cadg-dl-emp" style="width:90px" aria-label="Empresa" title="${esc((emps.find(x=>x[0]===String(r.emp))||[,""])[1])}"></td><td><input class="cad-in" data-cg="${i}" data-k="obra" value="${esc(r.obra||"")}" list="cadg-dl-o-${esc(String(r.emp||""))}" style="width:90px" aria-label="Obra" title="${esc(cadTodas(r.obra)?"todas as obras da empresa":((cadObraDe(String(r.emp)+"-"+String(r.obra))||[])[2]||""))}"></td>
     <td>${inp(i,"nome",r.nome,"Nome",150)}</td><td>${inp(i,"email",r.email,r.sug&&!r.email?"sugestão: "+r.sug.email:"nome@empresa.com.br",200)}</td><td>${inp(i,"cargo",r.cargo,"Cargo",120)}</td>
     <td style="text-align:center"><input type="checkbox" data-cg="${i}" data-k="link"${cadLink(r)?" checked":""} aria-label="Usa o app pelo link"></td>
     <td>${inp(i,"reg",r.reg,"Regional",110)}</td><td>${inp(i,"regNome",r.regNome,"Nome",130)}</td><td>${inp(i,"regEmail",r.regEmail,"e-mail",170)}</td>
     <td class="cad-st"><span class="pill ${s[0]}">${esc(s[1])}</span>${s[2]?` <span class="muted" style="font-size:11px">${s[2]} obra(s)</span>`:""}${r.sug&&!r.email?`<div class="cad-sug">Sugestão: ${esc(r.sug.nome||r.sug.email)} <button class="btn sm" data-cg-sug="${i}">Usar</button></div>`:""}</td>
     <td style="white-space:nowrap"><button class="btn sm" data-cg-dup="${i}" title="Duplicar linha" aria-label="Duplicar linha">⧉</button> <button class="btn sm danger" data-cg-del="${i}" title="Excluir linha" aria-label="Excluir linha">✕</button></td></tr>`}).join("")}</tbody>`;
+  {const vis=[...new Set(F.slice(0,MAX).map(([r])=>String(r.emp||"")).filter(e=>e&&!cadTodas(e)))];const byE=new Map();(S.cat.obras||[]).concat(C.novas).forEach(c=>{const k=String(c[6]);if(!vis.includes(k))return;(byE.get(k)||byE.set(k,[]).get(k)).push(c)});
+    let dl=$("#cadg-dls");if(!dl){dl=document.createElement("div");dl.id="cadg-dls";dl.hidden=true;$("#cadg-tbl").after(dl)}
+    dl.innerHTML=`<datalist id="cadg-dl-emp"><option value="Todas">${emps.map(([e,n])=>`<option value="${esc(e)}">${esc(n)}</option>`).join("")}</datalist>`+vis.map(e=>`<datalist id="cadg-dl-o-${esc(e)}"><option value="Todas">${(byE.get(e)||[]).sort((a,b)=>cadNum(a[1],b[1])).map(c=>`<option value="${esc(c[1])}">${esc(c[2]||"")}</option>`).join("")}</datalist>`).join("")}
   cadBarra()}
 function cadGerAoa(){return [CAD_H,...S.cad.ger.map(r=>[r.dep||"",r.emp||"",r.obra||"",r.nome||"",r.email||"",r.cargo||"",r.obs||"",r.reg||"",r.regNome||"",r.regEmail||""])]}
 function cadGerDaPlanilha(rows){const h=rows[0].map(c=>String(c).trim());const ix=n=>h.indexOf(n);
@@ -4143,7 +4151,7 @@ async function cadImportar(files){const C=S.cad;const out=$("#cad-imp-res");out.
 const cadEstIdx=()=>(S.cad.estr&&S.cad.estr.idx)||S.estIdx||null;
 async function cadEstObra(e,o){const C=S.cad;if(C.estr)return (C.estr.E[e]||{})[o]||[];const d=await estEmpresa(e);return (d&&d.o&&d.o[o])||[]}
 /* lista de obras novas (calculada da estrutura, então não some se você fechar a página antes de confirmar) */
-async function cadPendPrep(){const C=S.cad;if(C.pend)return;try{await cadRegTab()}catch(e){}if(!C.estr)await carregarEstIdx();const IX=cadEstIdx();C.pend=new Map();if(!IX||!IX.eo)return;
+async function cadPendPrep(){const C=S.cad;if(C.pend)return;try{C.eu=String(await quemSou()).toLowerCase()}catch(e){C.eu=""}try{await cadRegTab()}catch(e){}if(!C.estr)await carregarEstIdx();const IX=cadEstIdx();C.pend=new Map();if(!IX||!IX.eo)return;
   const ids=Object.keys(IX.eo).filter(id=>!S.catMap.has(id)&&!(C.sit&&C.sit.get(id)===1));if(!ids.length)return;
   /* desempenho: busca a estrutura das empresas em paralelo (8 por vez) em vez de uma por uma */
   if(!C.estr){const emps=[...new Set(ids.map(id=>id.split("-")[0]))];for(let i=0;i<emps.length;i+=8)await Promise.all(emps.slice(i,i+8).map(e=>estEmpresa(e)))}
@@ -4161,7 +4169,7 @@ async function cadPendPrep(){const C=S.cad;if(C.pend)return;try{await cadRegTab(
     else if(porGrupo[grupo]){base=top(porGrupo[grupo]);motivo=`${porGrupo[grupo][base]} obra(s) do grupo ${grupo} usam esta base`}
     else{let b="",best=0;tipos.forEach(tp=>{let n=0;si.forEach(k=>{if(TS[tp].has(k))n++});const sc=n/Math.max(1,TS[tp].size+si.size-n);if(sc>best){best=sc;b=tp}});if(best>=.3){base=b;motivo=`estrutura parecida com a base`}}
     const lin=new Map();at.forEach(x=>{const k=`${x[0]}|${x[3]}|${x[4]}`;if(!lin.has(k))lin.set(k,{key:k,P:x[0],S:x[3],I:x[4]})});
-    const p={id,e,o,en,on,reg,grupo,linhas,si,lin:[...lin.values()],base,semBase,motivo,st:"",resp:{},extra:{},escolha:{}};{const lg=((C.resolv&&C.resolv.itens)||[]).filter(x=>x.id===id).pop();if(lg){p.jaFeita=lg;if(lg.base==="ERP"){p.base="";p.semBase=true}else if(lg.base&&(T.tipos||{})[lg.base]){p.base=lg.base;p.semBase=false}if(lg.reg)p.reg=lg.reg;p.motivo=`já tinha sido confirmada por ${lg.por} em ${fmtDate(lg.em)}, mas não ficou gravada (salvamento ao mesmo tempo). Confira e confirme de novo`}};cadPendCalc(p);C.pend.set(id,p)}}
+    const p={id,e,o,en,on,reg,grupo,linhas,si,lin:[...lin.values()],base,semBase,motivo,st:"",resp:{},extra:{},escolha:{}};{const LL=((C.resolv&&C.resolv.itens)||[]).filter(x=>x.id===id);const lg=LL.filter(x=>String(x.por||"").toLowerCase()===C.eu).pop()||LL.pop();if(lg){p.jaFeita=lg;if(lg.base==="ERP"){p.base="";p.semBase=true}else if(lg.base&&(T.tipos||{})[lg.base]){p.base=lg.base;p.semBase=false}if(lg.reg)p.reg=lg.reg;p.motivo=`já tinha sido confirmada por ${lg.por} em ${fmtDate(lg.em)}, mas não ficou gravada (salvamento ao mesmo tempo). Confira e confirme de novo`}};cadPendCalc(p);if(p.jaFeita)cadReaplicar(p);C.pend.set(id,p)}}
 function cadParecido(p){const {TS}=S.cad.pendCtx;if(!p.base||!TS[p.base]||!p.si.size)return null;let n=0;p.si.forEach(k=>{if(TS[p.base].has(k))n++});return Math.round(100*n/p.si.size)}
 /* áreas e responsáveis sugeridos para a base escolhida */
 function cadPendCalc(p){const {TL,TS,cnt,cntS,top}=S.cad.pendCtx;const A={};let fora=0;
@@ -4201,6 +4209,12 @@ function cadSugRegional2(p){const R=S.cad.regTab;if(!R)return {nome:"",email:"",
     ||(p.reg?conta(cats.filter(c=>c[1]===p.o&&cadRegDaEmp(c[6])===p.reg).map(c=>c[0]),(c,n)=>`Regional desta obra em ${c} de ${n} empresa(s) da ${p.reg}`):null)||{nome:"",email:"",fonte:""}}
 async function cadRegTab(){const C=S.cad;if(C.regTab)return;const sb=window.ORC_SB;if(!sb||!sb.from)return;const M=new Map();
   for(let f=0;;f+=1000){const {data,error}=await sb.from("regionais").select("email,obra_id,nome").order("obra_id").order("email").range(f,f+999);if(error)return;data.forEach(r=>{const L=M.get(r.obra_id)||[];L.push({email:String(r.email).toLowerCase(),nome:r.nome||""});M.set(r.obra_id,L)});if(data.length<1000)break}C.regTab=M}
+/* obra que já tinha sido decidida e se perdeu: volta com a mesma decisão (responsáveis pelo nome registrado) e já marcada; é só Salvar */
+function cadReaplicar(p){const lg=p.jaFeita;const C=S.cad;const porNome=new Map();(S.pessoas||[]).forEach(x=>{if(x.nome)porNome.set(semAc(x.nome).trim(),String(x.email).toLowerCase())});
+  if(C.regTab)C.regTab.forEach(L=>L.forEach(x=>{if(x.nome&&!porNome.has(semAc(x.nome).trim()))porNome.set(semAc(x.nome).trim(),x.email)}));
+  const acha=v=>{v=String(v||"").trim();if(!v)return null;if(cadValido(v))return v.toLowerCase();return porNome.get(semAc(v))||null};
+  [[CAD_GA,lg.ga],[CAD_CTRL,lg.ctrl],["_reg",lg.rg]].forEach(([d,v])=>{const em=acha(v);if(em)p.resp[d]={nome:cadValido(v)?(p.resp[d]&&p.resp[d].nome)||"":v,email:em,fonte:"decisão registrada em "+fmtDate(lg.em),mexeu:true}});
+  if(lg.st==="ok"||lg.st==="pausa"){if(!cadPendAplicar(p,lg.st,true))p.motivo+=" · precisa de ajuste antes de confirmar"}}
 function cadPendBloqueio(p){const L=[];if(!p.base&&!p.semBase)L.push("escolher a base modelo");if(!p.reg)L.push("informar a Regional");if(p.semArea)L.push(`dizer quem planeja ${p.semArea} insumo(s) fora do modelo`);return L}
 function cadPendAplicar(p,modo,quieto){const C=S.cad;cadPendDesfazer(p);const bl=cadPendBloqueio(p);if(modo==="ok"&&bl.length){if(!quieto)toast("Antes de confirmar: "+bl.join(", ")+".");return false}
   const c=[p.id,p.o,p.on,p.base,0,0,p.e,p.en,0];C.novas.push(c);C.aoNovas[p.id]=Object.keys(p.areas).sort();if(p.reg)C.reg.set(p.id,p.reg);
