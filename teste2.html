@@ -1129,7 +1129,7 @@ function applyRules(cur){
     {const fi=foraIns(cur.info.tipo,l);l.foraIns=fi;if(fi&&!l.orf){l.fora=true;l.canEdit=false;l.lockMsg=(fi.t==="inativo"?"Saiu do modelo":"Planejado fora do aplicativo")+(fi.area?" · "+fi.area:"")+". O valor já digitado foi mantido; a Controladoria decide onde ele fica."}}
     if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){{const cs=(S.subR&&S.subR.c&&S.subR.c[`${cur.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>cs[i]?{id:"p"+i,n,c:cs[i]}:{id:"p"+i,n});
       /* valor já digitado direto no insumo (antes do detalhamento): vai para o 1º subitem, nada se perde */
-      {const lv=cur.doc.v[l.key];const k0=l.key+"#"+cur.doc.sub[l.key][0].id;if(lv&&!cur.doc.v[k0]){const c={};Object.entries(lv).forEach(([y,a])=>{if(Array.isArray(a)&&a.some(v=>+v))c[y]=a.slice()});if(Object.keys(c).length)cur.doc.v[k0]=c}}}}
+      if(cur.doc.v&&cur.doc.sub[l.key].length){const lv=cur.doc.v[l.key];const k0=l.key+"#"+cur.doc.sub[l.key][0].id;if(lv&&!cur.doc.v[k0]){const c={};Object.entries(lv).forEach(([y,a])=>{if(Array.isArray(a)&&a.some(v=>+v))c[y]=a.slice()});if(Object.keys(c).length)cur.doc.v[k0]=c}}}}
   });
   absorverHistSub(cur);
 }
