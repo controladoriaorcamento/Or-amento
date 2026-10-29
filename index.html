@@ -1164,6 +1164,7 @@ async function boot(){
   try{const dp=await db.doc("regras/depara").get();S.dpR=dp.exists?dp.data():null}catch(e){S.dpR=null}
   try{const sb=await db.doc("regras/subitens").get();S.subR=sb.exists?sb.data():null}catch(e){S.subR=null}
   try{const bf=await db.doc("regras/base_fixa").get();S.bfR=bf.exists?bf.data():null}catch(e){S.bfR=null}
+  try{const pz=await db.doc("regras/padronizar").get();S.pzIgn=pz.exists?(pz.data().m||{}):{}}catch(e){S.pzIgn={}}
   await carregarInsFora();
   $("#v-fill").hidden=false;
   /* Gerente Regional: as obras dele entram na tela Preencher (visão completa) e há a aba Regional com o resumo */
@@ -1993,7 +1994,7 @@ const fR=v=>{const a=Math.abs(v);return (v<0?"−":"")+(a>=1e9?(a/1e9).toLocaleS
 const fP=(a,b)=>!b?(a?"novo":"—"):((a/b-1)*100>0?"+":"")+nf0.format((a/b-1)*100)+"%";
 function barraSt(c,tot){return `<div class="ind-bar" title="${IND_STO.map(k=>IND_STN[k]+": "+(c[k]||0)).join(" · ")}">${IND_STO.map(k=>c[k]?`<span class="st-${k}" style="width:${(c[k]/tot*100).toFixed(2)}%"></span>`:"").join("")}</div>`}
 /* andamento: gerente × obra (aba 3) */
-async function dadosIndicadores(){if(!S.areasObra){try{const d=await S.db.doc("restrito/areasobra").get();S.areasObra=d.exists?d.data().m:{}}catch(e){S.areasObra={}}}if(S.foraApp===undefined){try{const fd=await S.db.doc("regras/fora_app").get();S.foraApp=fd.exists?(fd.data().m||{}):{}}catch(e){S.foraApp={}}}if(!S.acompEm){$("#ind-msg").textContent="Carregando orçamentos…";await loadAdm()}await loadCat();
+async function dadosIndicadores(){await carregarInsFora();if(!S.areasObra){try{const d=await S.db.doc("restrito/areasobra").get();S.areasObra=d.exists?d.data().m:{}}catch(e){S.areasObra={}}}if(S.foraApp===undefined){try{const fd=await S.db.doc("regras/fora_app").get();S.foraApp=fd.exists?(fd.data().m||{}):{}}catch(e){S.foraApp={}}}if(!S.acompEm){$("#ind-msg").textContent="Carregando orçamentos…";await loadAdm()}await loadCat();
   if(!S.regObra){try{const rd=await S.db.doc("regras/regional_obra").get();S.regObra=rd.exists?(rd.data().m||null):null}catch(e){}}
   const pess=S.pessoas||[];const depsDe=new Map(pess.map(p=>[p.email,p.acc||{}]));
   const orcObra=new Map();const vistos=new Set();(S.acomp||[]).forEach(r=>{if(!r.orc)return;const k=r.uid+"|"+r.o;if(vistos.has(k))return;vistos.add(k);if(!orcObra.has(r.o))orcObra.set(r.o,[]);orcObra.get(r.o).push(r)});
@@ -2021,7 +2022,7 @@ async function fatosIndicadores(D,prog){const F=[];let i=0;const N=D.orcObra.siz
     for(const r of L){const tipo=r.info.tipo||c[3]||"";const deps=(D.depsDe.get((r.email||"").toLowerCase())||{})[o]||null;const doc={v:r.orc.v||{},pr:r.orc.pr||{}};
       const lines=buildLines(tipo,hist,extOrf(r.orc.ext,r.orc.v),esp);const pd={};lines.forEach(l=>{if(l.kind==="prod")pd[l.P]=l.desc});
       lines.forEach(l=>{if(l.kind!=="leaf")return;const rule=ruleFor(tipo,l);const area=(rule&&rule[1])||"Sem regra";const temV=YEARS.some(y=>lineTotal(doc,l,y));
-        if(deps?!(deps.includes(area))&&!temV:!temV)return;if(!temV&&(foraDe(o,area)||foraIns(tipo,l)))return;
+        if(deps?!(deps.includes(area))&&!temV:!temV)return;/* 30/10: fora do app (obra/área ou insumo) não entra nos Indicadores, mesmo com valor digitado */if(foraDe(o,area)||foraIns(tipo,l))return;
         const f={o,uid:r.uid,emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",obraNome:c[2]||"",obraLb:`${o} ${c[2]||""}`.trim(),reg:S.regObra?regDe(o):"Sem regional",tipo:tipo||"Sem base",cesp,ger:r.nomeG||"",email:r.email||"",st:r.orc.status||"rascunho",area,
           P:l.P||"",Pd:pd[l.P]||(l.extra?"Itens fora do modelo":"Produto "+(l.P||"")),S:l.S||"",Sd:SDESC[l.S]||(l.S?"Serviço "+l.S:"Sem serviço"),I:l.I||l.key,Id:`${l.desc}${l.I?" ("+l.I+")":""}`,
           orc:{2027:z(),2028:z(),2029:z()},h25:z(),h26:z(),esp:{2026:z(),2027:z(),2028:z(),2029:z()}};
@@ -2106,7 +2107,7 @@ document.addEventListener("mousemove",e=>{if(!S.indOn)return;const g=e.target.cl
   if(g){indTip(e,g.dataset.tip);return}indTip(e,null)});
 /* ---------- montagem do relatório ---------- */
 async function renderIndicadores(forcar){S.indOn=true;S.indAno=S.indAno||"2027";if(forcar){S.acompEm=0;S.ind=null;S.indF=null;S.indFG=null;S.indFP=null}
-  try{$("#ind-msg").textContent="Calculando…";if(!S.ind)S.ind=await dadosIndicadores();
+  try{$("#ind-msg").textContent="Calculando…";if(!S.ind){S.indF=null;S.indFG=null;S.indFP=null;S.ind=await dadosIndicadores()}
     if(!S.indF)S.indF=await fatosIndicadores(S.ind,t=>$("#ind-msg").textContent=t);
     {const cats=S.cat.obras||[];let ina=0,pau=0,fo=0;cats.forEach(c=>{if(c[8]===1){ina++;return}const m=(S.foraApp||{})[c[0]];if(m&&m["*"]){if(m["*"].pausada)pau++;else fo++}});const nO=new Set(S.ind.UA.map(u=>u.o)).size;
     $("#ind-msg").textContent=`Contando ${cadN(nO)} obra(s) ativa(s) e planejadas no app · fora da conta: ${cadN(ina)} inativa(s), ${cadN(pau)} pausada(s), ${cadN(fo)} fora do app · ${S.ind.UA.length} empresa/obra × quem planeja · ${S.ind.orcObra.size} obras com orçamento iniciado`}
@@ -4257,7 +4258,7 @@ const cadClone=o=>JSON.parse(JSON.stringify(o==null?null:o));
 const cadNum=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true});
 function cadNovo(){return {foraA:new Map(),aba:S.cad?S.cad.aba:"pend",pend:null,sit:null,nomes:new Map(),extraDec:new Map(),cat:new Map(),fora:new Map(),reg:new Map(),novas:[],t:{},o:{},ger:null,gerDirty:false,sel:new Set(),gerDoc:null,gerOrigem:"",gerMsg:"",aoNovas:{},estr:null}}
 const cadAO=()=>({...(S.areasObra||{}),...((S.cad&&S.cad.aoNovas)||{})});
-function cadSujo(){const C=S.cad;if(!C)return 0;return C.cat.size+C.nomes.size+C.fora.size+C.reg.size+C.novas.length+Object.values(C.t).reduce((a,m)=>a+Object.keys(m).length,0)+Object.values(C.o).reduce((a,m)=>a+Object.keys(m).length,0)+(C.gerDirty?1:0)+(C.estr?1:0)+(C.foraA?C.foraA.size:0)+(C.insF?C.insF.size:0)}
+function cadSujo(){const C=S.cad;if(!C)return 0;return C.cat.size+C.nomes.size+C.fora.size+C.reg.size+C.novas.length+Object.values(C.t).reduce((a,m)=>a+Object.keys(m).length,0)+Object.values(C.o).reduce((a,m)=>a+Object.keys(m).length,0)+(C.gerDirty?1:0)+(C.estr?1:0)+(C.foraA?C.foraA.size:0)+(C.insF?C.insF.size:0)+(C.pzIgn?C.pzIgn.size:0)}
 
 async function abrirCadastros(){
   const v=$("#v-cad");if(!v)return;S.cad=S.cad||cadNovo();$("#cad-msg").textContent="Carregando cadastros…";
@@ -4485,7 +4486,7 @@ function cadGerDaPlanilha(rows){const h=rows[0].map(c=>String(c).trim());const i
    Nada do que já existe é alterado. */
 const CAD_GA="Gerente Administrativo",CAD_CTRL="Controladoria";
 const CAD_NING="-";
-const cadLimpo=v=>String(v==null?"":v).replace(/\s+/g," ").trim();
+const cadLimpo=v=>String(v==null?"":v).replace(/_x000[dDaA9]_/g," ").replace(/\s+/g," ").trim();
 const cadChave=v=>semAc(cadLimpo(v)).toUpperCase().replace(/[^A-Z0-9]/g,"");
 const cadNorm=v=>semAc(String(v==null?"":v)).replace(/[^a-z0-9]/g,"");
 function cadLerEstrutura(rows){const h=(rows[0]||[]).map(x=>String(x).trim());
@@ -4697,16 +4698,18 @@ function cadDifs(){const C=S.cad;const IX=cadEstIdx();if(!IX||!IX.eo)return [];c
   (S.cat.obras||[]).forEach(c=>{const v=IX.eo[c[0]];if(!v)return;const nm=C.nomes.get(c[0])||{};
     const en=nm.en!=null?nm.en:c[7],on=nm.on!=null?nm.on:c[2],reg=C.reg.has(c[0])?C.reg.get(c[0]):((S.regObra||{})[c[0]]||"");
     const E=cadLimpo(v[0]),O=cadLimpo(v[2]),R=cadLimpo(v[1]);
-    if(E&&en!==E)out.push({c,campo:"emp",rot:"Nome da empresa",app:en,est:E});
-    if(O&&on!==O)out.push({c,campo:"obra",rot:"Nome da obra",app:on,est:O});
-    if(R&&reg!==R)out.push({c,campo:"reg",rot:reg&&cadChave(reg)===cadChave(R)?"Regional (escrita diferente)":"Regional",app:reg,est:R})});return out}
+    /* 30/10: “Manter o do app” — não volta a aparecer enquanto a estrutura trouxer o mesmo texto */
+    const ign=(k,est)=>{const key=c[0]+"|"+k;const a=C.pzIgn&&C.pzIgn.has(key)?C.pzIgn.get(key):(S.pzIgn||{})[key];return a!=null&&cadLimpo(a)===est};if(ign("emp",E)&&ign("obra",O)&&ign("reg",R))return;
+    if(E&&en!==E&&!ign("emp",E))out.push({c,campo:"emp",rot:"Nome da empresa",app:en,est:E});
+    if(O&&on!==O&&!ign("obra",O))out.push({c,campo:"obra",rot:"Nome da obra",app:on,est:O});
+    if(R&&reg!==R&&!ign("reg",R))out.push({c,campo:"reg",rot:reg&&cadChave(reg)===cadChave(R)?"Regional (escrita diferente)":"Regional",app:reg,est:R})});return out}
 function cadUsarEst(d){const C=S.cad;const id=d.c[0];if(d.campo==="reg"){cadSetReg(id,d.est);return}const nm=C.nomes.get(id)||{};nm[d.campo==="emp"?"en":"on"]=d.est;
   if((nm.en==null||nm.en===d.c[7])&&(nm.on==null||nm.on===d.c[2]))C.nomes.delete(id);else C.nomes.set(id,nm)}
 function cadRenderPadrao(){const C=S.cad;const L=cadDifs();C.difs=L;const fv=$("#pz-campo").value;const cnt=k=>L.filter(d=>d.campo===k).length;
   $("#pz-campo").innerHTML=cadOpts([["emp",`Nome da empresa (${cnt("emp")})`],["obra",`Nome da obra (${cnt("obra")})`],["reg",`Regional (${cnt("reg")})`]],fv,`Tudo (${L.length})`);
   const F=L.filter(d=>!fv||d.campo===fv);C.pzVis=F;const MAX=300;$("#pz-n").textContent=`${cadN(F.length)} diferença(s)${F.length>MAX?` · mostrando ${MAX}`:""}`;
   const vis=t=>esc(t).replace(/ {2,}/g,m=>'<mark title="espaço repetido">'+"·".repeat(m.length)+"</mark>");
-  $("#pz-tbl").innerHTML=F.length?`<thead><tr><th>Empresa / obra</th><th>Campo</th><th>No app hoje</th><th>Na Base da Estrutura</th><th></th></tr></thead><tbody>${F.slice(0,MAX).map((d,i)=>`<tr><td class="cad-cod">${esc(d.c[0])}</td><td>${esc(d.rot)}</td><td>${d.app?vis(d.app):'<span class="muted">vazio</span>'}</td><td><b>${esc(d.est)}</b></td><td><button class="btn sm" data-pz="${i}">Usar a da estrutura</button></td></tr>`).join("")}</tbody>`:`<tbody><tr><td class="muted">${cadEstIdx()?"Nomes e Regionais do app iguais à Base da Estrutura.":"Suba a Base da Estrutura para comparar."}</td></tr></tbody>`;
+  $("#pz-tbl").innerHTML=F.length?`<thead><tr><th>Empresa / obra</th><th>Campo</th><th>No app hoje</th><th>Na Base da Estrutura</th><th></th></tr></thead><tbody>${F.slice(0,MAX).map((d,i)=>`<tr><td class="cad-cod">${esc(d.c[0])}</td><td>${esc(d.rot)}</td><td><input class="cad-in" data-pzi="${i}" value="${esc(d.app||"")}" title="Escreva o nome certo, se nenhum dos dois estiver bom" style="width:100%"></td><td><b>${esc(d.est)}</b></td><td style="white-space:nowrap"><button class="btn sm" data-pz="${i}">Usar a da estrutura</button> <button class="btn sm" data-pzk="${i}">Manter o do app</button></td></tr>`).join("")}</tbody>`:`<tbody><tr><td class="muted">${cadEstIdx()?"Nomes e Regionais do app iguais à Base da Estrutura.":"Suba a Base da Estrutura para comparar."}</td></tr></tbody>`;
   /* Regionais com a mesma grafia base escritas de jeitos diferentes */
   const g=new Map();const add=(v,n)=>{v=String(v||"");if(!v.trim())return;const k=cadChave(v);const m=g.get(k)||new Map();m.set(v,(m.get(v)||0)+n);g.set(k,m)};
   Object.values(S.regObra||{}).forEach(v=>add(v,1));C.reg.forEach(v=>add(v,1));
@@ -4885,6 +4888,7 @@ document.addEventListener("click",e=>{const t=e.target;if(!t.closest||!t.closest
   b=t.closest("[data-cp-desf]");if(b){const p=P(b.dataset.cpDesf);if(p){cadPendDesfazer(p);cadRenderPend()}return}
   if(t.dataset&&t.dataset.cpLote){const L=(C.cpVis||[]).map(P).filter(p=>p&&!p.st);let n=0;L.forEach(p=>{if(cadPendAplicar(p,t.dataset.cpLote,true))n++});toast(`${n} obra(s) ${t.dataset.cpLote==="ok"?"confirmadas":"marcadas para não planejar"}${t.dataset.cpLote==="ok"&&n<L.length?` · ${L.length-n} precisam de ajuste (base, Regional ou quem planeja) e ficaram aguardando`:""}`);cadRenderPend();return}
   b=t.closest("[data-pz]");if(b){const d=(C.pzVis||[])[+b.dataset.pz];if(d){cadUsarEst(d);cadRenderPend()}return}
+  b=t.closest("[data-pzk]");if(b){const d=(C.pzVis||[])[+b.dataset.pzk];if(d){C.pzIgn=C.pzIgn||new Map();C.pzIgn.set(d.c[0]+"|"+d.campo,d.est);toast("Fica o nome do app. Clique em Salvar para gravar.");cadRenderPend()}return}
   if(t.id==="cx-ning"){const K=(C.cxVis||[]).filter(g=>g.falta).map(g=>g.k);if(!K.length)return;if(!t.dataset.arm){t.dataset.arm=1;t.textContent=`Confirmar: ${K.length} insumo(s) ficam fora do app`;setTimeout(()=>{if(t.isConnected){delete t.dataset.arm;t.textContent="Os listados sem decisão: ninguém planeja"}},5000);return}
     delete t.dataset.arm;cadDecidir(K,CAD_NING);toast(`${K.length} insumo(s) marcados como fora do app`);cadRenderPend();return}
   b=t.closest("[data-pzs]");if(b){const x=(C.sumidas||[])[+b.dataset.pzs];if(x){cadSetInat(x.c[0],!x.inat);cadRenderPend()}return}
@@ -4955,6 +4959,7 @@ async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$(
       const ao=cadClone(S.areasObra)||{};afet.forEach((novas,id)=>{const c=S.catMap.get(id);if(novasAgora.has(id))return;if(c)ao[id]=cadAreasObra(id,c[3],ao[id]||[],[...novas])});
       await S.db.doc("restrito/areasobra").set({m:ao,aba:"Cadastros",arquivo:"Cadastros no app",atualizadoEm:em});S.areasObra=ao;
       if(S.cur){applyRules(S.cur);renderGrid()}feito.push(`${nT+nO} regra(s) de quem planeja`);C.t={};C.o={}}
+    if(C.pzIgn&&C.pzIgn.size){const d=await S.db.doc("regras/padronizar").get();const P=d.exists?d.data():{m:{}};P.m=P.m||{};C.pzIgn.forEach((v,k)=>P.m[k]=v);P.atualizadoEm=em;await S.db.doc("regras/padronizar").set(P);S.pzIgn=P.m;feito.push(`${C.pzIgn.size} nome(s) mantido(s) como no app`);C.pzIgn.clear()}
     /* 29/10 (2): insumo no app / fora do app / inativo, mudado em Quem planeja (relê o banco antes de gravar) */
     if(C.insF&&C.insF.size){msg.textContent="Gravando o que fica fora do app…";const d=await S.db.doc("regras/insumos_fora").get();const F=d.exists?d.data():{m:{}};F.m=F.m||{};const por2=await quemSou();
       C.insF.forEach((v,k)=>{const [tp,P,Sv,I]=k.split("|");const area=((ruleFor(tp,{P,S:Sv,I,key:`${P}|${Sv}|${I}`})||[])[1])||"";F.m[k]={t:v,area,motivo:v==="app"?"Voltou para o app (Cadastros)":v==="fora"?"Fora do app (Cadastros)":"Inativado (Cadastros)",app:true,por:por2,em}});
@@ -5011,6 +5016,8 @@ document.addEventListener("change",async e=>{const t=e.target;if(!t.closest||!t.
   if(["co-emp","co-st"].includes(t.id)){cadRenderObras();return}
   if(t.id==="cq-base"){$("#cq-obra").value="";cadQuemPrep();return}if(["cq-obra","cq-area"].includes(t.id)){cadRenderQuem();return}
   if(t.dataset.cq){cadSetQuem(t.dataset.cq,t.value);cadRenderQuem();return}
+  if(t.dataset.pzi!=null){const C=S.cad;const d=(C.pzVis||[])[+t.dataset.pzi];const v=cadLimpo(t.value);if(d&&v){if(d.campo==="reg")cadSetReg(d.c[0],v);else{const nm=C.nomes.get(d.c[0])||{};nm[d.campo==="emp"?"en":"on"]=v;C.nomes.set(d.c[0],nm)}
+    if(v!==d.est){C.pzIgn=C.pzIgn||new Map();C.pzIgn.set(d.c[0]+"|"+d.campo,d.est)}toast("Nome alterado. Clique em Salvar para gravar.");cadRenderPend()}return}
   if(t.dataset.cqf){const C=S.cad;C.insF=C.insF||new Map();const atual=(((S.insFora||{})[t.dataset.cqf]||{}).t)||"app";if(t.value===atual)C.insF.delete(t.dataset.cqf);else C.insF.set(t.dataset.cqf,t.value);cadRenderQuem();return}
   if(["cadg-dep","cadg-emp","cadg-pend"].includes(t.id)){cadRenderGer();return}
   if(t.dataset.cg!=null){const r=C.ger[+t.dataset.cg];const k=t.dataset.k;
