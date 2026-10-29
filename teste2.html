@@ -2379,7 +2379,7 @@ function menuMeuExcel(){let m=$("#mx-pop");if(m){m.remove();return}const b=$("#b
   const nOb=(S.selIds||[]).length,nF=obrasFiltradas().length;const filtrou=nF<nOb;
   m.innerHTML=`<b>Baixar meu Excel</b>
    <fieldset><legend>Anos</legend><label><input type="radio" name="mx-a" value="2027" checked> Só 2027</label><label><input type="radio" name="mx-a" value="todos"> 2027, 2028 e 2029</label></fieldset>
-   <fieldset><legend>Itens</legend><label><input type="radio" name="mx-i" value="todos" checked> Todos os itens que eu preencho (meses em branco para preencher)</label><label><input type="radio" name="mx-i" value="preench"> Só os já preenchidos</label></fieldset>
+   <fieldset><legend>Itens</legend><label><input type="radio" name="mx-i" value="todos" checked> Todos os itens que ${S.owner?"os filtros Gerente / Quem planeja mostram":"eu preencho"} (meses em branco para preencher)</label><label><input type="radio" name="mx-i" value="preench"> Só os já preenchidos</label></fieldset>
    <fieldset><legend>Obras</legend><label><input type="radio" name="mx-o" value="todas" ${nF>1?"checked":""}> ${filtrou?`Todas as obras do filtro (${nF}) – várias empresas juntas`:`Todas as ${S.owner?"":"minhas "}obras (${nF})`}</label><label><input type="radio" name="mx-o" value="atual" ${nF>1?"":"checked"}> Só a obra da tabela${S.cur?": "+esc(obraLbl(S.cur.o,S.cur.info)):""}</label>${nF>300?`<div class="muted" style="font-size:11.5px">São ${nF} obras; o Excel leva as primeiras 300. Use os filtros (Regional, Empresa…) para escolher.</div>`:""}</fieldset>
    <div class="row" style="gap:6px;justify-content:flex-end"><button class="btn sm" id="mx-no">Cancelar</button><button class="btn sm primary" id="mx-ok">Baixar</button></div>`;
   b.parentElement.style.position="relative";b.after(m);
@@ -2391,7 +2391,7 @@ async function exportarMeuExcel(op){op=op||{anos:YEARS.slice(),todos:false,obras
   if(!S.dl){toast("Download indisponível nesta visualização");return}
   await flush().catch(()=>{});toast("Montando o Excel…");
   const M=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-  const aoa=[["Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição do insumo","Subitem (nome do gasto)","Ano",...M,"Total","Histórico 2025","Histórico jan–set/2026","Observação"]];
+  const aoa=[["Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição do insumo","Subitem (nome do gasto)","Ano",...M,"Total","Histórico 2025","Histórico jan–set/2026","Observação","Quem planeja"]];
   let ids=op.obras==="atual"&&S.cur?[S.cur.o]:obrasFiltradas().filter(Boolean);
   if(ids.length>300){toast(`São ${ids.length} obras; vou exportar as primeiras 300. Use os filtros para escolher.`);ids=ids.slice(0,300)}
   const r2=x=>Math.round((+x||0)*100)/100;
@@ -2400,19 +2400,21 @@ async function exportarMeuExcel(op){op=op||{anos:YEARS.slice(),todos:false,obras
     const ds=await S.db.doc(`gerentes/${S.owner?S.me:donoDoc(o)}/orc/${o}`).get();const raw=ds.exists?ds.data():{};
     const doc={v:raw.v||{},pr:raw.pr||{},sub:raw.sub||{},lobs:raw.lobs||{}};const lines=buildLines(info.tipo,hd,extOrf(raw.ext,raw.v));const prods=produtosDaObra(hd,lines,o,info.tipo,doc);
     const cur={uid:S.me,o,info,doc:{sub:JSON.parse(JSON.stringify(doc.sub))},lines,editable:true};applyRules(cur);
-    lines.filter(l=>l.kind==="leaf"&&(S.owner||l.mine)&&(!prods||!l.P||l.extra||prods.has(l.P))).forEach(l=>{
+    /* 30/10: só o que a pessoa preenche. Master: respeita os filtros Gerente / Quem planeja do Preencher. Fora do app só sai se já tiver valor. */
+    const depsX=S.owner?depsDaObra(o):null;const temV=l=>temValor({v:doc.v,sub:doc.sub},l);
+    lines.filter(l=>l.kind==="leaf"&&(S.owner?(!depsX||l.extra||depsX.includes(l.area)):l.mine)&&!(l.fora&&!temV(l))&&(!prods||!l.P||l.extra||prods.has(l.P))).forEach(l=>{
       const oc=S.regras&&S.regras.ocSet&&S.regras.ocSet.has(`${info.tipo||""}|${l.P}|${l.S}|${l.I}`);if(oc&&!sum(l.h)&&!temValor({v:doc.v,sub:doc.sub},l))return;
       const st=histStats(l.h);
       const subs=(doc.sub[l.key]&&doc.sub[l.key].length?doc.sub[l.key]:(cur.doc.sub[l.key]||[]));
       op.anos.forEach(y=>{const v=M.map((_,m)=>lineMonth(doc,l,y,m));const t=sum(v);
         const sv=subs.map(sb=>({n:sb.n,v:((doc.v[subKey(l,sb)]||{})[y]||[]).map(x=>+x||0),h:l.subH&&l.subH[sb.n]}));
         if(!op.todos&&!t&&!sv.some(x=>sum(x.v)))return;
-        aoa.push([numOr(info.emp||""),numOr(info.obra||o),info.nome||"",l.P||"",l.S||"",l.I||"",l.desc,subs.length?"(total do insumo)":"",+y,...(subs.length?v.map(r2):v.map(x=>x?r2(x):null)),r2(t),r2(st.h25),r2(st.h26),doc.lobs[l.key]||""]);
-        sv.forEach(x=>{const hs2=x.h?histStats(x.h):null;aoa.push([numOr(info.emp||""),numOr(info.obra||o),info.nome||"",l.P||"",l.S||"",l.I||"",l.desc,x.n,+y,...M.map((_,m)=>x.v[m]?r2(x.v[m]):null),r2(sum(x.v)),hs2?r2(hs2.h25):null,hs2?r2(hs2.h26):null,""])});
+        aoa.push([numOr(info.emp||""),numOr(info.obra||o),info.nome||"",l.P||"",l.S||"",l.I||"",l.desc,subs.length?"(total do insumo)":"",+y,...(subs.length?v.map(r2):v.map(x=>x?r2(x):null)),r2(t),r2(st.h25),r2(st.h26),doc.lobs[l.key]||"",l.area||""]);
+        sv.forEach(x=>{const hs2=x.h?histStats(x.h):null;aoa.push([numOr(info.emp||""),numOr(info.obra||o),info.nome||"",l.P||"",l.S||"",l.I||"",l.desc,x.n,+y,...M.map((_,m)=>x.v[m]?r2(x.v[m]):null),r2(sum(x.v)),hs2?r2(hs2.h25):null,hs2?r2(hs2.h26):null,"",l.area||""])});
       })});
   }
   if(aoa.length===1){toast(op.todos?"Nenhum item para exportar.":"Ainda não há valores preenchidos para exportar.");return}
-  const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:8},{wch:9},{wch:9},{wch:40},{wch:28},{wch:6},...Array(12).fill({wch:11}),{wch:13},{wch:13},{wch:13},{wch:30}];ws["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(aoa[0].length-1)+aoa.length};ws["!freeze"]={xSplit:9,ySplit:1};
+  const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:8},{wch:9},{wch:9},{wch:40},{wch:28},{wch:6},...Array(12).fill({wch:11}),{wch:13},{wch:13},{wch:13},{wch:30},{wch:24}];ws["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(aoa[0].length-1)+aoa.length};ws["!freeze"]={xSplit:9,ySplit:1};
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Meu orçamento");
   const nm=slug((S.perfil&&S.perfil.nome)||(window.OFFLINE&&window.OFFLINE.nome)||"gerente");
   try{await S.dl.save({filename:`MEU_ORCAMENTO_${op.anos.length===1?op.anos[0]:"2027_2029"}_${nm}.xlsx`,data:new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}))});toast(`Excel gerado: ${aoa.length-1} linha(s)`)}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
