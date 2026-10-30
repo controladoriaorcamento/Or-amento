@@ -359,7 +359,7 @@ tr.cf-form td{background:var(--accent-soft)}
 .cp-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,.8fr)}
 .cad-h3{font-size:14px;margin:16px 0 6px}
 #cx-card[hidden]{display:none}
-#pz-sbox[hidden]{display:none}.mq-btn{border:1px solid var(--line,#ccd);background:transparent;border-radius:6px;font-size:11px;line-height:1;padding:2px 5px;margin-left:4px;cursor:pointer;color:inherit}.mq-btn:hover{background:rgba(0,0,0,.06)}
+#pz-sbox[hidden]{display:none}.mq-btn{border:1px solid var(--line,#ccd);background:transparent;border-radius:7px;font-size:17px;line-height:1;padding:3px 6px;margin-left:6px;cursor:pointer;color:inherit;vertical-align:middle}.mq-pop{position:fixed!important;right:auto!important;bottom:auto!important;z-index:9500;min-width:320px;max-width:380px;max-height:calc(100vh - 16px);overflow:auto;box-shadow:0 8px 28px rgba(0,0,0,.22)}.mq-btn:hover{background:rgba(0,0,0,.06)}
 .cp-emp{border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
 .cp-emp-h{display:flex;width:100%;gap:8px;align-items:center;padding:8px 12px;border:0;background:none;cursor:pointer;font:inherit;text-align:left;flex-wrap:wrap}
 .cp-emp-h:hover{background:var(--accent-soft)}
@@ -1603,14 +1603,16 @@ function mqAbrir(idx,btn){mqFechar();const c=S.cur;const l=c&&c.lines[idx];if(!l
   const ar=(typeof cadAreas==="function"?cadAreas():[]).filter(a=>a.length<60&&!/,/.test(a)).sort((a,b)=>a.localeCompare(b,"pt-BR"));if(l.area&&!ar.includes(l.area))ar.unshift(l.area);
   const ex=((S.dpR&&S.dpR.o&&S.dpR.o[c.o])||{})[k3];const xo=insObra(c.o,l);const fa=foraDe(c.o,l.area);const fb=foraIns(tipo,l);
   const st=l.fora?"fora":"app";const orig=xo?`decidido nesta obra (${xo.t==="app"?"no app":"fora do app"})`:fa?`área ${l.area} fora do app nesta obra`:fb?(fb.t==="inativo"?"saiu da Estrutura - Modelo":"fora do app na base "+tipo):"segue a base "+tipo;
-  const m=document.createElement("div");m.id="mq-pop";m.className="mx-pop";m.style.minWidth="320px";
+  const m=document.createElement("div");m.id="mq-pop";m.className="mx-pop mq-pop";
   m.innerHTML=`<b>${esc(l.desc)}</b><div class="muted" style="font-size:11.5px;margin:2px 0 6px">${esc(k3)} · obra ${esc(c.o)} · base ${esc(tipo)}</div>
    <fieldset><legend>Quem planeja</legend><select id="mq-area" class="cad-in" style="width:100%">${ar.map(a=>`<option${a===l.area?" selected":""}>${esc(a)}</option>`).join("")}</select>
     <small class="muted">${ex?"hoje: exceção desta obra":"hoje: regra da base"}</small></fieldset>
    <fieldset><legend>Preenchimento</legend><label><input type="radio" name="mq-st" value="app" ${st==="app"?"checked":""}> Preencher no app</label><label><input type="radio" name="mq-st" value="fora" ${st==="fora"?"checked":""}> Fora do app</label><small class="muted">hoje: ${esc(orig)}</small></fieldset>
    <fieldset><legend>Vale para</legend><label><input type="radio" name="mq-al" value="obra" checked> Só esta obra (${esc(c.o)})</label><label><input type="radio" name="mq-al" value="base"> Todas as obras da base ${esc(tipo)}</label></fieldset>
    <div class="row" style="gap:6px;justify-content:flex-end"><button class="btn sm" id="mq-no">Cancelar</button><button class="btn sm primary" id="mq-ok">Aplicar</button></div>`;
-  btn.parentElement.style.position="relative";btn.after(m);
+  document.body.appendChild(m);
+  /* 30/10: abre ao lado do botão (fixo na tela), sem ficar cortado */
+  {const r=btn.getBoundingClientRect(),w=m.offsetWidth,h=m.offsetHeight,W=innerWidth,H=innerHeight;let x=r.right+10;if(x+w>W-8)x=Math.max(8,r.left-w-10);let y=r.top-8;if(y+h>H-8)y=Math.max(8,H-h-8);m.style.left=x+"px";m.style.top=y+"px"}
   $("#mq-no").onclick=mqFechar;$("#mq-ok").onclick=()=>mqAplicar(idx).catch(e=>toast("Não foi possível gravar: "+(e&&e.message||e)))}
 async function mqAplicar(idx){const c=S.cur;const l=c.lines[idx];const tipo=c.info.tipo;const o=c.o;const k3=`${l.P}|${l.S}|${l.I}`;
   const area=$("#mq-area").value;const st=document.querySelector('input[name="mq-st"]:checked').value;const al=document.querySelector('input[name="mq-al"]:checked').value;
@@ -1630,6 +1632,7 @@ async function mqAplicar(idx){const c=S.cur;const l=c.lines[idx];const tipo=c.in
     if(st==="app"&&al==="obra"){try{const ad=await S.db.doc("restrito/areasobra").get();const A=ad.exists?ad.data():{m:{}};A.m=A.m||{};const a2=area||l.area;const at=A.m[o]||[];if(a2&&!at.includes(a2)){A.m[o]=[...at,a2].sort();A.atualizadoEm=em;await S.db.doc("restrito/areasobra").set(A);S.areasObra=A.m}}catch(e){console.warn("areasobra",e)}}}
   mqFechar();S.ind=null;if(!feito.length){toast("Nada mudou.");return}
   applyRules(c);renderGrid();toast(`Gravado (${al==="obra"?"só nesta obra":"base "+tipo}): ${feito.join(" · ")}`)}
+window.addEventListener("scroll",e=>{const m=$("#mq-pop");if(m&&!(e.target&&e.target.closest&&e.target.closest("#mq-pop")))mqFechar()},true);
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mq]");if(b){e.stopPropagation();mqAbrir(+b.dataset.mq,b);return}const m=$("#mq-pop");if(m&&!e.target.closest("#mq-pop"))mqFechar()});
 function renderGrid(){if(!S.cur||!S.cur.lines)return;
   const {lines,doc,editable}=S.cur, y=S.year;
