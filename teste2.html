@@ -359,7 +359,7 @@ tr.cf-form td{background:var(--accent-soft)}
 .cp-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,.8fr)}
 .cad-h3{font-size:14px;margin:16px 0 6px}
 #cx-card[hidden]{display:none}
-#pz-sbox[hidden]{display:none}
+#pz-sbox[hidden]{display:none}.mq-btn{border:1px solid var(--line,#ccd);background:transparent;border-radius:6px;font-size:11px;line-height:1;padding:2px 5px;margin-left:4px;cursor:pointer;color:inherit}.mq-btn:hover{background:rgba(0,0,0,.06)}
 .cp-emp{border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
 .cp-emp-h{display:flex;width:100%;gap:8px;align-items:center;padding:8px 12px;border:0;background:none;cursor:pointer;font:inherit;text-align:left;flex-wrap:wrap}
 .cp-emp-h:hover{background:var(--accent-soft)}
@@ -1125,8 +1125,8 @@ function applyRules(cur){
     l.mine=owner||(!!l.area&&(!areas.length||areas.includes(l.area)));const srcD=cur.inj&&cur.inj.src&&cur.inj.src[l.key];const alheio=srcD&&(srcD.nome||"outra pessoa");const ajusta=!srcD||podeAjustarOutro(srcD);l.canEdit=cur.editable&&l.mine&&ajusta;l.donoNome=alheio||"";
     l.lockMsg=alheio&&!ajusta?"Preenchido por "+alheio+" — já enviado à Controladoria (somente leitura)":!l.area?"Sem regra definida na Bases - Gerais":(l.canEdit?"":"Preenchido pela área "+l.area);
     if(l.orf){l.mine=true;l.canEdit=cur.editable;l.lockMsg=""}
-    {const fo=foraDe(cur.o,l.area);l.fora=!!fo;if(fo){l.canEdit=false;l.lockMsg="Planejado fora do aplicativo"+(fo.motivo?": "+fo.motivo:"")}}
-    {const fi=foraIns(cur.info.tipo,l);l.foraIns=fi;if(fi&&!l.orf){l.fora=true;l.canEdit=false;l.lockMsg=(fi.t==="inativo"?"Saiu do modelo":"Planejado fora do aplicativo")+(fi.area?" · "+fi.area:"")+". O valor já digitado foi mantido; a Controladoria decide onde ele fica."}}
+    {const fo=insAppObra(cur.o,l)?null:foraDe(cur.o,l.area);l.fora=!!fo;if(fo){l.canEdit=false;l.lockMsg="Planejado fora do aplicativo"+(fo.motivo?": "+fo.motivo:"")}}
+    {const fi=foraIns(cur.info.tipo,l,cur.o);l.foraIns=fi;if(fi&&!l.orf){l.fora=true;l.canEdit=false;l.lockMsg=(fi.t==="inativo"?"Saiu do modelo":"Planejado fora do aplicativo")+(fi.area?" · "+fi.area:"")+". O valor já digitado foi mantido; a Controladoria decide onde ele fica."}}
     if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){{const cs=(S.subR&&S.subR.c&&S.subR.c[`${cur.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>cs[i]?{id:"p"+i,n,c:cs[i]}:{id:"p"+i,n});
       /* valor já digitado direto no insumo (antes do detalhamento): vai para o 1º subitem, nada se perde */
       if(cur.doc.v&&cur.doc.sub[l.key].length){const lv=cur.doc.v[l.key];const k0=l.key+"#"+cur.doc.sub[l.key][0].id;if(lv&&!cur.doc.v[k0]){const c={};Object.entries(lv).forEach(([y,a])=>{if(Array.isArray(a)&&a.some(v=>+v))c[y]=a.slice()});if(Object.keys(c).length)cur.doc.v[k0]=c}}}}
@@ -1597,6 +1597,40 @@ function montarMulti(corpo,nCols){const conf=S.cur&&!meuCur();
 document.addEventListener("click",async e=>{const tr=e.target.closest("#grid tr.m-obra");if(!tr)return;const o=tr.dataset.mob;
   if(S.cur&&o===S.cur.o){S.curFechado=!S.curFechado;renderGrid();return}
   S.curFechado=false;await irObra(o);setTimeout(()=>{const r=document.querySelector(`#grid tr.m-obra[data-mob="${CSS.escape(o)}"]`);if(r)r.scrollIntoView({block:"start"})},700)});
+/* ---------- 30/10: master ajusta um insumo direto no Preencher (quem planeja e no app / fora do app) ---------- */
+function mqFechar(){const m=$("#mq-pop");if(m)m.remove()}
+function mqAbrir(idx,btn){mqFechar();const c=S.cur;const l=c&&c.lines[idx];if(!l)return;const tipo=c.info.tipo;const k3=`${l.P}|${l.S}|${l.I}`;
+  const ar=(typeof cadAreas==="function"?cadAreas():[]).filter(a=>a.length<60&&!/,/.test(a)).sort((a,b)=>a.localeCompare(b,"pt-BR"));if(l.area&&!ar.includes(l.area))ar.unshift(l.area);
+  const ex=((S.dpR&&S.dpR.o&&S.dpR.o[c.o])||{})[k3];const xo=insObra(c.o,l);const fa=foraDe(c.o,l.area);const fb=foraIns(tipo,l);
+  const st=l.fora?"fora":"app";const orig=xo?`decidido nesta obra (${xo.t==="app"?"no app":"fora do app"})`:fa?`área ${l.area} fora do app nesta obra`:fb?(fb.t==="inativo"?"saiu da Estrutura - Modelo":"fora do app na base "+tipo):"segue a base "+tipo;
+  const m=document.createElement("div");m.id="mq-pop";m.className="mx-pop";m.style.minWidth="320px";
+  m.innerHTML=`<b>${esc(l.desc)}</b><div class="muted" style="font-size:11.5px;margin:2px 0 6px">${esc(k3)} · obra ${esc(c.o)} · base ${esc(tipo)}</div>
+   <fieldset><legend>Quem planeja</legend><select id="mq-area" class="cad-in" style="width:100%">${ar.map(a=>`<option${a===l.area?" selected":""}>${esc(a)}</option>`).join("")}</select>
+    <small class="muted">${ex?"hoje: exceção desta obra":"hoje: regra da base"}</small></fieldset>
+   <fieldset><legend>Preenchimento</legend><label><input type="radio" name="mq-st" value="app" ${st==="app"?"checked":""}> Preencher no app</label><label><input type="radio" name="mq-st" value="fora" ${st==="fora"?"checked":""}> Fora do app</label><small class="muted">hoje: ${esc(orig)}</small></fieldset>
+   <fieldset><legend>Vale para</legend><label><input type="radio" name="mq-al" value="obra" checked> Só esta obra (${esc(c.o)})</label><label><input type="radio" name="mq-al" value="base"> Todas as obras da base ${esc(tipo)}</label></fieldset>
+   <div class="row" style="gap:6px;justify-content:flex-end"><button class="btn sm" id="mq-no">Cancelar</button><button class="btn sm primary" id="mq-ok">Aplicar</button></div>`;
+  btn.parentElement.style.position="relative";btn.after(m);
+  $("#mq-no").onclick=mqFechar;$("#mq-ok").onclick=()=>mqAplicar(idx).catch(e=>toast("Não foi possível gravar: "+(e&&e.message||e)))}
+async function mqAplicar(idx){const c=S.cur;const l=c.lines[idx];const tipo=c.info.tipo;const o=c.o;const k3=`${l.P}|${l.S}|${l.I}`;
+  const area=$("#mq-area").value;const st=document.querySelector('input[name="mq-st"]:checked').value;const al=document.querySelector('input[name="mq-al"]:checked').value;
+  const por=await quemSou();const em=nowISO();const b=$("#mq-ok");b.disabled=true;const feito=[];
+  await flush().catch(()=>{});
+  /* quem planeja (relê o banco antes de gravar) */
+  if(area&&area!==l.area){const d=await S.db.doc("regras/depara").get();const D=d.exists?d.data():{};
+    if(al==="obra"){D.o=D.o||{};const m=D.o[o]=D.o[o]||{};const base=cadBaseDe(D,tipo,l.P,l.S,l.I)||"";if(area===base)delete m[k3];else m[k3]=area;if(!Object.keys(m).length)delete D.o[o]}
+    else{D.t=D.t||{};const t=D.t[tipo]=D.t[tipo]||{};t[k3]=area}
+    D.atualizadoEm=em;D.editadoEm=em;D.editadoPor=por;await S.db.doc("regras/depara").set(D);S.dpR=D;feito.push("quem planeja: "+area);
+    /* a área passa a existir na obra (para os acessos e o Andamento) */
+    if(al==="obra"){try{const ad=await S.db.doc("restrito/areasobra").get();const A=ad.exists?ad.data():{m:{}};A.m=A.m||{};const at=A.m[o]||[];if(!at.includes(area)){A.m[o]=[...at,area].sort();A.atualizadoEm=em;await S.db.doc("restrito/areasobra").set(A);S.areasObra=A.m}}catch(e){console.warn("areasobra",e)}}}
+  /* no app / fora do app */
+  const eraFora=!!l.fora;if((st==="fora")!==eraFora||(st==="app"&&eraFora)){const d=await S.db.doc("regras/insumos_fora").get();const F=d.exists?d.data():{m:{}};F.m=F.m||{};
+    const key=al==="obra"?`o:${o}|${k3}`:`${tipo}|${k3}`;F.m[key]={t:st,area:area||l.area||"",motivo:st==="app"?"Liberado no Preencher (master)":"Fora do app pelo Preencher (master)",app:true,por,em};
+    F.atualizadoEm=em;await S.db.doc("regras/insumos_fora").set(F);S.insFora=F.m;feito.push(st==="app"?"liberado para preencher":"fora do app");
+    if(st==="app"&&al==="obra"){try{const ad=await S.db.doc("restrito/areasobra").get();const A=ad.exists?ad.data():{m:{}};A.m=A.m||{};const a2=area||l.area;const at=A.m[o]||[];if(a2&&!at.includes(a2)){A.m[o]=[...at,a2].sort();A.atualizadoEm=em;await S.db.doc("restrito/areasobra").set(A);S.areasObra=A.m}}catch(e){console.warn("areasobra",e)}}}
+  mqFechar();S.ind=null;if(!feito.length){toast("Nada mudou.");return}
+  applyRules(c);renderGrid();toast(`Gravado (${al==="obra"?"só nesta obra":"base "+tipo}): ${feito.join(" · ")}`)}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mq]");if(b){e.stopPropagation();mqAbrir(+b.dataset.mq,b);return}const m=$("#mq-pop");if(m&&!e.target.closest("#mq-pop"))mqFechar()});
 function renderGrid(){if(!S.cur||!S.cur.lines)return;
   const {lines,doc,editable}=S.cur, y=S.year;
   $("#btn-copy-prev").hidden=!(editable&&y!=="2027");
@@ -1630,7 +1664,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
       else acts=`<button data-act="rep" data-i="${idx}" title="Repete o primeiro valor preenchido em todos os meses">Repetir</button>${q?"":`<button data-act="avg" data-i="${idx}" title="Preenche os 12 meses com a média de 2026 (total ÷ meses com gasto)">Média 26</button><button data-act="det" data-i="${idx}" title="Abre subitens só para preenchimento (ex.: IRRF, 13º, VA, VT). O Excel recebe apenas o total do item">Detalhar</button>`}<button data-act="clr" data-i="${idx}" title="Limpa os 12 meses deste ano">Limpar</button>`;
     }
     if(modoRevisao())acts+=`<button data-act="rev" data-i="${idx}" class="${revDe(l)?"rev-on":""}" title="Escrever o que está errado neste insumo (o gerente vê ao reabrir)">${revDe(l)?"✎ Apontamento":"⚠ Apontar"}</button>`;
-    h+=`<tr data-i="${idx}" class="${hs?"has-sub":""}${revDe(l)?" has-rev":""}"><td class="c-desc" style="padding-left:${pad}px" title="${esc(l.desc)} ${esc(l.S)} ${esc(l.I)}"><button class="ldr" data-ldr="${idx}" title="Abrir os meses de 2025 e 2026 deste insumo" aria-expanded="${!!(S.lineOpen&&S.lineOpen.has(l.key))}">${S.lineOpen&&S.lineOpen.has(l.key)?"▾":"▸"}</button><button class="dlink" data-det="${idx}">${esc(l.desc)}</button>${q?`<span class="un">${esc(l.un)}</span>`:""}${hs?`<span class="un" title="Soma dos subitens">detalhado</span>`:""}${l.area&&!restrito()?`<span class="area" title="Quem planeja: ${esc(l.area)}">${esc(AREA_CURTA[l.area]||l.area)}</span>`:""}${l.obrigRegra&&!OBRIG_TODOS?`<span class="un" title="Obrigatório preencher pelos subitens">obrigatório detalhar</span>`:""}${orientacao(l)?`<span class="un orient" title="${esc(orientacao(l))}">ⓘ ${esc(orientacao(l))}</span>`:""}${alertasHtml(l)}${!l.canEdit&&editable?`<span class="lock" title="${esc(l.lockMsg)}">${l.fora?(l.foraIns&&l.foraIns.t==="inativo"?"saiu do modelo":"fora do app"):l.area?"bloqueado":"sem regra"}</span>`:""}${revDe(l)?`<div class="rev-note" title="${esc(revDe(l).t)}">⚠ Controladoria: ${esc(revDe(l).t)}</div>`:""}</td>
+    h+=`<tr data-i="${idx}" class="${hs?"has-sub":""}${revDe(l)?" has-rev":""}"><td class="c-desc" style="padding-left:${pad}px" title="${esc(l.desc)} ${esc(l.S)} ${esc(l.I)}"><button class="ldr" data-ldr="${idx}" title="Abrir os meses de 2025 e 2026 deste insumo" aria-expanded="${!!(S.lineOpen&&S.lineOpen.has(l.key))}">${S.lineOpen&&S.lineOpen.has(l.key)?"▾":"▸"}</button><button class="dlink" data-det="${idx}">${esc(l.desc)}</button>${q?`<span class="un">${esc(l.un)}</span>`:""}${hs?`<span class="un" title="Soma dos subitens">detalhado</span>`:""}${l.area&&!restrito()?`<span class="area" title="Quem planeja: ${esc(l.area)}">${esc(AREA_CURTA[l.area]||l.area)}</span>`:""}${S.owner&&!l.orf?`<button class="mq-btn" data-mq="${idx}" title="Master: quem planeja e se este insumo é preenchido no app">⚙</button>`:""}${l.obrigRegra&&!OBRIG_TODOS?`<span class="un" title="Obrigatório preencher pelos subitens">obrigatório detalhar</span>`:""}${orientacao(l)?`<span class="un orient" title="${esc(orientacao(l))}">ⓘ ${esc(orientacao(l))}</span>`:""}${alertasHtml(l)}${!l.canEdit&&editable?`<span class="lock" title="${esc(l.lockMsg)}">${l.fora?(l.foraIns&&l.foraIns.t==="inativo"?"saiu do modelo":"fora do app"):l.area?"bloqueado":"sem regra"}</span>`:""}${revDe(l)?`<div class="rev-note" title="${esc(revDe(l).t)}">⚠ Controladoria: ${esc(revDe(l).t)}</div>`:""}</td>
     ${REF}
     <td class="c-flag">${ce&&!hs?flagSel(l.key,y,idx,undefined,y!=="2027"||!q):hs?`<span class="muted" style="font-size:11px">${S.hideSubs?`${subs.length} subitem(ns) recolhido(s)`:"nos subitens ↓"}</span>`:""}</td>
     <td class="cell">${q?`<input id="pr-${idx}" data-pr="${idx}" value="${f2(+pr)}" ${l.canEdit?"":"disabled"} aria-label="Preço unitário ${esc(l.desc)}" inputmode="decimal">`:`<span class="empty-cell" style="padding:0 8px">—</span>`}</td>
@@ -2005,7 +2039,7 @@ async function dadosIndicadores(){await carregarInsFora();S._afi={};if(!S.areasO
   const logados=new Set((S.acomp||[]).map(r=>(r.email||"").toLowerCase()).filter(Boolean));
   const catBy=new Map((S.cat.obras||[]).map(c=>[c[0],c]));
   let espIdx={};try{const ei=await S.db.doc("restrito/esp_idx").get();espIdx=ei.exists?(ei.data().obras||{}):{}}catch(e){}
-  const U=[];pess.forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>{if(!indObraConta(o,catBy))return;const tb=(catBy.get(o)||[])[3];deps=deps.filter(d=>!foraDe(o,d)&&!indAreaForaIns(tb,d));if(!deps.length)return;const L=orcObra.get(o)||[];
+  const U=[];pess.forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>{if(!indObraConta(o,catBy))return;const tb=(catBy.get(o)||[])[3];deps=deps.filter(d=>insAppObraArea(o,d)||(!foraDe(o,d)&&!indAreaForaIns(tb,d)));if(!deps.length)return;const L=orcObra.get(o)||[];
     let r=L.find(x=>(x.email||"").toLowerCase()===p.email);
     if(!r)r=L.find(x=>{const d2=(depsDe.get((x.email||"").toLowerCase())||{})[o]||[];return d2.some(d=>deps.includes(d))});
     const c=catBy.get(o)||[];const todasFora=deps.length&&deps.every(d=>foraDe(o,d));U.push({nome:p.nome||p.email,email:p.email,o,deps,st:r?r.orc.status||"rascunho":todasFora?"fora":"vazio",emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",reg:S.regObra?regDe(o):"Sem regional",tipo:c[3]||"Sem base",cesp:espIdx[o]?"Com espelho":"Sem espelho",entrou:logados.has(p.email)})}));
@@ -2014,7 +2048,7 @@ async function dadosIndicadores(){await carregarInsFora();S._afi={};if(!S.areasO
   const RK={vazio:0,rascunho:1,reaberto:2,enviado:3,validado:4};const stDe=new Map();(S.acomp||[]).forEach(r=>{if(!r.orc)return;const k=(r.email||"").toLowerCase()+"|"+r.o;const st=r.orc.status||"rascunho";if(!stDe.has(k)||RK[st]>RK[stDe.get(k)])stDe.set(k,st)});
   const resp=new Map();pess.forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>deps.forEach(d=>{const k=o+"|"+d;if(!resp.has(k))resp.set(k,[]);resp.get(k).push(p)})));
   const pares=new Set();Object.entries(S.areasObra||{}).forEach(([o,as])=>(as||[]).forEach(a=>pares.add(o+"|"+a)));resp.forEach((_,k)=>pares.add(k));
-  const UA=[];pares.forEach(k=>{const i=k.indexOf("|");const o=k.slice(0,i),a=k.slice(i+1);if(!a||foraDe(o,a)||!indObraConta(o,catBy)||indAreaForaIns((catBy.get(o)||[])[3],a))return;const c=catBy.get(o)||[];const ps=resp.get(k)||[];
+  const UA=[];pares.forEach(k=>{const i=k.indexOf("|");const o=k.slice(0,i),a=k.slice(i+1);if(!a||!indObraConta(o,catBy)||(!insAppObraArea(o,a)&&(foraDe(o,a)||indAreaForaIns((catBy.get(o)||[])[3],a))))return;const c=catBy.get(o)||[];const ps=resp.get(k)||[];
     let st="vazio";ps.forEach(p=>{const s2=stDe.get(p.email+"|"+o);if(s2&&RK[s2]>RK[st])st=s2});
     UA.push({o,area:a,deps:[a],nome:ps.length?ps.map(p=>p.nome||p.email):["Sem responsável"],sem:!ps.length,st,emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",obraNome:c[2]||"",reg:S.regObra?regDe(o):"Sem regional",tipo:c[3]||"Sem base",cesp:espIdx[o]?"Com espelho":"Sem espelho"})});
   return {U,UA,orcObra,catBy,logados,pess,depsDe,espIdx}}
@@ -2025,8 +2059,8 @@ async function fatosIndicadores(D,prog){const F=[];let i=0;const N=D.orcObra.siz
     const cesp=(esp&&esp.h&&Object.keys(esp.h).length)||D.espIdx[o]?"Com espelho":"Sem espelho";
     for(const r of L){const tipo=r.info.tipo||c[3]||"";const deps=(D.depsDe.get((r.email||"").toLowerCase())||{})[o]||null;const doc={v:r.orc.v||{},pr:r.orc.pr||{}};
       const lines=buildLines(tipo,hist,extOrf(r.orc.ext,r.orc.v),esp);const pd={};lines.forEach(l=>{if(l.kind==="prod")pd[l.P]=l.desc});
-      lines.forEach(l=>{if(l.kind!=="leaf")return;const rule=ruleFor(tipo,l);const area=(rule&&rule[1])||"Sem regra";const temV=YEARS.some(y=>lineTotal(doc,l,y));
-        if(deps?!(deps.includes(area))&&!temV:!temV)return;/* 30/10: fora do app (obra/área ou insumo) não entra nos Indicadores, mesmo com valor digitado */if(foraDe(o,area)||foraIns(tipo,l))return;
+      lines.forEach(l=>{if(l.kind!=="leaf")return;const rule=ruleFor(tipo,l,o);const area=(rule&&rule[1])||"Sem regra";const temV=YEARS.some(y=>lineTotal(doc,l,y));
+        if(deps?!(deps.includes(area))&&!temV:!temV)return;/* 30/10: fora do app (obra/área ou insumo) não entra nos Indicadores, mesmo com valor digitado */if((!insAppObra(o,l)&&foraDe(o,area))||foraIns(tipo,l,o))return;
         const f={o,uid:r.uid,emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",obraNome:c[2]||"",obraLb:`${o} ${c[2]||""}`.trim(),reg:S.regObra?regDe(o):"Sem regional",tipo:tipo||"Sem base",cesp,ger:r.nomeG||"",email:r.email||"",st:r.orc.status||"rascunho",area,
           P:l.P||"",Pd:pd[l.P]||(l.extra?"Itens fora do modelo":"Produto "+(l.P||"")),S:l.S||"",Sd:SDESC[l.S]||(l.S?"Serviço "+l.S:"Sem serviço"),I:l.I||l.key,Id:`${l.desc}${l.I?" ("+l.I+")":""}`,
           orc:{2027:z(),2028:z(),2029:z()},h25:z(),h26:z(),esp:{2026:z(),2027:z(),2028:z(),2029:z()}};
@@ -2137,7 +2171,7 @@ async function fatosGeral(D,prog){const z=()=>new Array(12).fill(0);prog&&prog("
     Object.entries((esp&&esp.h)||{}).forEach(([k,[d,ys]])=>{const l=pega(k,d);Object.entries(ys||{}).forEach(([y,a])=>{const t=l.esp[y]||(l.esp[y]=z());(a||[]).forEach((v,i)=>t[i]+=+v||0)})});
     L.forEach(r=>Object.entries(r.orc.v||{}).forEach(([k,ys])=>{if(k.includes("#"))return;const l=lin.get(k)||pega(k,"");YEARS.forEach(y=>{const a=ys&&ys[y];if(a)a.forEach((v,i)=>l.orc[y][i]+=+v||0)})}));
     const cesp=(esp&&esp.h&&Object.keys(esp.h).length)||D.espIdx[o]?"Com espelho":"Sem espelho";const UO=uPor.get(o)||[];
-    lin.forEach(l=>{const rule=ruleFor(tipo,l,o);const area=(rule&&rule[1])||"Sem regra";if(foraDe(o,area)||foraIns(tipo,l))return;
+    lin.forEach(l=>{const rule=ruleFor(tipo,l,o);const area=(rule&&rule[1])||"Sem regra";if((!insAppObra(o,l)&&foraDe(o,area))||foraIns(tipo,l,o))return;
       const u=UO.find(x=>x.deps.includes(area));const h=l.h,r9=h.slice(12,21),med=sum(r9)/9,e26=l.esp["2026"];
       const f={o,emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",obraNome:c[2]||"",obraLb:`${o} ${c[2]||""}`.trim(),reg:S.regObra?regDe(o):"Sem regional",tipo:tipo||"Sem base",cesp,ger:u?u.nome:"Sem gerente",email:u?u.email:"",st:u?u.st:"vazio",area,
         P:l.P||"",Pd:m.prods[l.P]||((hist&&hist.pd)||{})[l.P]||(l.extra?"Itens fora do modelo":"Produto "+(l.P||"")),S:l.S||"",Sd:SDESC[l.S]||(l.S?"Serviço "+l.S:"Sem serviço"),I:l.I||l.key,Id:`${l.desc}${l.I?" ("+l.I+")":""}`,
@@ -2684,7 +2718,11 @@ document.addEventListener("click",e=>{const t=e.target;if(t.id==="bf-add"){BF_ED
   if(t.dataset&&t.dataset.bfDel!=null){BF_ED.splice(+t.dataset.bfDel,1);bfRender();return}if(t.id==="bf-salvar"){bfSalvar();return}
   if(t.id==="bf-hist"){const bx=$("#bf-histbox");bx.hidden=!bx.hidden;const H=(S.bfR&&S.bfR.hist)||[];bx.innerHTML=H.length?H.slice().reverse().map((h,j)=>`<div class="sub-card" style="margin:4px 0;font-size:13px"><b>${h.em?fmtDate(h.em):"padrão"}</b> ${esc(h.por||"")} · ${(h.r||[]).map(r=>`${esc(r.emp)}-${esc(r.obra)}${r.se?" (base "+esc(r.se)+")":""} → ${esc(r.base||"mesma")}${r.ocultar&&r.ocultar.length?" sem "+esc(r.ocultar.join(", ")):""}`).join(" · ")} <button class="btn sm" data-bf-volta="${H.length-1-j}">Usar esta</button></div>`).join(""):'<p class="muted">Sem versões anteriores.</p>';return}
   if(t.dataset&&t.dataset.bfVolta!=null){const h=((S.bfR&&S.bfR.hist)||[])[+t.dataset.bfVolta];if(h){BF_ED=JSON.parse(JSON.stringify(h.r||[]));bfRender();toast("Versão carregada na tabela. Clique em Salvar regras para gravar.")}}});
-function foraIns(tipo,l){const m=S.insFora;const x=m&&m[`${tipo||""}|${l.P}|${l.S}|${l.I}`];return (x&&x.t!=="app")?x:null}
+function insObra(o,l){const m=S.insFora;return (o&&m&&m[`o:${o}|${l.P}|${l.S}|${l.I}`])||null}
+function foraIns(tipo,l,o){const xo=insObra(o,l);if(xo)return xo.t==="app"?null:xo;const m=S.insFora;const x=m&&m[`${tipo||""}|${l.P}|${l.S}|${l.I}`];return (x&&x.t!=="app")?x:null}
+/* insumo liberado “no app” só nesta obra: vence a área marcada fora do app */
+function insAppObra(o,l){const xo=insObra(o,l);return !!(xo&&xo.t==="app")}
+function insAppObraArea(o,area){const m=S.insFora||{};const pre=`o:${o}|`;return Object.keys(m).some(k=>k.startsWith(pre)&&m[k].t==="app"&&m[k].area===area)}
 async function carregarInsFora(){try{const d=await S.db.doc("regras/insumos_fora").get();S.insFora=d.exists?(d.data().m||{}):{}}catch(e){S.insFora=S.insFora||{}}}
 /* 29/10 (Evaldo): estas áreas planejam tudo por fora do app, em todas as bases */
 const EM_FORA=new Set(["Gente & Gestão","TI","Engenharia","Obras Corporativas"]);
