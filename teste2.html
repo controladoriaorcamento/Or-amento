@@ -3461,10 +3461,11 @@ onCarga("#es-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
   if(typeof XLSX==="undefined"){toast("O leitor de Excel não carregou. Recarregue a página.");return}
   $("#es-msg").textContent="Lendo a estrutura… (arquivo grande, pode levar até 1 minuto)";await new Promise(r=>setTimeout(r,30));
   try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array",dense:true});
-    let rows=null;for(const n of wb.SheetNames){const a=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:""});if(a.length&&a[0].map(String).includes("Empresa_plt")){rows=a;break}}
+    let rows=null;for(const n of wb.SheetNames){const a=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:""});if(a.length&&a[0].map(x=>String(x).trim()).some(x=>x==="Empresa_plt"||x==="Empresa")&&a[0].map(x=>String(x).trim()).includes("Ins_cins")){rows=a;break}}
     if(!rows)throw new Error("cols");
-    const h=rows[0].map(c=>String(c).trim());const ix=n=>h.indexOf(n);
-    const c={E:ix("Empresa_plt"),O:ix("Obra_plt"),P:ix("Prod_plt"),C:ix("Contrato_plt"),It:ix("Item_plt"),S:ix("Serv_plt"),I:ix("Ins_cins"),dO:ix("Descricao_obra"),dP:ix("descricao_ppl"),dS:ix("Descr_plt"),dI:ix("Descr_ins"),a1:ix("AtInat_plt"),a2:ix("AtInat_ppl"),a3:ix("AtInat_pi")};
+    const h=rows[0].map(c=>String(c).trim());const ix=(...ns)=>{for(const n of ns){const i=h.indexOf(n);if(i>=0)return i}return -1};
+    /* 03/11: aceita o cabeçalho do sistema (Empresa_plt/Obra_plt) e o da Base - Geral (Empresa/Obra) */
+    const c={E:ix("Empresa_plt","Empresa"),O:ix("Obra_plt","Obra"),P:ix("Prod_plt"),C:ix("Contrato_plt"),It:ix("Item_plt"),S:ix("Serv_plt"),I:ix("Ins_cins"),dO:ix("Descricao_obra"),dP:ix("descricao_ppl"),dS:ix("Descr_plt"),dI:ix("Descr_ins"),a1:ix("AtInat_plt"),a2:ix("AtInat_ppl"),a3:ix("AtInat_pi")};
     if([c.E,c.O,c.P,c.S,c.I].some(x=>x<0))throw new Error("cols");
     const E={eo:new Map(),n:0,arquivo:f.name,em:new Date()};
     rows.slice(1).forEach(r=>{const eo=cod(r[c.E])+"-"+cod(r[c.O]);if(eo==="-")return;E.n++;
@@ -3475,7 +3476,7 @@ onCarga("#es-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
       sv.I.set(cod(r[c.I]),{d:r[c.dI]||"",C:cod(r[c.C]),It:cod(r[c.It]),inat:inat[0]?"serviço/item inativo":inat[1]?"produto inativo":inat[2]?"insumo inativo":""})});
     S.estr=E;$("#es-validar").disabled=false;
     $("#es-msg").textContent=`Estrutura carregada: ${f.name} · ${E.n.toLocaleString("pt-BR")} linhas · ${E.eo.size} empresa/obra. Agora clique em Validar.`;
-  }catch(err){S.estr=null;$("#es-validar").disabled=true;$("#es-msg").textContent=err&&err.message==="cols"?"Não encontrei as colunas da estrutura (Empresa_plt, Obra_plt, Prod_plt, Serv_plt, Ins_cins).":"Não consegui ler a planilha da estrutura."}});
+  }catch(err){S.estr=null;$("#es-validar").disabled=true;$("#es-msg").textContent=err&&err.message==="cols"?"Não encontrei as colunas da estrutura (Empresa ou Empresa_plt, Obra ou Obra_plt, Prod_plt, Serv_plt, Ins_cins).":"Não consegui ler a planilha da estrutura."}});
 /* valida (e corrige contrato/item) as linhas do layout do modelo; devolve {aoa corrigido, problemas, resumo} */
 /* estrutura da Base - Geral (aba Estrutura) no formato usado pela validação: obra → produto → serviço → insumo {contrato,item,inativo} */
 async function estrDaBaseGeral(emps){const X=await carregarEstIdx();if(!X)return null;const E=(S.estr&&S.estr.base)?S.estr:{eo:new Map(),n:0,arquivo:"Base - Geral: "+(X.arquivo||""),em:new Date(X.atualizadoEm||Date.now()),base:true,emps:new Set()};
@@ -4537,7 +4538,7 @@ const cadLimpo=v=>String(v==null?"":v).replace(/_x000[dDaA9]_/g," ").replace(/\s
 const cadChave=v=>semAc(cadLimpo(v)).toUpperCase().replace(/[^A-Z0-9]/g,"");
 const cadNorm=v=>semAc(String(v==null?"":v)).replace(/[^a-z0-9]/g,"");
 function cadLerEstrutura(rows){const h=(rows[0]||[]).map(x=>String(x).trim());
-  if(!(h[0]==="Empresa"&&h[3]==="Obra"&&h[6]==="Prod_plt"&&h[10]==="Serv_plt"&&h[12]==="Ins_cins"))return null;
+  if(!((h[0]==="Empresa"||h[0]==="Empresa_plt")&&(h[3]==="Obra"||h[3]==="Obra_plt")&&h[6]==="Prod_plt"&&h[10]==="Serv_plt"&&h[12]==="Ins_cins"))return null;
   const t=v=>String(v==null?"":v).trim();const eo={},dP={},dS={},dI={},E={};let n=0,inat=0;
   for(let i=1;i<rows.length;i++){const r=rows[i];const emp=t(r[0]),ob=t(r[3]);if(!emp||!ob)continue;const k=emp+"-"+ob;
     if(!eo[k])eo[k]=[t(r[1]),t(r[2]),t(r[4]),t(r[5]),0];eo[k][4]++;const P=t(r[6]),S_=t(r[10]),I=t(r[12]);
@@ -4556,7 +4557,7 @@ function cadLerSituacao(rows){const h=(rows[0]||[]).map(cadNorm);const ach=(...n
 async function cadImportar(files){const C=S.cad;const out=$("#cad-imp-res");out.hidden=false;out.innerHTML="Lendo… (a Base da Estrutura pode levar alguns segundos)";await new Promise(r=>setTimeout(r,30));
   const nomes=[];let mud=0;
   for(const f of files){const wb=XLSX.read(await f.arrayBuffer(),{type:"array",dense:true});let ok=false;
-    if(wb.Sheets["Base - Geral"]){const e=cadLerEstrutura(XLSX.utils.sheet_to_json(wb.Sheets["Base - Geral"],{header:1,defval:""}));if(e){C.estr={...e,arquivo:f.name};nomes.push(`${f.name}: ${cadN(e.idx.linhas)} linhas, ${cadN(Object.keys(e.idx.eo).length)} empresas/obras`);ok=true}}
+    {const nmE=wb.Sheets["Base - Geral"]?"Base - Geral":wb.SheetNames.find(n=>{const ws=wb.Sheets[n];const d=ws&&(ws["!data"]||(Array.isArray(ws)?ws:null));const r0=d&&d[0]?d[0].map(x=>x?String(x.v).trim():""):[6,12].map(()=>"");return r0[6]==="Prod_plt"&&r0[12]==="Ins_cins"});const e=nmE?cadLerEstrutura(XLSX.utils.sheet_to_json(wb.Sheets[nmE],{header:1,defval:""})):null;if(e){C.estr={...e,arquivo:f.name};nomes.push(`${f.name}: ${cadN(e.idx.linhas)} linhas, ${cadN(Object.keys(e.idx.eo).length)} empresas/obras`);ok=true}}
     if(!ok){const nm=wb.SheetNames.find(n=>/^obras?$/i.test(n.trim()))||wb.SheetNames[0];const M=cadLerSituacao(XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:""}));
       if(M){C.sit=M;M.forEach((v,id)=>{const c=cadObraDe(id);if(c&&((C.cat.has(id)?C.cat.get(id):c[8]===1)!==(v===1))){cadSetInat(id,v===1);mud++}});nomes.push(`${f.name}: situação de ${cadN(M.size)} obras`);ok=true}}
     if(!ok){out.innerHTML=`Não reconheci <b>${esc(f.name)}</b>. Use a Base da Estrutura (aba “Base - Geral”) ou uma planilha de obras com empresa, obra e situação.`;return}}
