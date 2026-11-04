@@ -906,7 +906,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
       <div class="cad-fbar"><div><label class="lbl" for="co-q">Buscar</label><input type="search" id="co-q" placeholder="Código, obra, empresa ou Regional"></div>
         <div><label class="lbl">Regional</label><div class="slicer cms" data-cms="reg"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Regional"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><div><label class="lbl">Empresa</label><div class="slicer cms" data-cms="emp"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Empresa"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><select id="co-emp" hidden><option value=""></option></select>
         <div><label class="lbl" for="co-st">Mostrar</label><select id="co-st"><option value="ativas">Ativas</option><option value="todas">Todas</option><option value="inativas">Inativas</option><option value="app">Planejam no app</option><option value="pausa">Pausadas</option><option value="fora">Fora do app</option><option value="semger">Sem gerente em alguma área</option><option value="semreg">Sem Regional</option></select></div>
-        <div><label class="lbl">Quem planeja</label><div class="slicer cms" data-cms="area"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Quem planeja"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><div><label class="lbl" for="co-ast">Área</label><select id="co-ast"><option value="">No app ou fora</option><option value="app">Só no app</option><option value="fora">Só fora do app</option></select></div>
+        <div><label class="lbl">Quem planeja</label><div class="slicer cms" data-cms="area"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Quem planeja"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><div><label class="lbl" for="co-ast" title="Vale para as áreas escolhidas em Quem planeja">Essa área está</label><select id="co-ast" title="Vale para as áreas escolhidas em Quem planeja"><option value="">Tanto faz</option><option value="app">Ainda no app</option><option value="fora">Já fora do app</option></select></div>
         <span class="muted" id="co-n" style="align-self:end;font-size:12px"></span></div>
       <div class="cad-selbar" id="co-areabar" hidden><b id="co-arean"></b><button class="btn sm" data-co-areas="fora">Marcar como fora do app</button><button class="btn sm" data-co-areas="app">Voltar para o app</button><small class="muted">vale para todas as obras listadas pelos filtros que têm essa(s) área(s); grava no Salvar</small></div>
       <div class="cad-selbar" id="co-selbar" hidden><b id="co-seln"></b>
@@ -4395,6 +4395,7 @@ function cadRenderObras(){const C=S.cad;const cats=(S.cat.obras||[]).concat(C.no
     <td class="num">${x.pes||'<span style="color:var(--bad)">0</span>'}</td></tr>`}).join("")}</tbody>`;
   {const sa=$("#co-lote-area");if(sa&&!sa.options.length)sa.innerHTML=cadOpts(cadAreas().map(a=>[a,a]),"","— área —")}
   $("#co-selbar").hidden=!C.sel.size;$("#co-seln").textContent=`${C.sel.size} marcada(s)`;
+  {const sa=$("#co-ast");if(sa){sa.disabled=!fA.size;if(!fA.size)sa.value=""}}
   {const ab=$("#co-areabar");if(ab){const A=[...fA];C.coAreaAlvo=F.filter(x=>!x.inat).flatMap(x=>x.areas.filter(a=>fA.has(a)).map(a=>[x.c[0],a]));ab.hidden=!A.length;
     if(A.length)$("#co-arean").textContent=`${cadN(new Set(C.coAreaAlvo.map(p=>p[0])).size)} obra(s) ativas listadas · ${A.map(a=>AREA_CURTA[a]||a).join(", ")} (${cadN(C.coAreaAlvo.length)} obra×área):`}}
   cadBarra()}
@@ -4418,6 +4419,25 @@ document.addEventListener("click",e=>{const t=e.target;const b=t.closest&&t.clos
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||t.dataset.cmsv==null||!S.cad)return;const b=t.closest(".cms");const k=b.dataset.cms;const C=S.cad;
   const X=cadCmsSt(b);t.checked?X.sel.add(t.dataset.cmsv):X.sel.delete(t.dataset.cmsv);X.render()});
 document.addEventListener("input",e=>{const t=e.target;if(!t.classList||!t.classList.contains("sl-q"))return;const b=t.closest(".cms");if(b&&S.cad)cadCmsDesenha(b)});
+/* 04/11: ao clicar numa área da obra, pergunta se vale só nesta obra, na empresa toda ou em todas as obras listadas */
+function cadAreaFecha(){const m=$("#caq-pop");if(m)m.remove();if(S.cad)S.cad.caq=null}
+function cadAreaPergunta(id,a,btn){cadAreaFecha();const C=S.cad;const c=cadObraDe(id);const e=c?String(c[6]):id.split("-")[0];const fora=cadAreaFora(id,a);const v=fora?"voltar para o app":"marcar como fora do app";
+  const AO=cadCobGer().AO;const nE=(S.cat.obras||[]).concat(C.novas).filter(x=>String(x[6])===e&&!cadObraEstado(x).inat&&(AO[x[0]]||[]).includes(a)&&!!cadAreaFora(x[0],a)===fora).length;
+  const nL=(C.coVis||[]).filter(i=>{const x=cadObraDe(i);return x&&!cadObraEstado(x).inat&&(AO[i]||[]).includes(a)&&!!cadAreaFora(i,a)===fora}).length;
+  C.caq={id,a,e};const m=document.createElement("div");m.id="caq-pop";m.className="mx-pop mq-pop";
+  m.innerHTML=`<b>${esc(a)}</b> — ${esc(v)}<div class="muted" style="font-size:12px;margin:2px 0 8px">obra ${esc(id)} · empresa ${esc(e)}</div>
+   <div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm primary" data-caq="obra">Só nesta obra (${esc(id)})</button>
+   <button class="btn sm" data-caq="emp">Em todas as obras da empresa ${esc(e)} (${nE})</button>
+   <button class="btn sm" data-caq="lista">Em todas as obras listadas pelos filtros (${nL})</button>
+   <button class="btn sm" data-caq="nao">Cancelar</button></div><small class="muted" style="display:block;margin-top:6px">Só obras ativas que têm essa área. Grava no Salvar.</small>`;
+  document.body.appendChild(m);const r=btn.getBoundingClientRect(),w=m.offsetWidth,h=m.offsetHeight;let x=r.left;if(x+w>innerWidth-8)x=Math.max(8,innerWidth-w-8);let y=r.bottom+6;if(y+h>innerHeight-8)y=Math.max(8,r.top-h-6);m.style.left=x+"px";m.style.top=y+"px"}
+document.addEventListener("click",e=>{const m=$("#caq-pop");if(m&&!e.target.closest("#caq-pop")&&!e.target.closest("[data-co-area]"))cadAreaFecha()});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("#caq-pop [data-caq]");if(!b||!S.cad)return;const C=S.cad;
+  if(b.dataset.caq==="nao"){cadAreaFecha();return}const P=C.caq;if(!P)return;const v=!cadAreaFora(P.id,P.a);const AO=cadCobGer().AO;let L;
+  if(b.dataset.caq==="obra")L=[P.id];else if(b.dataset.caq==="emp")L=(S.cat.obras||[]).concat(C.novas).filter(c=>String(c[6])===P.e&&!cadObraEstado(c).inat&&(AO[c[0]]||[]).includes(P.a)).map(c=>c[0]);
+  else L=(C.coVis||[]).filter(id=>{const c=cadObraDe(id);return c&&!cadObraEstado(c).inat&&(AO[id]||[]).includes(P.a)});
+  L=L.filter(id=>!!cadAreaFora(id,P.a)!==v);L.forEach(id=>cadSetAreaFora(id,P.a,v));toast(`${P.a}: ${L.length} obra(s) ${v?"marcada(s) fora do app":"de volta ao app"}. Clique em Salvar para gravar.`);
+  cadAreaFecha();cadRenderObras();cadBarra()});
 function cadObraDe(id){return S.catMap.get(id)||S.cad.novas.find(c=>c[0]===id)}
 function cadSetInat(id,v){const c=cadObraDe(id);if(!c)return;if((c[8]===1)===v)S.cad.cat.delete(id);else S.cad.cat.set(id,v)}
 /* 28/10: fora do app por ÁREA (quem planeja), valendo em todas as telas: Empresas e obras, Falta preencher, Gerentes, Indicadores */
@@ -5074,7 +5094,7 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest||!t.c
   if(t.id==="cad-salvar"){cadSalvar();return}if(t.id==="cad-desc"){cadDescartar();return}
   let b=t.closest("[data-co-inat]");if(b){const id=b.dataset.coInat;cadSetInat(id,!cadObraEstado(cadObraDe(id)).inat);cadRenderObras();return}
   if(t.id==="co-all"){(C.coVis||[]).slice(0,800).forEach(id=>t.checked?C.sel.add(id):C.sel.delete(id));cadRenderObras();return}
-  {const ba=t.closest&&t.closest("[data-co-area]");if(ba){const [id,...aa]=ba.dataset.coArea.split("|");const a=aa.join("|");cadSetAreaFora(id,a,!cadAreaFora(id,a));cadRenderObras();cadBarra();return}}
+  {const ba=t.closest&&t.closest("[data-co-area]");if(ba){const [id,...aa]=ba.dataset.coArea.split("|");const a=aa.join("|");cadAreaPergunta(id,a,ba);return}}
   {const ar=t.dataset&&t.dataset.coAreas;if(ar){const L=C.coAreaAlvo||[];const mud=L.filter(([id,a])=>!!cadAreaFora(id,a)!==(ar==="fora"));
     if(!mud.length){toast("Nada a mudar: todas já estão "+(ar==="fora"?"fora do app.":"no app."));return}
     if(!confirm(`${ar==="fora"?"Marcar como FORA do app":"Voltar para o APP"} ${mud.length} obra×área (${new Set(mud.map(p=>p[0])).size} obras)? Grava só quando você clicar em Salvar.`))return;
