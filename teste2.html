@@ -937,8 +937,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
 
     <div class="card" id="cad-ger" hidden>
       <div class="cad-fbar"><div><label class="lbl" for="cadg-q">Buscar</label><input type="search" id="cadg-q" placeholder="Nome, e-mail ou cargo"></div>
-        <div><label class="lbl" for="cadg-dep">Departamento</label><select id="cadg-dep"></select></div>
-        <div><label class="lbl" for="cadg-emp">Empresa</label><select id="cadg-emp"></select></div>
+        <div><label class="lbl">Departamento</label><div class="slicer cms" data-cms="g-dep"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Departamento"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><div><label class="lbl">Regional</label><div class="slicer cms" data-cms="g-reg"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Regional"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><div><label class="lbl">Empresa</label><div class="slicer cms" data-cms="g-emp"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Empresa"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><select id="cadg-dep" hidden></select><select id="cadg-emp" hidden></select>
         <label style="align-self:end;font-size:13px;display:flex;gap:4px;align-items:center"><input type="checkbox" id="cadg-pend"> Só com pendência</label>
         <span style="flex:1"></span>
         <div class="cad-acts"><button class="btn primary" id="cadg-add">+ Nova linha</button><label class="btn" for="cadg-file">Importar aba 3 (Excel)</label><input type="file" id="cadg-file" accept=".xlsx,.xls" hidden><button class="btn" id="cadg-sugs" hidden>Usar as sugestões</button><button class="btn" id="cadg-xlsx">Baixar em Excel</button></div></div>
@@ -4406,17 +4405,18 @@ function cadCmsSync(linhas,regDeX){const C=S.cad;const F=C.coF;const nome=new Ma
   const areasC=new Map();linhas.forEach(x=>{if(F.reg.size&&!F.reg.has(regDeX(x)))return;if(F.emp.size&&!F.emp.has(String(x.c[6])))return;x.areas.forEach(a=>areasC.set(a,(areasC.get(a)||0)+1))});
   C.cmsOpts={area:[...areasC.entries()].sort((a,b)=>a[0].localeCompare(b[0],"pt-BR")).map(([k,n])=>[k,k,n]),reg:[...regs.entries()].sort((a,b)=>a[0].localeCompare(b[0],"pt-BR")).map(([k,n])=>[k,k,n]),emp:[...emps.entries()].sort((a,b)=>cadNum(a[0],b[0])).map(([k,n])=>[k,`${k} – ${nome.get(k)||""}`,n])};
   document.querySelectorAll("#cad-obras .cms").forEach(b=>cadCmsDesenha(b))}
-function cadCmsDesenha(b){const C=S.cad;const k=b.dataset.cms;const sel=C.coF[k];const opts=(C.cmsOpts||{})[k]||[];const q=semAc((b.querySelector(".sl-q")||{}).value||"").trim();
+function cadCmsSt(b){const C=S.cad;const k=b.dataset.cms;if(k.startsWith("g-")){const G=cadGF();return {sel:G[k.slice(2)],opts:(C.cgOpts||{})[k.slice(2)]||[],render:cadRenderGer,k:k.slice(2),G}}C.coF=C.coF||{emp:new Set(),reg:new Set(),area:new Set()};C.coF.area=C.coF.area||new Set();return {sel:C.coF[k],opts:(C.cmsOpts||{})[k]||[],render:cadRenderObras,k,G:C.coF}}
+function cadCmsDesenha(b){const C=S.cad;const k=b.dataset.cms;const X=cadCmsSt(b);const sel=X.sel;const opts=X.opts;const q=semAc((b.querySelector(".sl-q")||{}).value||"").trim();
   const vis=opts.filter(([v,lb])=>!q||semAc(lb).includes(q));
   b.querySelector(".sl-list").innerHTML=vis.slice(0,1500).map(([v,lb,n])=>`<label class="sl-it${sel.has(v)?" on":""}"><input type="checkbox" data-cmsv="${esc(v)}"${sel.has(v)?" checked":""}><span>${esc(lb)}</span><span class="muted">${n}</span></label>`).join("")||'<p class="muted" style="font-size:12px;margin:6px">Nada encontrado.</p>';
   b.querySelector(".sl-n").textContent=`${vis.length} de ${opts.length}`;
   const ss=[...sel];b.querySelector(".sl-txt").textContent=!ss.length?"Todas":ss.length===1?((opts.find(o=>o[0]===ss[0])||[,ss[0]])[1]):`${ss.length} selecionadas`;b.classList.toggle("ativo",!!ss.length)}
 document.addEventListener("click",e=>{const t=e.target;const b=t.closest&&t.closest(".cms");if(!b||!S.cad)return;const C=S.cad;C.coF=C.coF||{emp:new Set(),reg:new Set(),area:new Set()};C.coF.area=C.coF.area||new Set();const k=b.dataset.cms;
   if(t.closest(".sl-btn")){const pop=b.querySelector(".sl-pop");const ab=pop.hidden;document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true);pop.hidden=!ab;if(ab){cadCmsDesenha(b);const q=b.querySelector(".sl-q");if(q)q.focus()}return}
-  const a=t.dataset&&t.dataset.cmsa;if(a){const q=semAc(b.querySelector(".sl-q").value||"").trim();if(a==="limpar")C.coF[k].clear();else((C.cmsOpts||{})[k]||[]).filter(([v,lb])=>!q||semAc(lb).includes(q)).forEach(([v])=>C.coF[k].add(v));
-    if(k==="reg")C.coF.emp.clear();cadRenderObras();return}});
+  const a=t.dataset&&t.dataset.cmsa;if(a){const X=cadCmsSt(b);const q=semAc(b.querySelector(".sl-q").value||"").trim();if(a==="limpar")X.sel.clear();else X.opts.filter(([v,lb])=>!q||semAc(lb).includes(q)).forEach(([v])=>X.sel.add(v));
+    if(X.k==="reg")X.G.emp.clear();X.render();return}});
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||t.dataset.cmsv==null||!S.cad)return;const b=t.closest(".cms");const k=b.dataset.cms;const C=S.cad;
-  t.checked?C.coF[k].add(t.dataset.cmsv):C.coF[k].delete(t.dataset.cmsv);if(k==="reg")C.coF.emp.forEach(v=>{});cadRenderObras()});
+  const X=cadCmsSt(b);t.checked?X.sel.add(t.dataset.cmsv):X.sel.delete(t.dataset.cmsv);X.render()});
 document.addEventListener("input",e=>{const t=e.target;if(!t.classList||!t.classList.contains("sl-q"))return;const b=t.closest(".cms");if(b&&S.cad)cadCmsDesenha(b)});
 function cadObraDe(id){return S.catMap.get(id)||S.cad.novas.find(c=>c[0]===id)}
 function cadSetInat(id,v){const c=cadObraDe(id);if(!c)return;if((c[8]===1)===v)S.cad.cat.delete(id);else S.cad.cat.set(id,v)}
@@ -4497,8 +4497,14 @@ function cadGerStatus(r){const X=_cgsCtx||{GX:cadGOctx(),EM:new Set(cadEmpresas(
   if(!cadTodas(e)&&!cadTodas(o)&&!(cadAO()[e+"-"+o]||[]).includes(r.dep))return["rascunho","Obra sem itens desta área",n];
   return["enviado","ok",n]}
 const cadLink=r=>/com\s*claude/i.test(String(r.obs||""));
-function cadGerFiltradas(){const q=semAc($("#cadg-q").value||"").trim(),dep=$("#cadg-dep").value,emp=$("#cadg-emp").value,pend=$("#cadg-pend").checked;
-  return S.cad.ger.map((r,i)=>[r,i]).filter(([r])=>(!q||semAc(`${r.nome} ${r.email} ${r.cargo} ${r.regNome}`).includes(q))&&(!dep||r.dep===dep)&&(!emp||String(r.emp)===emp)&&(!pend||((S.cad._stc&&S.cad._stc.get(r))?S.cad._stc.get(r).v:cadGerStatus(r))[1]!=="ok"))}
+/* 04/11: Departamento, Regional e Empresa com várias escolhas na aba Gerentes */
+function cadGF(){const C=S.cad;C.cgF=C.cgF||{dep:new Set(),reg:new Set(),emp:new Set()};return C.cgF}
+function cadRegsEmp(){const C=S.cad;const sig=Object.keys(S.regObra||{}).length+"|"+C.reg.size;if(C._regEmpSig===sig)return C._regEmp;const M=new Map();
+  (S.cat.obras||[]).concat(C.novas).forEach(c=>{const id=c[0];const r=(C.reg.has(id)?C.reg.get(id):(S.regObra||{})[id])||"Sem Regional";const e=String(c[6]);if(!M.has(e))M.set(e,new Set());M.get(e).add(r)});C._regEmp=M;C._regEmpSig=sig;return M}
+function cadGerRegs(r){const C=S.cad;if(cadTodas(r.emp))return null;const e=String(r.emp).trim();if(!cadTodas(r.obra)){const id=e+"-"+String(r.obra).trim();return new Set([(C.reg.has(id)?C.reg.get(id):(S.regObra||{})[id])||"Sem Regional"])}return cadRegsEmp().get(e)||new Set(["Sem Regional"])}
+function cadGerFiltradas(){const q=semAc($("#cadg-q").value||"").trim(),pend=$("#cadg-pend").checked;const G=cadGF();
+  const okR=r=>{if(!G.reg.size)return true;const rs=cadGerRegs(r);return !rs||[...rs].some(x=>G.reg.has(x))};
+  return S.cad.ger.map((r,i)=>[r,i]).filter(([r])=>(!q||semAc(`${r.nome} ${r.email} ${r.cargo} ${r.regNome}`).includes(q))&&(!G.dep.size||G.dep.has(r.dep))&&(!G.emp.size||cadTodas(r.emp)||G.emp.has(String(r.emp).trim()))&&okR(r)&&(!pend||((S.cad._stc&&S.cad._stc.get(r))?S.cad._stc.get(r).v:cadGerStatus(r))[1]!=="ok"))}
 function cadRenderGer(){const emps0=cadEmpresas();_cgsCtx={GX:cadGOctx(),EM:new Set(emps0.map(x=>x[0]))};try{cadRenderGer0(emps0)}finally{_cgsCtx=null}}
 function cadRenderGer0(emps){const C=S.cad;const R=C.ger;const ar=cadAreas();
   /* desempenho: status e cobertura só são recalculados quando a linha (ou o cadastro) muda */
@@ -4509,7 +4515,12 @@ function cadRenderGer0(emps){const C=S.cad;const R=C.ger;const ar=cadAreas();
   let falta=0;if(C._faltaSig===allSig)falta=C._falta;else{const cob=new Set();const GX=_cgsCtx.GX;R.forEach((r,i)=>{if(st[i][0]==="reaberto"||!r.email)return;cadGerObras(r,GX).forEach(id=>cob.add(id+"|"+r.dep))});
   (S.cat.obras||[]).concat(C.novas).forEach(c=>{const e=cadObraEstado(c);if(e.inat||e.fora)return;(GX.AO[c[0]]||[]).forEach(a=>{if(!cadAreaFora(c[0],a)&&!cob.has(c[0]+"|"+a))falta++})});C._faltaSig=allSig;C._falta=falta}
   $("#cad-kpi").innerHTML=cadKpi("Pessoas com e-mail",cadN(pes.size),`${R.length} linha(s) no cadastro`)+cadKpi("Acessam pelo link",cadN(link.size),`${cadN(pes.size-link.size)} recebem formulário offline`)+cadKpi("Departamentos",cadN(new Set(R.map(r=>r.dep).filter(Boolean)).size),"quem planeja")+cadKpi("Linhas com pendência",`<span style="color:${prob?"var(--warn)":"var(--good)"}">${cadN(prob)}</span>`,"veja a coluna Situação")+cadKpi("Áreas de obra sem gerente",`<span style="color:${falta?"var(--bad)":"var(--good)"}">${cadN(falta)}</span>`,"obras ativas no app");
-  const sd=$("#cadg-dep"),se=$("#cadg-emp");const dv=sd.value,ev=se.value;sd.innerHTML=cadOpts(ar.map(a=>[a,a]),dv,"Todos os departamentos");se.innerHTML=cadOpts(emps.map(([e,n])=>[e,`${e} – ${n}`]),ev,"Todas as empresas");
+  {const G=cadGF();const cnt=f=>{const m=new Map();R.forEach(r=>{const ks=f(r);(ks||[]).forEach(k=>m.set(k,(m.get(k)||0)+1))});return m};
+    const dC=cnt(r=>r.dep?[r.dep]:[]),rC=cnt(r=>{const s2=cadGerRegs(r);return s2?[...s2]:[]});const RE=cadRegsEmp();
+    const eC=new Map();emps.forEach(([e])=>{if(G.reg.size&&![...(RE.get(e)||[])].some(x=>G.reg.has(x)))return;eC.set(e,R.filter(r=>String(r.emp).trim()===e).length)});const nome=new Map(emps);
+    S.cad.cgOpts={dep:[...dC.entries()].sort((a,b)=>a[0].localeCompare(b[0],"pt-BR")).map(([k,n])=>[k,k,n]),reg:[...rC.entries()].sort((a,b)=>a[0].localeCompare(b[0],"pt-BR")).map(([k,n])=>[k,k,n]),emp:[...eC.entries()].sort((a,b)=>cadNum(a[0],b[0])).map(([k,n])=>[k,`${k} – ${nome.get(k)||""}`,n])};
+    document.querySelectorAll("#cad-ger .cms").forEach(b=>cadCmsDesenha(b));
+    const sd=$("#cadg-dep"),se=$("#cadg-emp");sd.innerHTML=G.dep.size===1?`<option selected>${esc([...G.dep][0])}</option>`:'<option value=""></option>';se.innerHTML=G.emp.size===1?`<option selected>${esc([...G.emp][0])}</option>`:'<option value=""></option>'}
   $("#cadg-origem").textContent=C.gerOrigem||"";{const ns=R.filter(r=>r.sug&&!r.email).length;const bs=$("#cadg-sugs");bs.hidden=!ns;bs.textContent=`Usar as ${ns} sugestões`}
   const F=cadGerFiltradas();
   const empOpts=sel=>`<option value="Todas"${cadTodas(sel)?" selected":""}>Todas</option>`+(sel&&!cadTodas(sel)&&!emps.some(x=>x[0]===String(sel))?`<option selected>${esc(sel)}</option>`:"")+cadOpts(emps.map(([e,n])=>[e,`${e} – ${n}`]),sel);
@@ -5092,7 +5103,7 @@ document.addEventListener("change",async e=>{const t=e.target;if(!t.closest||!t.
   if(t.dataset.pzi!=null){const C=S.cad;const d=(C.pzVis||[])[+t.dataset.pzi];const v=cadLimpo(t.value);if(d&&v){if(d.campo==="reg")cadSetReg(d.c[0],v);else{const nm=C.nomes.get(d.c[0])||{};nm[d.campo==="emp"?"en":"on"]=v;C.nomes.set(d.c[0],nm)}
     if(v!==d.est){C.pzIgn=C.pzIgn||new Map();C.pzIgn.set(d.c[0]+"|"+d.campo,d.est)}toast("Nome alterado. Clique em Salvar para gravar.");cadRenderPend()}return}
   if(t.dataset.cqf){const C=S.cad;C.insF=C.insF||new Map();const atual=(((S.insFora||{})[t.dataset.cqf]||{}).t)||"app";if(t.value===atual)C.insF.delete(t.dataset.cqf);else C.insF.set(t.dataset.cqf,t.value);cadRenderQuem();return}
-  if(["cadg-dep","cadg-emp","cadg-pend"].includes(t.id)){cadRenderGer();return}
+  if(["cadg-pend"].includes(t.id)){cadRenderGer();return}
   if(t.dataset.cg!=null){const r=C.ger[+t.dataset.cg];const k=t.dataset.k;
     if(k==="link"){const o=String(r.obs||"").replace(/\s*com\s*claude\s*/ig," ").replace(/\s*sem\s*claude\s*/ig," ").trim();r.obs=t.checked?(o?o+" · com Claude":"com Claude"):o}
     else{r[k]=t.value.trim();if(k==="emp")r.obra="Todas"}C.gerDirty=true;
