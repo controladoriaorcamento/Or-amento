@@ -161,9 +161,9 @@ tr.drill-row>td{background:var(--group)}
 table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
 .grid th,.grid td{border-bottom:1px solid var(--line);padding:0;white-space:nowrap;height:30px}
 .grid thead th{position:sticky;top:0;z-index:5;background:var(--surface);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 8px;text-align:right;border-bottom:1px solid var(--line-strong)}
-.grid thead tr.band th{font-size:10px;padding:4px 8px;top:var(--ctxH,30px);text-align:center}
-.grid thead tr.cols th{top:calc(var(--ctxH,30px) + var(--bandH,24px))}
-.grid thead tr.ctx th{top:0;z-index:9;padding:0;text-align:left;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--ink);background:var(--accent-soft,var(--group));border-bottom:2px solid var(--accent)}
+.grid thead tr.band th{font-size:10px;padding:4px 8px;top:calc(var(--pgOff,0px) + var(--ctxH,30px));text-align:center}
+.grid thead tr.cols th{top:calc(var(--pgOff,0px) + var(--ctxH,30px) + var(--bandH,24px))}
+.grid thead tr.ctx th{top:var(--pgOff,0px);z-index:9;padding:0;text-align:left;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--ink);background:var(--accent-soft,var(--group));border-bottom:2px solid var(--accent)}
 .grid thead tr.ctx .ctx-in{position:sticky;left:0;display:inline-flex;flex-wrap:wrap;gap:4px 18px;padding:6px 10px;max-width:calc(100vw - 80px)}
 .grid thead tr.ctx .ctx-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
 .niv-tg .btn.sm{font-size:12px;padding:3px 9px}
@@ -1634,6 +1634,18 @@ async function mqAplicar(idx){const c=S.cur;const l=c.lines[idx];const tipo=c.in
   applyRules(c);renderGrid();toast(`Gravado (${al==="obra"?"só nesta obra":"base "+tipo}): ${feito.join(" · ")}`)}
 window.addEventListener("scroll",e=>{const m=$("#mq-pop");if(m&&!(e.target&&e.target.closest&&e.target.closest("#mq-pop")))mqFechar()},true);
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mq]");if(b){e.stopPropagation();mqAbrir(+b.dataset.mq,b);return}const m=$("#mq-pop");if(m&&!e.target.closest("#mq-pop"))mqFechar()});
+/* 04/11: altura das linhas do cabeçalho medida sempre que muda (fonte, largura, texto do aviso), para cada linha travar no lugar certo */
+function gridHdrMedir(){const g=$("#grid");if(!g)return;const bt=g.querySelector("thead tr.band"),ct=g.querySelector("thead tr.ctx");
+  const h=el=>el?Math.round(el.getBoundingClientRect().height*10)/10:0;const hc=h(ct),hb=h(bt);if(!hc&&!hb)return;
+  g.style.setProperty("--ctxH",hc+"px");g.style.setProperty("--bandH",hb+"px");
+  if(window.ResizeObserver){if(!S._hdrRO)S._hdrRO=new ResizeObserver(()=>{const a=h(g.querySelector("thead tr.ctx")),b=h(g.querySelector("thead tr.band"));if(a||b){g.style.setProperty("--ctxH",a+"px");g.style.setProperty("--bandH",b+"px")}});
+    S._hdrRO.disconnect();if(ct)S._hdrRO.observe(ct);if(bt)S._hdrRO.observe(bt)}}
+window.addEventListener("resize",()=>{try{gridHdrMedir();gridHdrPagina()}catch(e){}});
+/* 04/11: quando a página rola e a tabela passa por baixo da barra de filtros, o cabeçalho desce junto e fica logo abaixo da barra */
+function gridHdrPagina(){const g=$("#grid"),gb=$("#grid-box");if(!g||!gb||!gb.offsetParent)return;const tb=document.querySelector("#v-fill .toolbar")||document.querySelector(".toolbar");
+  const lim=tb&&tb.offsetParent?tb.getBoundingClientRect().bottom:0;const r=gb.getBoundingClientRect();const th=g.tHead?g.tHead.getBoundingClientRect().height:0;
+  const off=Math.max(0,Math.min(lim-r.top,r.height-th-40));const v=Math.round(off)+"px";if(g.style.getPropertyValue("--pgOff")!==v)g.style.setProperty("--pgOff",v)}
+window.addEventListener("scroll",()=>{if(S._hdrRaf)return;S._hdrRaf=requestAnimationFrame(()=>{S._hdrRaf=0;try{gridHdrPagina()}catch(e){}})},{passive:true});
 function renderGrid(){if(!S.cur||!S.cur.lines)return;
   const {lines,doc,editable}=S.cur, y=S.year;
   $("#btn-copy-prev").hidden=!(editable&&y!=="2027");
@@ -1688,7 +1700,7 @@ function renderGrid(){if(!S.cur||!S.cur.lines)return;
   h+=`</tbody><tfoot><tr><td class="c-desc" style="padding-left:8px">Total da obra</td>${REF.replace(/data-r=/g,"data-f=")}<td class="c-flag"></td><td></td>${MES.map((_,m)=>`<td class="num" data-f="m${m}"></td>`).join("")}<td class="num tot" data-f="t"></td><td class="num" data-f="d"></td><td></td></tr></tfoot>`;
   $("#grid").innerHTML=h;
   {const tas=[...document.querySelectorAll("#grid textarea.sname")];tas.forEach(t=>t.style.height="auto");const hs=tas.map(t=>t.scrollHeight);tas.forEach((t,i)=>t.style.height=hs[i]+"px")}/* ajuste em lote: 1 recálculo de layout em vez de 1 por subitem (antes ~6 s com 175 subitens) */
-  try{marcarNivel()}catch(e){}{const bt=$("#grid thead tr.band"),ct=$("#grid thead tr.ctx");if(ct)$("#grid").style.setProperty("--ctxH",ct.getBoundingClientRect().height+"px");if(bt)$("#grid").style.setProperty("--bandH",bt.getBoundingClientRect().height+"px")}
+  try{marcarNivel()}catch(e){}gridHdrMedir();gridHdrPagina()
   updateTotals();try{renderAlertas()}catch(e){}
 }
 function deltaHtml(t,p26){if(!t)return"";if(!p26)return`<span class="delta up">novo</span>`;const d=(t/p26-1)*100;const c=Math.abs(d)<2?"eq":d>0?"up":"dn";return`<span class="delta ${c}">${d>0?"+":""}${nf0.format(d)}%</span>`}
