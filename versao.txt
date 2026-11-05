@@ -1,1 +1,1 @@
-Versao do site: 28/10/2026g - filtros Regional e Empresa (varias escolhas)
+Versao do site: 05/11/2026 v23 - I08253 na base 67000 (liberado em 57-68389, 242-69729, 361-67113)
