@@ -2552,7 +2552,7 @@ let ALL_LEAVES=null;
 function allLeaves(){if(ALL_LEAVES)return ALL_LEAVES;const m=new Map();Object.values(T.tipos).forEach(tp=>tp.rows.forEach(r=>{if(r[6]){const k=r[0]+"|"+r[2]+"|"+r[3];if(!m.has(k))m.set(k,{k,P:r[0],item:r[1],S:r[2],I:r[3],d:r[4],un:r[5]||"VB",pn:tp.prods[r[0]]})}}));return ALL_LEAVES=[...m.values()]}
 function syncAddBtn(){$("#btn-add").textContent=$("#add-box").hidden?"Adicionar item":"Recolher adicionar item"}
 $("#btn-add").addEventListener("click",()=>{$("#add-box").hidden=!$("#add-box").hidden;syncAddBtn();if(!$("#add-box").hidden){$("#add-q").focus();renderAdd();addErpCarregar()}});
-$("#add-q").addEventListener("input",renderAdd);
+$("#add-q").addEventListener("input",()=>{renderAdd();clearTimeout(S._addT);S._addT=setTimeout(addErpBuscaGlobal,400)});
 /* 05/11 (Evaldo): insumo da estrutura do ERP desta obra que não está no modelo (ex.: I08253) entra só manualmente, obra a obra.
    A estrutura do ERP é restrita: só a Controladoria (master) enxerga e inclui esses itens. */
 async function addErpCarregar(){const cur=S.cur;if(!cur||!S.owner||cur._erp)return;cur._erp=[];
@@ -2563,11 +2563,28 @@ async function addErpCarregar(){const cur=S.cur;if(!cur||!S.owner||cur._erp)retu
     L.forEach(x=>{const [P0,C,item,Sv,I,inat]=x;if(inat===1||!Sv||String(Sv).startsWith("-")||!I||Ib.has(I)||vis.has(I))return;const P=(P0&&!String(P0).startsWith("-"))?P0:pS[Sv];if(!P)return;const k=P+"|"+Sv+"|"+I;if(no.has(k))return;vis.add(I);
       cur._erp.push({k,P,item:item||"",S:Sv,I,d:dI[I]||I,un:"VB",pn:dP[P]||(tp&&tp.prods[P])||"",erp:true})})}catch(e){console.warn("erp add",e)}
   if(S.cur===cur&&!$("#add-box").hidden)renderAdd()}
+/* 05/11 (2): o insumo pode não estar na estrutura do ERP desta obra (ex.: I08253 só está em 54 das 327 obras da base 67000).
+   Para o master, a busca também procura em toda a estrutura do ERP; o serviço/produto vem da obra onde o insumo mais aparece. */
+let ERP_GLOBAL=null;
+async function addErpGlobal(){if(ERP_GLOBAL)return ERP_GLOBAL;ERP_GLOBAL=new Promise(async res=>{const m=new Map();
+  try{const ix=await carregarEstIdx();const emps=[...new Set(Object.keys((ix&&ix.eo)||{}).map(k=>k.split("-")[0]))];
+    for(let i=0;i<emps.length;i+=8){const lote=await Promise.all(emps.slice(i,i+8).map(e=>estEmpresa(e)));
+      lote.forEach(E=>Object.values((E&&E.o)||{}).forEach(L=>L.forEach(x=>{const [P,C,item,Sv,I,inat]=x;if(inat===1||!I||!Sv||String(Sv).startsWith("-"))return;
+        const k=I+"|"+Sv+"|"+(String(P).startsWith("-")?"":P);m.set(k,(m.get(k)||0)+1)})))}}catch(e){console.warn("erp global",e)}
+  const best=new Map();[...m.entries()].forEach(([k,n])=>{const [I,Sv,P]=k.split("|");const b=best.get(I);if(!b||(!!P&&!b.P)||((!!P===!!b.P)&&n>b.n))best.set(I,{I,S:Sv,P,n})});res(best)});return ERP_GLOBAL}
+async function addErpBuscaGlobal(){const cur=S.cur;if(!cur||!S.owner)return;const q=$("#add-q").value.trim().toLowerCase();if(q.length<3)return;
+  const best=await addErpGlobal();if(S.cur!==cur||$("#add-q").value.trim().toLowerCase()!==q)return;
+  const ix=await carregarEstIdx();const dI=(ix&&ix.dI)||{},dP=(ix&&ix.dP)||{};const c=S.catMap&&S.catMap.get(cur.o);const tp=T.tipos[(c&&c[3])||(cur.info&&cur.info.tipo)];
+  const pS={},Ib=new Set();if(tp)tp.rows.forEach(r=>{if(r[2]&&!pS[r[2]])pS[r[2]]=r[0];if(r[3])Ib.add(r[3])});
+  const ja=new Set((cur._erp||[]).map(x=>x.I));cur._erpG=[];
+  best.forEach(b=>{if(Ib.has(b.I)||ja.has(b.I))return;const d=dI[b.I]||b.I;if(!(d+" "+b.S+" "+b.I).toLowerCase().includes(q))return;const P=pS[b.S]||b.P;if(!P)return;
+    cur._erpG.push({k:P+"|"+b.S+"|"+b.I,P,item:"",S:b.S,I:b.I,d,un:"VB",pn:dP[P]||(tp&&tp.prods[P])||"",erp:"g"})});
+  renderAdd()}
 function renderAdd(){const q=$("#add-q").value.trim().toLowerCase();const have=new Set(S.cur.lines.map(l=>l.key));
-  const fonte=allLeaves().concat(S.cur._erp||[]);
+  const fonte=allLeaves().concat(S.cur._erp||[],S.cur._erpG||[]);
   const r=fonte.filter(x=>!have.has(x.k)&&(!q||(x.d+" "+x.S+" "+x.I+" "+x.pn).toLowerCase().includes(q))).sort((a,b)=>(b.erp?1:0)-(a.erp?1:0)).slice(0,60);
-  $("#add-list").innerHTML=r.length?r.map(x=>`<button data-k="${esc(x.k)}">${esc(x.d)} <span class="muted">· ${esc(x.S)} ${esc(x.I)} · ${esc(x.P)} ${esc(x.pn)}</span>${x.erp?' <small class="cp-src">estrutura do ERP desta obra · fora do modelo</small>':""}</button>`).join(""):`<div class="muted" style="padding:10px">Nenhum item encontrado.</div>`}
-$("#add-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const x=allLeaves().concat(S.cur._erp||[]).find(z=>z.k===b.dataset.k);if(!x)return;
+  $("#add-list").innerHTML=r.length?r.map(x=>`<button data-k="${esc(x.k)}">${esc(x.d)} <span class="muted">· ${esc(x.S)} ${esc(x.I)} · ${esc(x.P)} ${esc(x.pn)}</span>${x.erp==="g"?' <small class="cp-src">estrutura do ERP de outras obras · fora do modelo</small>':x.erp?' <small class="cp-src">estrutura do ERP desta obra · fora do modelo</small>':""}</button>`).join(""):`<div class="muted" style="padding:10px">Nenhum item encontrado.</div>`}
+$("#add-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const x=allLeaves().concat(S.cur._erp||[],S.cur._erpG||[]).find(z=>z.k===b.dataset.k);if(!x)return;
   S.cur.doc.ext[x.k]={d:x.d,un:x.un,item:x.item};S.cur.lines=buildLines(S.cur.info.tipo,S.cur.hist,extOrf(S.cur.doc.ext,S.cur.doc.v),S.cur.esp);applyRules(S.cur);
   const l=S.cur.lines.find(z=>z.key===x.k);l.desc=x.d;renderGrid();S.cur.dirty=true;changed();$("#add-box").hidden=true;syncAddBtn();toast("Item adicionado em Outros itens");});
 
