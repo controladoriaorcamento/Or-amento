@@ -974,6 +974,23 @@ const TIPO_NOME = {"60000":"Usina de asfalto","67000":"Obras – custo direto, i
 const YEARS=["2027","2028","2029"], MES=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const $=s=>document.querySelector(s);
 const S={db:null,user:null,dl:null,me:null,owner:false,perfil:null,myOrc:{},cur:null,year:"2027",collapsed:new Set(),q:"",onlyUsed:false,cat:null,people:[],pick:null,sel:new Map(),acomp:[]};
+/* 05/11 (Evaldo): "quando eu alterar em um lugar, alterar em todos os outros". As áreas (quem planeja) de cada obra passam a ser
+   CALCULADAS do mesmo modelo que o Preencher usa (base + regras + exceções da obra). O que está gravado em restrito/areasobra
+   fica só como reserva (obra sem base carregada). Assim Preencher, Pendências, Empresas e obras, Gerentes e Andamento mostram o mesmo. */
+Object.defineProperty(S,"areasObra",{configurable:true,enumerable:true,get(){return aoCalc()},set(v){S.areasObraRaw=v}});
+function aoCalc(){const raw=S.areasObraRaw;if(!raw||!S.cat||!S.catMap||typeof T==="undefined"||!T.tipos)return raw;
+  const k=S._aoc;const nc=(S.cat.obras||[]).length,nd=S.dpR&&S.dpR.o?Object.keys(S.dpR.o).length:0;
+  if(k&&k.raw===raw&&k.cat===S.cat&&k.nc===nc&&k.rg===S.regras&&k.dp===S.dpR&&k.nd===nd&&k.T===T)return k.m;
+  const porTipo={};const m={};
+  Object.keys(raw).forEach(o=>{if(!S.catMap.has(o))m[o]=raw[o]});
+  (S.cat.obras||[]).forEach(c=>{const o=c[0],tipo=c[3];if(!tipo||!T.tipos[tipo]){if(raw[o])m[o]=raw[o];return}
+    const vis=produtosDaObra0(null,[],o,tipo);const ex=S.dpR&&S.dpR.o&&S.dpR.o[o];
+    let pt=porTipo[tipo];if(!pt){pt=porTipo[tipo]={lv:cadLeaves(tipo),memo:{}}}
+    const ck=vis?[...vis].sort().join("|"):"";let ar;
+    if(!ex&&pt.memo[ck])ar=pt.memo[ck];else{const st=new Set();pt.lv.forEach(l=>{if(vis&&!vis.has(l.P))return;const r=ruleFor(tipo,l,o);if(r&&r[1])st.add(r[1])});ar=[...st].sort();if(!ex)pt.memo[ck]=ar}
+    if(ar.length)m[o]=ar;else if(raw[o])m[o]=raw[o]});
+  S._aoc={raw,cat:S.cat,nc,rg:S.regras,dp:S.dpR,nd,T,m};return m}
+
 
 /* ---------- utilitários ---------- */
 const nf2=new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1491,7 +1508,9 @@ function produtosDaObra(hist,lines,o,tipo,doc){const s=produtosDaObra0(hist,line
 function produtosDaObra0(hist,lines,o,tipo){const pd=Object.keys((hist&&hist.pd)||{});const s=new Set(pd);lines.forEach(l=>{if(l.kind==="leaf"&&l.P&&(sum(l.h)||temEsp(l)))s.add(l.P)});
   /* 29/10 (Evaldo): a obra mostra o modelo inteiro da base, não só os produtos que já tiveram histórico. Despesas com vendas só para obra com vendas (ou se já teve histórico). */
   const tp=T.tipos[tipo];if(tp){const vend=new Set(prodsVendas(tipo));Object.keys(tp.prods).forEach(P=>{if(!vend.has(P))s.add(P)})}
-  if(o&&obraComVendas(o))prodsVendas(tipo).forEach(P=>s.add(P));return s.size?s:null}
+  const pv=prodsVendas(tipo);if(o&&obraComVendas(o))pv.forEach(P=>s.add(P));
+  /* 05/11: base só com despesas de vendas (ex.: 71401 — 2434 Estoque e 2525 Lançamento) mostra todos os produtos dela */
+  if(tp&&pv.length&&pv.length===Object.keys(tp.prods).length)pv.forEach(P=>s.add(P));return s.size?s:null}
 const oculto=l=>{const oc=S.regras&&S.regras.ocSet;return !!(oc&&oc.has(`${(S.cur&&S.cur.info&&S.cur.info.tipo)||""}|${l.P}|${l.S}|${l.I}`))};
 const prodOk=l=>!(S.cur&&S.cur.prods&&l.P&&l.key!=="P:extra"&&!String(l.key).startsWith("GX:")&&!l.extra&&!S.cur.prods.has(l.P));
 function visivelFiltro(c){const sv=S.collapsed;if(!sv.size)return visible(c);S.collapsed=new Set();try{return visible(c)}finally{S.collapsed=sv}}
