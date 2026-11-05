@@ -1118,7 +1118,10 @@ const OBRIG_TODOS=true;
 /* 28/10: Indicadores contam só obra ativa (no catálogo e não inativa) e planejada no app */
 function indObraConta(o,catBy){const c=(catBy||S.catMap||new Map()).get(o);if(!c||c[8]===1)return false;const m=(S.foraApp||{})[o];return !(m&&m["*"])}
 function foraDe(o,area){const m=(S.foraApp||{})[o];if(!m)return null;return m["*"]||(area&&m[area])||null}
-function foraTxtObra(o){const m=(S.foraApp||{})[o];if(!m)return"";return Object.entries(m).map(([a,v])=>(a==="*"?"todas as áreas":a)+(v.motivo?" ("+v.motivo+")":"")).join("; ")}
+/* 05/11: área sem nenhum insumo no app na base da obra (Cadastros › Quem planeja) conta como fora do app em todas as telas */
+function areaForaBase(o,a){const c=S.catMap&&S.catMap.get(o);if(!c||!a||typeof indAreaForaIns!=="function")return false;return indAreaForaIns(c[3],a)&&!insAppObraArea(o,a)}
+function foraTxtObra(o){const m=(S.foraApp||{})[o]||{};const L=Object.entries(m).map(([a,v])=>(a==="*"?"todas as áreas":a)+(v.motivo?" ("+v.motivo+")":""));
+  if(!m["*"])((S.areasObra||{})[o]||[]).forEach(a=>{if(!m[a]&&areaForaBase(o,a))L.push(a+" (todos os insumos fora do app na base)")});return L.join("; ")}
 function applyRules(cur){
   const areas=(cur.info.areas||[]);const owner=S.owner&&cur.uid===S.me;
   cur.lines.forEach(l=>{if(l.kind!=="leaf")return;const r=ruleFor(cur.info.tipo,l,cur.o);
@@ -2738,7 +2741,7 @@ function insObra(o,l){const m=S.insFora;return (o&&m&&m[`o:${o}|${l.P}|${l.S}|${
 function foraIns(tipo,l,o){const xo=insObra(o,l);if(xo)return xo.t==="app"?null:xo;const m=S.insFora;const x=m&&m[`${tipo||""}|${l.P}|${l.S}|${l.I}`];return (x&&x.t!=="app")?x:null}
 /* insumo liberado “no app” só nesta obra: vence a área marcada fora do app */
 function insAppObra(o,l){const xo=insObra(o,l);return !!(xo&&xo.t==="app")}
-function insAppObraArea(o,area){const m=S.insFora||{};const pre=`o:${o}|`;return Object.keys(m).some(k=>k.startsWith(pre)&&m[k].t==="app"&&m[k].area===area)}
+function insAppObraArea(o,area){const m=S.insFora||{};const n=Object.keys(m).length;if(!S._iaoa||S._iaoa.m!==m||S._iaoa.n!==n){const st=new Set();Object.entries(m).forEach(([k,v])=>{if(k.startsWith("o:")&&v&&v.t==="app")st.add(k.slice(2).split("|")[0]+"|"+v.area)});S._iaoa={m,n,st}}return S._iaoa.st.has(o+"|"+area)}
 async function carregarInsFora(){try{const d=await S.db.doc("regras/insumos_fora").get();S.insFora=d.exists?(d.data().m||{}):{}}catch(e){S.insFora=S.insFora||{}}}
 /* 29/10 (Evaldo): estas áreas planejam tudo por fora do app, em todas as bases */
 const EM_FORA=new Set(["Gente & Gestão","TI","Engenharia","Obras Corporativas"]);
@@ -3017,7 +3020,7 @@ function linhasEst(){const X=S.estIdx||{eo:{}};const cat=new Map((S.cat.obras||[
   const ger=new Map();(S.pessoas||[]).forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>{if(!ger.has(o))ger.set(o,[]);ger.get(o).push({nome:p.nome||p.email,email:p.email,deps})}));
   const ids=new Set([...Object.keys(X.eo||{}),...(S.estIdx?cat.keys():[])]);const L=[];
   ids.forEach(o=>{const b=(X.eo||{})[o],c=cat.get(o);const [emp,ob]=[o.split("-")[0],o.split("-").slice(1).join("-")];const G=ger.get(o)||[];
-    const areas=(AO[o]||[]).filter(a=>!foraDe(o,a));const cob=new Set(G.flatMap(g=>g.deps));const semR=areas.filter(a=>!cob.has(a));const todasFora=(AO[o]||[]).length&&!areas.length||!!((S.foraApp||{})[o]||{})["*"];
+    const areas=(AO[o]||[]).filter(a=>!foraDe(o,a)&&!areaForaBase(o,a));const cob=new Set(G.flatMap(g=>g.deps));const semR=areas.filter(a=>!cob.has(a));const todasFora=(AO[o]||[]).length&&!areas.length||!!((S.foraApp||{})[o]||{})["*"];
     const sit=!b?"fora_base":!c?"falta_app":todasFora?"fora":!G.length?"sem_ger":semR.length?"area":"ok";
     L.push({o,emp,ob,empNome:(b&&b[0])||(c&&c[7])||"",reg:(b&&b[1])||(S.regObra?regDe(o):"")||"Sem regional",obraNome:(b&&b[2])||(c&&c[2])||"",grupo:(b&&b[3])||"",linhas:b?b[4]:0,base:c?c[3]:"",G,areas,semR,sit})});
   return L.sort((a,b)=>a.emp.localeCompare(b.emp,undefined,{numeric:true})||a.ob.localeCompare(b.ob,undefined,{numeric:true}))}
@@ -4391,7 +4394,7 @@ function cadRenderObras(){const C=S.cad;const cats=(S.cat.obras||[]).concat(C.no
     <td><input class="cad-in" list="cad-regs" data-co-reg="${esc(id)}" value="${esc(x.reg)}" placeholder="—" aria-label="Regional de ${esc(id)}"></td>
     <td><button class="pill ${x.inat?"vazio":"enviado"} cad-pb" data-co-inat="${esc(id)}" title="Clique para ${x.inat?"ativar":"inativar"}">${x.inat?"Inativa":"Ativa"}</button></td>
     <td><select class="cad-in cad-plan p-${x.fora||"app"}" data-co-plan="${esc(id)}" aria-label="Planejamento de ${esc(id)}">${cadOpts([["","No app"],["pausa","Pausada (não planejar agora)"],["fora","Fora do app"]],x.fora)}</select>${x.parcial?` <span class="muted" title="${esc(foraTxtObra(id))}">${x.parcial} área(s) fora</span>`:""}</td>
-    <td>${x.areas.length?x.areas.map(a=>{const fo=cadAreaFora(id,a);return `<button type="button" class="cad-chip cf-chip${x.semGer.includes(a)?" bad":""}" data-co-area="${esc(id)}|${esc(a)}" style="${fo?"text-decoration:line-through;opacity:.6":""}" title="${fo?"Fora do app — clique para voltar a planejar no app":(x.semGer.includes(a)?"Sem gerente. ":"")+"Clique para marcar esta área como fora do app"}">${esc(AREA_CURTA&&AREA_CURTA[a]||a)}${fo?" · fora":""}</button>`}).join(""):'<span class="muted">sem regra</span>'}</td>
+    <td>${x.areas.length?x.areas.map(a=>{const fo=cadAreaFora(id,a),fb=fo&&cadAreaForaSoBase(id,a);return `<button type="button" class="cad-chip cf-chip${x.semGer.includes(a)?" bad":""}" data-co-area="${esc(id)}|${esc(a)}" style="${fo?"text-decoration:line-through;opacity:.6":""}" title="${fb?"Fora do app pela base modelo: todos os insumos desta área estão fora do app em Cadastros › Quem planeja (base "+esc(x.c[3]||"")+")":fo?"Fora do app — clique para voltar a planejar no app":(x.semGer.includes(a)?"Sem gerente. ":"")+"Clique para marcar esta área como fora do app"}">${esc(AREA_CURTA&&AREA_CURTA[a]||a)}${fb?" · fora (base)":fo?" · fora":""}</button>`}).join(""):'<span class="muted">sem regra</span>'}</td>
     <td class="num">${x.pes||'<span style="color:var(--bad)">0</span>'}</td></tr>`}).join("")}</tbody>`;
   {const sa=$("#co-lote-area");if(sa&&!sa.options.length)sa.innerHTML=cadOpts(cadAreas().map(a=>[a,a]),"","— área —")}
   $("#co-selbar").hidden=!C.sel.size;$("#co-seln").textContent=`${C.sel.size} marcada(s)`;
@@ -4421,7 +4424,8 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||t.dataset
 document.addEventListener("input",e=>{const t=e.target;if(!t.classList||!t.classList.contains("sl-q"))return;const b=t.closest(".cms");if(b&&S.cad)cadCmsDesenha(b)});
 /* 04/11: ao clicar numa área da obra, pergunta se vale só nesta obra, na empresa toda ou em todas as obras listadas */
 function cadAreaFecha(){const m=$("#caq-pop");if(m)m.remove();if(S.cad)S.cad.caq=null}
-function cadAreaPergunta(id,a,btn){cadAreaFecha();const C=S.cad;const c=cadObraDe(id);const e=c?String(c[6]):id.split("-")[0];const fora=cadAreaFora(id,a);const v=fora?"voltar para o app":"marcar como fora do app";
+function cadAreaPergunta(id,a,btn){cadAreaFecha();const C=S.cad;
+  if(cadAreaForaSoBase(id,a)){const c0=cadObraDe(id);toast(`${a} está fora do app pela base ${c0?c0[3]:""}: todos os insumos dessa área estão marcados “Fora do app” em Cadastros › Quem planeja. Para voltar, mude lá (vale para a base) ou use o ⚙ no Preencher (só nesta obra).`);return}const c=cadObraDe(id);const e=c?String(c[6]):id.split("-")[0];const fora=cadAreaFora(id,a);const v=fora?"voltar para o app":"marcar como fora do app";
   const AO=cadCobGer().AO;const nE=(S.cat.obras||[]).concat(C.novas).filter(x=>String(x[6])===e&&!cadObraEstado(x).inat&&(AO[x[0]]||[]).includes(a)&&!!cadAreaFora(x[0],a)===fora).length;
   const nL=(C.coVis||[]).filter(i=>{const x=cadObraDe(i);return x&&!cadObraEstado(x).inat&&(AO[i]||[]).includes(a)&&!!cadAreaFora(i,a)===fora}).length;
   C.caq={id,a,e};const m=document.createElement("div");m.id="caq-pop";m.className="mx-pop mq-pop";
@@ -4436,12 +4440,13 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   if(b.dataset.caq==="nao"){cadAreaFecha();return}const P=C.caq;if(!P)return;const v=!cadAreaFora(P.id,P.a);const AO=cadCobGer().AO;let L;
   if(b.dataset.caq==="obra")L=[P.id];else if(b.dataset.caq==="emp")L=(S.cat.obras||[]).concat(C.novas).filter(c=>String(c[6])===P.e&&!cadObraEstado(c).inat&&(AO[c[0]]||[]).includes(P.a)).map(c=>c[0]);
   else L=(C.coVis||[]).filter(id=>{const c=cadObraDe(id);return c&&!cadObraEstado(c).inat&&(AO[id]||[]).includes(P.a)});
-  L=L.filter(id=>!!cadAreaFora(id,P.a)!==v);L.forEach(id=>cadSetAreaFora(id,P.a,v));toast(`${P.a}: ${L.length} obra(s) ${v?"marcada(s) fora do app":"de volta ao app"}. Clique em Salvar para gravar.`);
+  L=L.filter(id=>!!cadAreaFora(id,P.a)!==v&&!(!v&&cadAreaForaSoBase(id,P.a)));L.forEach(id=>cadSetAreaFora(id,P.a,v));toast(`${P.a}: ${L.length} obra(s) ${v?"marcada(s) fora do app":"de volta ao app"}. Clique em Salvar para gravar.`);
   cadAreaFecha();cadRenderObras();cadBarra()});
 function cadObraDe(id){return S.catMap.get(id)||S.cad.novas.find(c=>c[0]===id)}
 function cadSetInat(id,v){const c=cadObraDe(id);if(!c)return;if((c[8]===1)===v)S.cad.cat.delete(id);else S.cad.cat.set(id,v)}
 /* 28/10: fora do app por ÁREA (quem planeja), valendo em todas as telas: Empresas e obras, Falta preencher, Gerentes, Indicadores */
-function cadAreaFora(id,a){const C=S.cad;const k=id+"|"+a;if(C&&C.foraA&&C.foraA.has(k))return C.foraA.get(k);const fm=(S.foraApp||{})[id]||{};return !!fm[a]}
+function cadAreaFora(id,a){const C=S.cad;const k=id+"|"+a;let v;if(C&&C.foraA&&C.foraA.has(k))v=C.foraA.get(k);else{const fm=(S.foraApp||{})[id]||{};v=!!fm[a]}return v||areaForaBase(id,a)}
+function cadAreaForaSoBase(id,a){const C=S.cad;const k=id+"|"+a;const fm=(S.foraApp||{})[id]||{};const ex=C&&C.foraA&&C.foraA.has(k)?C.foraA.get(k):!!fm[a];return !ex&&areaForaBase(id,a)}
 function cadSetAreaFora(id,a,v){const C=S.cad;const k=id+"|"+a;const fm=(S.foraApp||{})[id]||{};if(!!fm[a]===!!v)C.foraA.delete(k);else C.foraA.set(k,!!v)}
 /* quem cobre cada obra × área pelo cadastro de gerentes (mesma regra em todas as telas) */
 function cadCobGer(){const C=S.cad;const GX=cadGOctx();const cov=new Set();C.ger.forEach(r=>{if(!r.dep||!cadValido(r.email))return;cadGerObras(r,GX).forEach(id=>cov.add(id+"|"+r.dep))});return {cov,AO:GX.AO}}
@@ -5095,7 +5100,7 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest||!t.c
   let b=t.closest("[data-co-inat]");if(b){const id=b.dataset.coInat;cadSetInat(id,!cadObraEstado(cadObraDe(id)).inat);cadRenderObras();return}
   if(t.id==="co-all"){(C.coVis||[]).slice(0,800).forEach(id=>t.checked?C.sel.add(id):C.sel.delete(id));cadRenderObras();return}
   {const ba=t.closest&&t.closest("[data-co-area]");if(ba){const [id,...aa]=ba.dataset.coArea.split("|");const a=aa.join("|");cadAreaPergunta(id,a,ba);return}}
-  {const ar=t.dataset&&t.dataset.coAreas;if(ar){const L=C.coAreaAlvo||[];const mud=L.filter(([id,a])=>!!cadAreaFora(id,a)!==(ar==="fora"));
+  {const ar=t.dataset&&t.dataset.coAreas;if(ar){const L=C.coAreaAlvo||[];const mud=L.filter(([id,a])=>!!cadAreaFora(id,a)!==(ar==="fora")&&!(ar==="app"&&cadAreaForaSoBase(id,a)));
     if(!mud.length){toast("Nada a mudar: todas já estão "+(ar==="fora"?"fora do app.":"no app."));return}
     if(!confirm(`${ar==="fora"?"Marcar como FORA do app":"Voltar para o APP"} ${mud.length} obra×área (${new Set(mud.map(p=>p[0])).size} obras)? Grava só quando você clicar em Salvar.`))return;
     mud.forEach(([id,a])=>cadSetAreaFora(id,a,ar==="fora"));toast(`${mud.length} obra×área preparadas. Clique em Salvar para gravar.`);cadRenderObras();return}}
