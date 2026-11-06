@@ -1198,6 +1198,7 @@ async function boot(){
   if(!S.owner&&!S.offline){try{const pr=window.ORC_HOOKS&&window.ORC_HOOKS.regionalPainel?await window.ORC_HOOKS.regionalPainel():null;if(pr&&pr.obras&&pr.obras.length)S.regional=pr}catch(e){console.warn("regional",e)}}
   await loadMine();
   if(S.owner)loadSolic().catch(()=>{});
+  if(!S.offline)avisoMostrar().catch(()=>{});
   if(!S.offline)novMostrar().then(()=>supIniciar()).then(()=>{if(!$("#nov-modal"))supDiaria()}).catch(()=>{});
   if(S.regional){$("#tabs").hidden=false;$("#tab-reg").hidden=false;$("#tab-fill").hidden=false;if(!S.owner){$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}}
 }
@@ -2746,6 +2747,21 @@ const NOV_ITENS=[["Pendências em quadros","Acessos, Obras novas, Insumos sem mo
  ["Menu mais enxuto","Ficaram Orçamento, Indicadores, Pendências, Cadastros, Acessos, Bases e importações e Suporte. As telas repetidas estão em Bases e importações › Telas antigas."],
  ["Estrutura modelo","Insumos de Gente e Gestão, TI, Engenharia e Obras Corporativas são planejados fora do app e saem do Preencher e dos Indicadores. Valores já digitados foram mantidos."],
  ["Suporte","Botão verde no canto da tela para relatar erro ou sugestão, com print. As respostas aparecem em Meus chamados."]];
+/* 06/11: avisos individuais ao gerente (gerentes/<uid>/avisos/<id>). Bloqueia a tela até a pessoa confirmar a leitura. */
+async function avisoMostrar(){if(!S.me||S.offline||$("#av-modal"))return;let L=[];try{const q=await S.db.collection("gerentes/"+S.me+"/avisos").get();L=q.docs.map(d=>({id:d.id,d:d.data()||{}})).filter(x=>!x.d.lidoEm).sort((a,b)=>a.id.localeCompare(b.id))}catch(_){return}
+  if(!L.length)return;const a=L[0],d=a.d;const it=Array.isArray(d.itens)?d.itens:[];const nf=n=>(+n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const w=document.createElement("div");w.className="sup-modal";w.id="av-modal";w.style.zIndex="80";w.setAttribute("role","alertdialog");w.setAttribute("aria-modal","true");w.setAttribute("aria-labelledby","av-h");w.dataset.id=a.id;
+  w.innerHTML=`<div class="sup-dlg card" style="width:min(760px,100%)"><h2 id="av-h" style="margin:0">${esc(d.titulo||"Aviso da Controladoria")}</h2>
+   <p class="desc" style="margin:6px 0 10px;white-space:pre-line">${esc(d.texto||"")}</p>
+   ${it.length?`<div class="tbl-box" style="max-height:46vh"><table class="list"><thead><tr><th>Obra</th><th>Insumo</th><th>O que foi feito</th><th style="text-align:right">2027</th><th style="text-align:right">2028</th><th style="text-align:right">2029</th></tr></thead><tbody>${it.map(x=>`<tr><td>${esc(x.obra||"")}</td><td>${esc(x.insumo||"")}</td><td>${esc(x.acao||"")}</td>${[0,1,2].map(i=>`<td style="text-align:right">${nf((x.valores||[])[i])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`:""}
+   <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input type="checkbox" id="av-ck"> <span>Li e estou ciente das alterações feitas no meu orçamento.</span></label>
+   <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center"><button class="btn primary" id="av-ok" disabled>Confirmar leitura</button>${L.length>1?`<span class="muted" style="font-size:12px">Aviso 1 de ${L.length}</span>`:""}</div></div>`;
+  document.body.appendChild(w);$("#av-ck").focus()}
+document.addEventListener("change",e=>{if(e.target.id==="av-ck")$("#av-ok").disabled=!e.target.checked});
+document.addEventListener("click",async e=>{if(e.target.id!=="av-ok")return;const w=$("#av-modal");if(!w||!$("#av-ck").checked)return;const b=e.target;b.disabled=true;
+  try{const ref=S.db.doc("gerentes/"+S.me+"/avisos/"+w.dataset.id);const g=await ref.get();await ref.set({...(g.exists?g.data():{}),lidoEm:nowISO(),lidoPor:S.me})}catch(_){b.disabled=false;toast("Não foi possível registrar a leitura. Tente de novo.");return}
+  w.remove();avisoMostrar().catch(()=>{})});
+document.addEventListener("keydown",e=>{if($("#av-modal")&&e.key==="Escape"){e.preventDefault();e.stopPropagation()}},true);
 async function novMostrar(){if(!S.owner||S.offline)return;let D={};try{const d=await S.db.doc("restrito/novidades").get();D=d.exists?d.data():{}}catch(_){return}
   if(((D.vistos||{})[S.me]||"")===NOV_VER)return;
   const w=document.createElement("div");w.className="sup-modal";w.id="nov-modal";w.setAttribute("role","dialog");w.setAttribute("aria-modal","true");
