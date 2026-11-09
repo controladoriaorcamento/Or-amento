@@ -2078,7 +2078,7 @@ const fP=(a,b)=>!b?(a?"novo":"—"):((a/b-1)*100>0?"+":"")+nf0.format((a/b-1)*10
 function barraSt(c,tot){return `<div class="ind-bar" title="${IND_STO.map(k=>IND_STN[k]+": "+(c[k]||0)).join(" · ")}">${IND_STO.map(k=>c[k]?`<span class="st-${k}" style="width:${(c[k]/tot*100).toFixed(2)}%"></span>`:"").join("")}</div>`}
 /* andamento: gerente × obra (aba 3) */
 /* 30/10 (2): área que, na base da obra, só tem insumos marcados fora do app → o par obra × área não conta nos Indicadores */
-function indAreaForaIns(tipo,area){if(!tipo||!area||!(T.tipos||{})[tipo])return false;S._afi=S._afi||{};const ck=tipo+"|"+Object.keys(S.insFora||{}).length;
+function indAreaForaIns(tipo,area){if(!tipo||!area||!(T.tipos||{})[tipo])return false;/* 09/11: cache pela referência do objeto (antes contava as chaves a cada chamada e travava os Indicadores) */if(S._afiM!==S.insFora){S._afi={};S._afiM=S.insFora}S._afi=S._afi||{};const ck=tipo;
   if(!S._afi[ck]){const tot={},den={};buildLines(tipo,null,{}).forEach(l=>{if(l.kind!=="leaf")return;const r=ruleFor(tipo,l);const a=(r&&r[1])||"";if(!a)return;tot[a]=(tot[a]||0)+1;if(!foraIns(tipo,l))den[a]=(den[a]||0)+1});S._afi[ck]={tot,den}}
   const x=S._afi[ck];return !!(x.tot[area]&&!x.den[area])}
 async function dadosIndicadores(){await carregarInsFora();S._afi={};if(!S.areasObra){try{const d=await S.db.doc("restrito/areasobra").get();S.areasObra=d.exists?d.data().m:{}}catch(e){S.areasObra={}}}if(S.foraApp===undefined){try{const fd=await S.db.doc("regras/fora_app").get();S.foraApp=fd.exists?(fd.data().m||{}):{}}catch(e){S.foraApp={}}}if(!S.acompEm){$("#ind-msg").textContent="Carregando orçamentos…";await loadAdm()}await loadCat();
@@ -2814,7 +2814,7 @@ function insObra(o,l){const m=S.insFora;return (o&&m&&m[`o:${o}|${l.P}|${l.S}|${
 function foraIns(tipo,l,o){const xo=insObra(o,l);if(xo)return xo.t==="app"?null:xo;const m=S.insFora;const x=m&&m[`${tipo||""}|${l.P}|${l.S}|${l.I}`];return (x&&x.t!=="app")?x:null}
 /* insumo liberado “no app” só nesta obra: vence a área marcada fora do app */
 function insAppObra(o,l){const xo=insObra(o,l);return !!(xo&&xo.t==="app")}
-function insAppObraArea(o,area){const m=S.insFora||{};const n=Object.keys(m).length;if(!S._iaoa||S._iaoa.m!==m||S._iaoa.n!==n){const st=new Set();Object.entries(m).forEach(([k,v])=>{if(k.startsWith("o:")&&v&&v.t==="app")st.add(k.slice(2).split("|")[0]+"|"+v.area)});S._iaoa={m,n,st}}return S._iaoa.st.has(o+"|"+area)}
+function insAppObraArea(o,area){const m=S.insFora||{};if(!S._iaoa||S._iaoa.m!==m){const st=new Set();Object.entries(m).forEach(([k,v])=>{if(k.startsWith("o:")&&v&&v.t==="app")st.add(k.slice(2).split("|")[0]+"|"+v.area)});S._iaoa={m,st}}return S._iaoa.st.has(o+"|"+area)}
 async function carregarInsFora(){try{const d=await S.db.doc("regras/insumos_fora").get();S.insFora=d.exists?(d.data().m||{}):{}}catch(e){S.insFora=S.insFora||{}}}
 /* 29/10 (Evaldo): estas áreas planejam tudo por fora do app, em todas as bases */
 const EM_FORA=new Set(["Gente & Gestão","TI","Engenharia","Obras Corporativas"]);
