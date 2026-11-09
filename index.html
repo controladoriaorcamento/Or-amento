@@ -1266,7 +1266,7 @@ async function loadMine(){
   S.myOrc={};q.docs.forEach(d=>S.myOrc[d.id]=d.data());
   await carregarColegas();
   const sel=$("#sel-obra");
-  S.selAll=obras.sort((a,b)=>String(a[1].obra||a[0]).localeCompare(String(b[1].obra||b[0]))||String(a[1].emp||"").localeCompare(String(b[1].emp||""),undefined,{numeric:true})).map(([o,i])=>{const st=(orcVis(o)&&orcVis(o).status)||"não iniciado";return `<option value="${esc(o)}">${esc(obraLbl(o,i))} (${esc(st)})</option>`}).join("");
+  S.selAll=obras.sort((a,b)=>String(a[1].obra||a[0]).localeCompare(String(b[1].obra||b[0]))||String(a[1].emp||"").localeCompare(String(b[1].emp||""),undefined,{numeric:true})).map(([o,i])=>{return `<option value="${esc(o)}">${esc(obraLbl(o,i))} (${esc(stObraTxt(o))})</option>`}).join("");
   sel.innerHTML=S.selAll;S.selIds=obras.map(x=>x[0]);$("#busca-obra").value="";$("#busca-obra-n").textContent=obras.length>1?"- "+obras.length+" obras":"";$("#busca-obra").parentElement.hidden=obras.length<2;
   await carregarOrcIndex();await montarFiltros();
   {let last=null;try{last=localStorage.getItem("orc.last")}catch(e){}await openObra(S.me,last&&S.perfil.obras[last]?last:S.selIds[0],false);filtrarObras()}
@@ -1334,7 +1334,10 @@ try{if(localStorage.getItem("orc.fcomp")==="1")$("#filtros").classList.add("comp
 /* quem já preencheu cada obra (masters): índice carregado do banco */
 async function carregarOrcIndex(forcar){if(!S.owner||!(window.ORC_HOOKS&&window.ORC_HOOKS.orcIndex))return;if(S.orcIdx&&!forcar&&Date.now()-S.orcIdxEm<60000)return;
   try{const L=await window.ORC_HOOKS.orcIndex();const uids=[...new Set(L.map(x=>x.uid))].filter(u=>u!==S.me);const ps=uids.length?await S.user.profiles(uids):{};
-    S.orcIdx=new Map();L.forEach(x=>{if(x.uid===S.me)return;x.nome=(ps[x.uid]&&ps[x.uid].name)||"Gerente";const a=S.orcIdx.get(x.o)||[];a.push(x);S.orcIdx.set(x.o,a)});S.orcIdxEm=Date.now()}catch(e){}}
+    S.orcIdx=new Map();L.forEach(x=>{if(x.uid===S.me)return;x.nome=(ps[x.uid]&&ps[x.uid].name)||"Gerente";const a=S.orcIdx.get(x.o)||[];a.push(x);S.orcIdx.set(x.o,a)});S.orcIdxEm=Date.now();relabelObras()}catch(e){}}
+/* 09/11: situação da obra na lista = a mesma do filtro "Situação da obra" e dos chips de preenchimento (todos os orçamentos da obra, não só o da Controladoria) */
+function stObraTxt(o){const a=S.owner&&S.orcIdx?S.orcIdx.get(o):null;if(a&&a.length){const c=new Map();a.forEach(x=>{const k=(ST_LAB[x.status||"rascunho"]||x.status||"").toLowerCase();c.set(k,(c.get(k)||0)+1)});return [...c].map(([k,n])=>a.length>1?`${n} ${k}`:k).join(", ")}const v=orcVis(o);return v&&v.status?(ST_LAB[v.status]||v.status).toLowerCase():"não iniciado"}
+function relabelObras(){if(!S.selAll)return;const t=document.createElement("select");t.innerHTML=S.selAll;[...t.options].forEach(op=>{op.textContent=op.textContent.replace(/\s\([^()]*\)$/,"")+" ("+stObraTxt(op.value)+")"});S.selAll=t.innerHTML;if(S.fInfo){try{filtrarObras()}catch(e){}}}
 const ST_LAB={rascunho:"Em preenchimento",enviado:"Aguardando validação",validado:"Validado",reaberto:"Devolvido"};
 function chipsPreench(o){const a=(S.orcIdx&&S.orcIdx.get(o))||[];return a.map(x=>`<span class="oq">${esc(x.nome)} <span class="pill ${esc(x.status||"rascunho")}">${esc(ST_LAB[x.status]||x.status||"")}</span>${x.t["2027"]?`<span class="muted">2027: ${f0(x.t["2027"])}</span>`:""}<button class="btn sm primary" data-verorc="${esc(x.uid)}|${esc(o)}">Ver o que preencheu</button></span>`).join("")}
 function renderQuem(){const box=$("#orc-quem");if(!S.cur||!S.owner){box.hidden=true;return}
