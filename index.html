@@ -2103,8 +2103,9 @@ async function dadosIndicadores(){await carregarInsFora();S._afi={};if(!S.areasO
   return {U,UA,orcObra,catBy,logados,pess,depsDe,espIdx}}
 /* fatos por orçamento × insumo: meses orçados, histórico 2025/2026 e espelho (só insumos da área de quem orçou ou com valor) */
 async function fatosIndicadores(D,prog){const F=[];let i=0;const N=D.orcObra.size;const z=()=>new Array(12).fill(0);
+  /* 09/11: histórico das obras lido em paralelo (antes era uma obra por vez, ~20 s) */const HC=new Map();{const ids=[...D.orcObra.keys()];for(let k=0;k<ids.length;k+=30){prog&&prog(`Lendo histórico ${Math.min(k+30,ids.length)}/${ids.length}…`);await Promise.all(ids.slice(k,k+30).map(async o=>{try{const hs=await S.db.doc("restrito/hist/eo/"+o).get();HC.set(o,hs.exists?hs.data():null)}catch(e){HC.set(o,null)}}))}}
   for(const [o,L] of D.orcObra){i++;prog&&prog(`Lendo obra ${i}/${N}…`);const c=D.catBy.get(o)||[];
-    let hist=null,esp=null;try{const hs=await S.db.doc("restrito/hist/eo/"+o).get();hist=hs.exists?hs.data():null}catch(e){}try{esp=await carregarEspelho(o)}catch(e){}
+    let hist=HC.get(o)||null,esp=null;try{esp=await carregarEspelho(o)}catch(e){}
     const cesp=(esp&&esp.h&&Object.keys(esp.h).length)||D.espIdx[o]?"Com espelho":"Sem espelho";
     for(const r of L){const tipo=r.info.tipo||c[3]||"";const deps=(D.depsDe.get((r.email||"").toLowerCase())||{})[o]||null;const doc={v:r.orc.v||{},pr:r.orc.pr||{}};
       const lines=buildLines(tipo,hist,extOrf(r.orc.ext,r.orc.v),esp);const pd={};lines.forEach(l=>{if(l.kind==="prod")pd[l.P]=l.desc});
