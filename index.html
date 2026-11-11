@@ -906,7 +906,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
     <div class="card" id="cad-obras" hidden>
       <div class="cad-fbar"><div><label class="lbl" for="co-q">Buscar</label><input type="search" id="co-q" placeholder="Código, obra, empresa ou Regional"></div>
         <div><label class="lbl">Regional</label><div class="slicer cms" data-cms="reg"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Regional"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><div><label class="lbl">Empresa</label><div class="slicer cms" data-cms="emp"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Empresa"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><select id="co-emp" hidden><option value=""></option></select>
-        <div><label class="lbl" for="co-st">Mostrar</label><select id="co-st"><option value="ativas">Ativas</option><option value="todas">Todas</option><option value="inativas">Inativas</option><option value="app">Planejam no app</option><option value="pausa">Pausadas</option><option value="fora">Fora do app</option><option value="semger">Sem gerente em alguma área</option><option value="semreg">Sem Regional</option></select></div>
+        <div><label class="lbl" for="co-st">Mostrar</label><select id="co-st"><option value="ativas">Ativas</option><option value="todas">Todas</option><option value="inativas">Inativas</option><option value="app">Planejam no app</option><option value="pausa">Pausadas</option><option value="fora">Fora do app</option><option value="semger">Sem gerente em alguma área</option><option value="semreg">Sem Regional</option><option value="semb">Sem base / base inexistente</option></select></div>
         <div><label class="lbl">Quem planeja</label><div class="slicer cms" data-cms="area"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Quem planeja"><div class="sl-acts"><button type="button" data-cmsa="todos">Marcar todos</button><button type="button" data-cmsa="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div><div><label class="lbl" for="co-ast" title="Vale para as áreas escolhidas em Quem planeja">Essa área está</label><select id="co-ast" title="Vale para as áreas escolhidas em Quem planeja"><option value="">Ambos</option><option value="app">Ainda no app</option><option value="fora">Já fora do app</option></select></div>
         <span class="muted" id="co-n" style="align-self:end;font-size:12px"></span></div>
       <div class="cad-selbar" id="co-areabar" hidden><b id="co-arean"></b><button class="btn sm" data-co-areas="fora">Marcar como fora do app</button><button class="btn sm" data-co-areas="app">Voltar para o app</button><small class="muted">vale para todas as obras listadas pelos filtros que têm essa(s) área(s); grava no Salvar</small></div>
@@ -4397,9 +4397,9 @@ const CAD_EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const cadTodas=v=>/^todas$/i.test(String(v||"").trim());
 const cadClone=o=>JSON.parse(JSON.stringify(o==null?null:o));
 const cadNum=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true});
-function cadNovo(){return {foraA:new Map(),aba:S.cad?S.cad.aba:"pend",pend:null,sit:null,nomes:new Map(),extraDec:new Map(),cat:new Map(),fora:new Map(),reg:new Map(),novas:[],t:{},o:{},ger:null,gerDirty:false,sel:new Set(),gerDoc:null,gerOrigem:"",gerMsg:"",aoNovas:{},estr:null}}
+function cadNovo(){return {foraA:new Map(),aba:S.cad?S.cad.aba:"pend",pend:null,sit:null,nomes:new Map(),extraDec:new Map(),cat:new Map(),base:new Map(),fora:new Map(),reg:new Map(),novas:[],t:{},o:{},ger:null,gerDirty:false,sel:new Set(),gerDoc:null,gerOrigem:"",gerMsg:"",aoNovas:{},estr:null}}
 const cadAO=()=>({...(S.areasObra||{}),...((S.cad&&S.cad.aoNovas)||{})});
-function cadSujo(){const C=S.cad;if(!C)return 0;return C.cat.size+C.nomes.size+C.fora.size+C.reg.size+C.novas.length+Object.values(C.t).reduce((a,m)=>a+Object.keys(m).length,0)+Object.values(C.o).reduce((a,m)=>a+Object.keys(m).length,0)+(C.gerDirty?1:0)+(C.estr?1:0)+(C.foraA?C.foraA.size:0)+(C.insF?C.insF.size:0)+(C.pzIgn?C.pzIgn.size:0)}
+function cadSujo(){const C=S.cad;if(!C)return 0;return C.cat.size+C.nomes.size+C.fora.size+C.reg.size+C.novas.length+Object.values(C.t).reduce((a,m)=>a+Object.keys(m).length,0)+Object.values(C.o).reduce((a,m)=>a+Object.keys(m).length,0)+(C.gerDirty?1:0)+(C.estr?1:0)+(C.foraA?C.foraA.size:0)+(C.insF?C.insF.size:0)+(C.pzIgn?C.pzIgn.size:0)+(C.base?C.base.size:0)}
 
 async function abrirCadastros(){
   const v=$("#v-cad");if(!v)return;S.cad=S.cad||cadNovo();$("#cad-msg").textContent="Carregando cadastros…";
@@ -4460,14 +4460,14 @@ function cadRenderObras(){const C=S.cad;const cats=(S.cat.obras||[]).concat(C.no
   /* 04/11: filtro Quem planeja (obra que tem a área) e situação da área */
   const temA=x=>{if(!fA.size)return true;const sel=x.areas.filter(a=>fA.has(a));if(!sel.length)return false;if(ast==="app")return sel.some(a=>!cadAreaFora(x.c[0],a));if(ast==="fora")return sel.some(a=>cadAreaFora(x.c[0],a));return true};
   const F=linhas.filter(x=>temA(x)&&(!fE.size||fE.has(String(x.c[6])))&&(!fR.size||fR.has(regDeX(x)))&&(!q||semAc(`${x.c[0]} ${x.c[2]} ${x.c[7]} ${x.reg}`).includes(q))&&
-    (st==="todas"||(st==="ativas"&&!x.inat)||(st==="inativas"&&x.inat)||(st==="fora"&&!x.inat&&x.fora==="fora")||(st==="pausa"&&!x.inat&&x.fora==="pausa")||(st==="app"&&!x.inat&&!x.fora)||(st==="semger"&&x.semGer.length)||(st==="semreg"&&!x.inat&&!x.reg)))
+    (st==="todas"||(st==="ativas"&&!x.inat)||(st==="inativas"&&x.inat)||(st==="fora"&&!x.inat&&x.fora==="fora")||(st==="pausa"&&!x.inat&&x.fora==="pausa")||(st==="app"&&!x.inat&&!x.fora)||(st==="semger"&&x.semGer.length)||(st==="semreg"&&!x.inat&&!x.reg)||(st==="semb"&&!cadBaseValida(cadBaseAtual(x.c)))))
     .sort((a,b)=>cadNum(a.c[0],b.c[0]));
   C.coVis=F.map(x=>x.c[0]);const MAX=800;
   $("#co-n").textContent=`${F.length} de ${tot} empresa/obra${F.length>MAX?` · mostrando as ${MAX} primeiras, use os filtros`:""}`;
   const regs=[...new Set(Object.values(S.regObra||{}).concat([...C.reg.values()]).filter(Boolean))].sort();$("#cad-regs").innerHTML=regs.map(r=>`<option value="${esc(r)}">`).join("");
-  $("#co-tbl").innerHTML=`<thead><tr><th style="width:28px"><input type="checkbox" id="co-all" aria-label="Marcar todas as listadas"></th><th>Empresa</th><th>Obra</th><th>Base</th><th>Regional</th><th>Situação</th><th>Planejamento</th><th>Quem planeja (áreas)</th><th class="num">Gerentes</th></tr></thead><tbody>${F.slice(0,MAX).map(x=>{const id=x.c[0];const mud=S.cad.cat.has(id)||S.cad.fora.has(id)||S.cad.reg.has(id)||x.nova;
+  $("#co-tbl").innerHTML=`<thead><tr><th style="width:28px"><input type="checkbox" id="co-all" aria-label="Marcar todas as listadas"></th><th>Empresa</th><th>Obra</th><th>Base</th><th>Regional</th><th>Situação</th><th>Planejamento</th><th>Quem planeja (áreas)</th><th class="num">Gerentes</th></tr></thead><tbody>${F.slice(0,MAX).map(x=>{const id=x.c[0];const mud=S.cad.cat.has(id)||S.cad.fora.has(id)||S.cad.reg.has(id)||(S.cad.base&&S.cad.base.has(id))||x.nova;
     return `<tr class="${x.inat?"cad-inat":""}${mud?" cad-mud":""}"><td><input type="checkbox" data-co-sel="${esc(id)}"${C.sel.has(id)?" checked":""} aria-label="Marcar ${esc(id)}"></td>
-    <td><span class="cad-cod">${esc(x.c[6])}</span> ${esc(x.c[7]||"")}</td><td><span class="cad-cod">${esc(x.c[1])}</span> ${esc(x.c[2]||"")}${x.nova?' <span class="pill validado">nova</span>':""}</td><td class="cad-cod">${esc(x.c[3]||"—")}</td>
+    <td><span class="cad-cod">${esc(x.c[6])}</span> ${esc(x.c[7]||"")}</td><td><span class="cad-cod">${esc(x.c[1])}</span> ${esc(x.c[2]||"")}${x.nova?' <span class="pill validado">nova</span>':""}</td><td>${cadBaseSel(id,x.c[3])}</td>
     <td><input class="cad-in" list="cad-regs" data-co-reg="${esc(id)}" value="${esc(x.reg)}" placeholder="—" aria-label="Regional de ${esc(id)}"></td>
     <td><button class="pill ${x.inat?"vazio":"enviado"} cad-pb" data-co-inat="${esc(id)}" title="Clique para ${x.inat?"ativar":"inativar"}">${x.inat?"Inativa":"Ativa"}</button></td>
     <td><select class="cad-in cad-plan p-${x.fora||"app"}" data-co-plan="${esc(id)}" aria-label="Planejamento de ${esc(id)}">${cadOpts([["","No app"],["pausa","Pausada (não planejar agora)"],["fora","Fora do app"]],x.fora)}</select>${x.parcial?` <span class="muted" title="${esc(foraTxtObra(id))}">${x.parcial} área(s) fora</span>`:""}</td>
@@ -4530,9 +4530,16 @@ function cadCobGer(){const C=S.cad;const GX=cadGOctx();const cov=new Set();C.ger
 const cadPlanDe=fm=>fm&&fm["*"]?(fm["*"].pausada?"pausa":"fora"):"";
 function cadSetFora(id,v){const atual=cadPlanDe((S.foraApp||{})[id]);if(atual===v)S.cad.fora.delete(id);else S.cad.fora.set(id,v)}
 function cadSetReg(id,v){v=String(v||"").trim();const atual=(S.regObra&&S.regObra[id])||"";if(atual===v)S.cad.reg.delete(id);else S.cad.reg.set(id,v)}
+/* 11/11: base modelo editável em Empresas e obras e em Quem planeja (obras sem base ou com base que não existe) */
+function cadBaseValida(b){return !!(b&&T.tipos&&T.tipos[b])}
+function cadBaseAtual(c){const C=S.cad;return C&&C.base&&C.base.has(c[0])?C.base.get(c[0]):(c[3]||"")}
+function cadBaseSel(id,b){const C=S.cad;const v=C.base&&C.base.has(id)?C.base.get(id):(b||"");const ok=cadBaseValida(v);const ts=Object.keys(T.tipos||{}).sort(cadNum);
+  return `<select class="cad-in" data-co-base="${esc(id)}" aria-label="Base modelo de ${esc(id)}" title="${ok?"Base modelo (troque e clique em Salvar)":"Base que não existe: escolha a base modelo e clique em Salvar"}" style="${ok?"":"border-color:var(--bad);color:var(--bad);font-weight:600"}">${ok?"":`<option value="${esc(v)}" selected>${v?esc(v)+" (não existe)":"— sem base —"}</option>`}${ts.map(t=>`<option value="${t}"${t===v?" selected":""}>${t}</option>`).join("")}</select>`}
+function cadSemBase(){return (S.cat.obras||[]).concat(S.cad.novas).filter(c=>c[8]!==1&&!cadBaseValida(cadBaseAtual(c)))}
 function cadNovaObra(){const g=k=>$("#cn-"+k).value.trim();const e=g("emp"),o=g("obra");const msg=$("#cn-msg");
   if(!e||!o){msg.textContent="Informe o código da empresa e o da obra.";return}const id=`${e}-${o}`;
   if(cadObraDe(id)){msg.textContent=`A obra ${id} já está no catálogo.`;return}
+  if(!cadBaseValida(g("base"))){msg.textContent=`Informe uma base modelo que exista (${Object.keys(T.tipos||{}).sort(cadNum).join(", ")}). Sem base certa a obra não aparece em Quem planeja nem no Preencher.`;return}
   const en=g("empn")||(cadEmpresas().find(x=>x[0]===e)||[])[1]||"";
   S.cad.novas.push([id,o,g("obran"),g("base"),0,0,e,en,0]);const r=g("reg");if(r)S.cad.reg.set(id,r);
   ["obra","obran","reg"].forEach(k=>$("#cn-"+k).value="");msg.textContent=`Obra ${id} incluída. Clique em Salvar para gravar.`;$("#co-q").value=id;cadRenderObras()}
@@ -4550,13 +4557,15 @@ function cadExc(o,l){const ex=S.dpR&&S.dpR.o&&S.dpR.o[o];return ex&&(ex[l.key]||
 function cadValObra(tipo,l,o){const p=S.cad.o[o];if(p&&l.key in p)return p[l.key];return cadExc(o,l)||cadValBase(tipo,l)}
 function cadQuemPrep(){const sb=$("#cq-base");const cats=(S.cat.obras||[]).concat(S.cad.novas);
   if(!sb.options.length){const n={};cats.forEach(c=>{n[c[3]]=(n[c[3]]||0)+1});const tipos=Object.keys(T.tipos||{}).sort(cadNum);
-    sb.innerHTML=cadOpts(tipos.map(t=>[t,`Base ${t} · ${n[t]||0} obra(s)`]),tipos.sort((a,b)=>(n[b]||0)-(n[a]||0))[0])}
+    const nsb=cadSemBase().length;sb.innerHTML=(nsb?`<option value="__sem">⚠ Obras sem base ou com base que não existe · ${nsb}</option>`:"")+cadOpts(tipos.map(t=>[t,`Base ${t} · ${n[t]||0} obra(s)`]),tipos.sort((a,b)=>(n[b]||0)-(n[a]||0))[0])}
   const tipo=sb.value;const so=$("#cq-obra");const cur=so.dataset.tipo===tipo?so.value:"";
   so.innerHTML=cadOpts(cats.filter(c=>c[3]===tipo).sort((a,b)=>cadNum(a[0],b[0])).map(c=>[c[0],`${c[0]} ${c[2]||""}`]),cur,"Todas as obras desta base (regra da base)");so.dataset.tipo=tipo;
   const ar=cadAreas();const fa=$("#cq-area");const fv=fa.value;fa.innerHTML=cadOpts(ar.map(a=>[a,a]),fv,"Todas as áreas");
   $("#cq-de").innerHTML=cadOpts(ar.map(a=>[a,a]),$("#cq-de").value,"de…");$("#cq-para").innerHTML=cadOpts(ar.map(a=>[a,a]),$("#cq-para").value,"para…");
   cadRenderQuem()}
 function cadRenderQuem(){const tipo=$("#cq-base").value,o=$("#cq-obra").value;if(!tipo){$("#cq-tbl").innerHTML="";return}
+  if(tipo==="__sem"){const L=cadSemBase().sort((a,b)=>cadNum(a[0],b[0]));$("#cq-res").innerHTML=`<b>${L.length}</b> obra(s) ativa(s) sem base modelo ou com uma base que não existe. Elas não aparecem em Quem planeja nem no Preencher. Escolha a base de cada uma e clique em <b>Salvar</b>.`;$("#cq-n").textContent="";
+    $("#cq-tbl").innerHTML=`<thead><tr><th>Empresa</th><th>Obra</th><th>Regional</th><th>Base modelo</th></tr></thead><tbody>${L.slice(0,800).map(c=>`<tr${S.cad.base&&S.cad.base.has(c[0])?' class="cad-mud"':""}><td><span class="cad-cod">${esc(c[6])}</span> ${esc(c[7]||"")}</td><td><span class="cad-cod">${esc(c[1])}</span> ${esc(c[2]||"")}</td><td>${esc((S.regObra&&S.regObra[c[0]])||"—")}</td><td>${cadBaseSel(c[0],c[3])}</td></tr>`).join("")||'<tr><td colspan="4" class="muted">Nenhuma.</td></tr>'}</tbody>`;return}
   const L=cadLeaves(tipo);const tp=T.tipos[tipo]||{prods:{}};const ar=cadAreas();const val=l=>o?cadValObra(tipo,l,o):cadValBase(tipo,l);
   const q=semAc($("#cq-q").value||"").trim(),fa=$("#cq-area").value;
   const cnt={};L.forEach(l=>{const v=val(l)||"(sem regra)";cnt[v]=(cnt[v]||0)+1});
@@ -5106,7 +5115,7 @@ async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$(
       if(rdF&&Array.isArray(rdF.linhas))S.dp=rdF.linhas;
       if(C.gerDirty&&!C.gerTroca&&C.gerBase&&cgF&&Array.isArray(cgF.linhas)){C.ger=cadGerMesclar(C.gerBase,C.ger,cgF.linhas)}
       /* 28/10 (2): obra nova, situação, área ou quem planeja mudou → os acessos dos gerentes são recalculados no fim (antes só recalculava quando a lista de gerentes mudava) */
-      C._recalc=!!(C.novas.length||C.cat.size||C.fora.size||(C.foraA&&C.foraA.size)||Object.keys(C.t).length||Object.keys(C.o).length);
+      C._recalc=!!((C.base&&C.base.size)||C.novas.length||C.cat.size||C.fora.size||(C.foraA&&C.foraA.size)||Object.keys(C.t).length||Object.keys(C.o).length);
       if(C._recalc&&!C.gerDirty&&cgF&&Array.isArray(cgF.linhas)){C.ger=cgF.linhas.map(r=>({...r}));C.gerBase=cgF.linhas.map(r=>({...r}))}
 
       if((S.cat&&S.cat.obras||[]).length&&!Object.keys(S.areasObra).length)throw new Error("as áreas das obras não foram carregadas do banco");
@@ -5116,12 +5125,12 @@ async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$(
     /* 1) catálogo: obras novas e ativa/inativa */
     const novasAgora=new Set(C.novas.map(c=>c[0]));
     const pp2=(p,d)=>{const r=p.resp[d]||{};return r.nome||r.email||""};const resolvidas=[...(C.pend||new Map()).values()].filter(p=>p.st&&novasAgora.has(p.id)).map(p=>({id:p.id,e:p.e,en:p.en,o:p.o,on:p.on,st:p.st,base:p.base||(p.semBase?"ERP":""),reg:p.reg||"",ga:p.st==="ok"?pp2(p,CAD_GA):"",ctrl:p.st==="ok"?pp2(p,CAD_CTRL):"",rg:p.st==="ok"?pp2(p,"_reg"):"",por,em}));
-    if(C.cat.size||C.novas.length||C.nomes.size){msg.textContent="Gravando empresas e obras…";const cat=cadClone(S.cat);const novasIds=new Set(C.novas.map(c=>c[0]));
-      cat.obras=cat.obras.concat(C.novas.filter(c=>!cat.obras.some(x=>x[0]===c[0])).map(c=>c.slice()));cat.obras.forEach(c=>{if(C.cat.has(c[0]))c[8]=C.cat.get(c[0])?1:0;const nm=C.nomes.get(c[0]);if(nm){if(nm.en!=null)c[7]=nm.en;if(nm.on!=null)c[2]=nm.on}});cat.atualizadoEm=em;
+    if(C.cat.size||C.novas.length||C.nomes.size||(C.base&&C.base.size)){msg.textContent="Gravando empresas e obras…";const cat=cadClone(S.cat);const novasIds=new Set(C.novas.map(c=>c[0]));const baseIds=new Set(C.base?C.base.keys():[]);
+      cat.obras=cat.obras.concat(C.novas.filter(c=>!cat.obras.some(x=>x[0]===c[0])).map(c=>c.slice()));cat.obras.forEach(c=>{if(C.base&&C.base.has(c[0])){c[3]=C.base.get(c[0]);if(S.baseOrig)S.baseOrig.set(c[0],c[3])}if(C.cat.has(c[0]))c[8]=C.cat.get(c[0])?1:0;const nm=C.nomes.get(c[0]);if(nm){if(nm.en!=null)c[7]=nm.en;if(nm.on!=null)c[2]=nm.on}});cat.atualizadoEm=em;
       await S.db.doc("restrito/catalogo").set(catGravar(cat));S.cat=cat;bfAplicarCat();
-      if(novasIds.size){const ao=cadClone(S.areasObra)||{};novasIds.forEach(id=>{const c=S.catMap.get(id);if(c&&!ao[id])ao[id]=C.aoNovas[id]||cadAreasObra(id,c[3],[],[])});C.aoNovas={};
+      if(novasIds.size||baseIds.size){const ao=cadClone(S.areasObra)||{};[...novasIds,...baseIds].forEach(id=>{const c=S.catMap.get(id);if(c&&(!ao[id]||baseIds.has(id)))ao[id]=(!baseIds.has(id)&&C.aoNovas[id])||cadAreasObra(id,c[3],[],[])});C.aoNovas={};
         await S.db.doc("restrito/areasobra").set({m:ao,aba:"Cadastros",arquivo:"Cadastros no app",atualizadoEm:em});S.areasObra=ao}
-      feito.push(`${C.cat.size} situação(ões)${C.novas.length?` e ${C.novas.length} obra(s) nova(s)`:""}${C.nomes.size?` · ${C.nomes.size} nome(s) corrigido(s)`:""}`);C.cat.clear();C.novas=[];C.nomes.clear()}
+      feito.push(`${C.cat.size} situação(ões)${C.novas.length?` e ${C.novas.length} obra(s) nova(s)`:""}${C.nomes.size?` · ${C.nomes.size} nome(s) corrigido(s)`:""}${C.base&&C.base.size?` · ${C.base.size} base(s) modelo trocada(s)`:""}`);C.cat.clear();C.novas=[];C.nomes.clear();if(C.base)C.base.clear()}
     if(C.fora.size){msg.textContent="Gravando planejamento fora do app…";const m=cadClone(S.foraApp)||{};C.fora.forEach((v,id)=>{if(v){m[id]=m[id]||{};m[id]["*"]=v==="pausa"?{motivo:"Pausada: não planejar agora",pausada:true,por,em}:{motivo:"Marcado em Cadastros",por,em}}else if(m[id]){delete m[id]["*"];if(!Object.keys(m[id]).length)delete m[id]}});
       await S.db.doc("regras/fora_app").set({m,atualizadoEm:em});S.foraApp=m;S.ind=null;feito.push(`${C.fora.size} obra(s) no/fora do app`);C.fora.clear()}
     if(C.foraA&&C.foraA.size){msg.textContent="Gravando áreas fora do app…";const fd=await S.db.doc("regras/fora_app").get();const m={...((fd.exists&&fd.data().m)||{})};
@@ -5198,7 +5207,9 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest||!t.c
 document.addEventListener("change",async e=>{const t=e.target;if(!t.closest||!t.closest("#v-cad"))return;const C=S.cad;
   if(t.dataset.coSel){t.checked?C.sel.add(t.dataset.coSel):C.sel.delete(t.dataset.coSel);$("#co-selbar").hidden=!C.sel.size;$("#co-seln").textContent=`${C.sel.size} marcada(s)`;return}
   if(t.dataset.coPlan!=null){cadSetFora(t.dataset.coPlan,t.value);cadRenderObras();return}
-  if(t.dataset.coReg!=null){cadSetReg(t.dataset.coReg,t.value);t.closest("tr").classList.add("cad-mud");cadBarra();return}
+  if(t.dataset.coBase!=null){const id=t.dataset.coBase;const nv=S.cad.novas.find(x=>x[0]===id);if(nv){nv[3]=t.value}else{const c=S.catMap.get(id);const orig=(S.baseOrig&&S.baseOrig.has(id))?S.baseOrig.get(id):(c?c[3]:"");if(t.value===orig||t.value===(c&&c[3]))S.cad.base.delete(id);else S.cad.base.set(id,t.value)}
+  toast("Base alterada. Clique em Salvar para gravar.");cadBarra();if(S.cad.aba==="quem")cadRenderQuem();else cadRenderObras();return}
+if(t.dataset.coReg!=null){cadSetReg(t.dataset.coReg,t.value);t.closest("tr").classList.add("cad-mud");cadBarra();return}
   if(["co-emp","co-st","co-ast"].includes(t.id)){cadRenderObras();return}
   if(t.id==="cq-base"){$("#cq-obra").value="";cadQuemPrep();return}if(["cq-obra","cq-area"].includes(t.id)){cadRenderQuem();return}
   if(t.dataset.cq){cadSetQuem(t.dataset.cq,t.value);cadRenderQuem();return}
