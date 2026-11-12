@@ -3122,14 +3122,14 @@ onCarga("#est-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)
   const msg=$("#est-msg");msg.textContent="Lendo a planilha (pode levar alguns segundos)…";await new Promise(r=>setTimeout(r,50));
   const wb=XLSX.read(await f.arrayBuffer(),{type:"array",dense:true,sheets:["Base - Geral"]});const ws=wb.Sheets["Base - Geral"];if(!ws){msg.textContent="Não encontrei a aba \"Base - Geral\".";return}
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});const h=(rows[0]||[]).map(x=>String(x).trim());
-  const ok=h[0]==="Empresa"&&h[3]==="Obra"&&h[6]==="Prod_plt"&&h[10]==="Serv_plt"&&h[12]==="Ins_cins";if(!ok){msg.textContent="Não foi possível: colunas diferentes do esperado (Empresa, Descricao, Grupo_Empresa, Obra, Descricao, Grupo, Prod_plt, descricao, Contrato_plt, Item_plt, Serv_plt, Descr_plt, Ins_cins, Descr_ins…).";return}
-  const t=v=>String(v==null?"":v).trim();const eo={},dP={},dS={},dI={},E={};let n=0,inat=0;
+  const ok=(h[0]==="Empresa"||h[0]==="Empresa_plt")&&(h[3]==="Obra"||h[3]==="Obra_plt")&&h[6]==="Prod_plt"&&h[10]==="Serv_plt"&&h[12]==="Ins_cins";if(!ok){msg.textContent="Não foi possível: colunas diferentes do esperado (Empresa, Descricao, Grupo_Empresa, Obra, Descricao, Grupo, Prod_plt, descricao, Contrato_plt, Item_plt, Serv_plt, Descr_plt, Ins_cins, Descr_ins…).";return}
+  const t=v=>String(v==null?"":v).trim();const eo={},dP={},dS={},dI={},E={},N={};let n=0,inat=0;
   for(let i=1;i<rows.length;i++){const r=rows[i];const emp=t(r[0]),ob=t(r[3]);if(!emp||!ob)continue;const k=emp+"-"+ob;
     if(!eo[k])eo[k]=[t(r[1]),t(r[2]),t(r[4]),t(r[5]),0];eo[k][4]++;const P=t(r[6]),S_=t(r[10]),I=t(r[12]);
     if(P&&!dP[P]&&t(r[7]))dP[P]=t(r[7]);if(S_&&!dS[S_]&&t(r[11]))dS[S_]=t(r[11]);if(I&&!dI[I]&&t(r[13]))dI[I]=t(r[13]);
-    const ina=[14,15,16].some(j=>String(r[j]).trim()==="1");if(ina)inat++;const L=[P,t(r[8]),t(r[9]),S_,I];if(ina)L.push(1);
+    const ina=[14,15,16].some(j=>String(r[j]).trim()==="1");if(ina)inat++;const L=[P,t(r[8]),t(r[9]),S_,I];if(ina)L.push(1);{/* 12/11: nomes exatos do ERP por obra (produto, serviço, título de item) e do insumo, para a exportação */const nn=(N[emp]=N[emp]||{p:{},s:{},h:{},i:{}});const pn=t(r[7]),sdn=t(r[11]),idn=t(r[13]);if(pn&&!nn.p[ob+"|"+P])nn.p[ob+"|"+P]=pn;if(S_==="-1"){const hk=ob+"|"+P+"|"+t(r[9]);if(sdn&&!nn.h[hk])nn.h[hk]=sdn}else if(sdn&&!nn.s[ob+"|"+P+"|"+S_])nn.s[ob+"|"+P+"|"+S_]=sdn;if(I&&idn&&!nn.i[I])nn.i[I]=idn}
     ((E[emp]=E[emp]||{})[ob]=(E[emp][ob]||[])).push(L);n++}
-  const emps=Object.keys(E);let i=0;for(const emp of emps){i++;msg.textContent=`Gravando estrutura: empresa ${i}/${emps.length}…`;await S.db.doc("restrito/estr/"+emp).set({o:E[emp],atualizadoEm:nowISO()})}
+  const emps=Object.keys(E);let i=0;for(const emp of emps){i++;msg.textContent=`Gravando estrutura: empresa ${i}/${emps.length}…`;await S.db.doc("restrito/estr/"+emp).set({o:E[emp],n:N[emp]||{},atualizadoEm:nowISO()})}
   const idx={eo,dP,dS,dI,arquivo:f.name,linhas:n,inativas:inat,empresas:emps.length,atualizadoEm:nowISO()};await S.db.doc("restrito/estr_idx").set(idx);S.estIdx=idx;S.estE={};S.estAp=null;
   msg.textContent=`Base - Geral carregada: ${nf0.format(n)} linhas · ${emps.length} empresas · ${nf0.format(Object.keys(eo).length)} empresas/obras${inat?` · ${nf0.format(inat)} linhas inativas`:""} · arquivo ${f.name}.`;renderEst()});
 async function abrirEstrutura(){await loadCat();await carregarEstIdx();
@@ -3620,9 +3620,10 @@ onCarga("#es-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
 /* estrutura da Base - Geral (aba Estrutura) no formato usado pela validação: obra → produto → serviço → insumo {contrato,item,inativo} */
 async function estrDaBaseGeral(emps){const X=await carregarEstIdx();if(!X)return null;const E=(S.estr&&S.estr.base)?S.estr:{eo:new Map(),n:0,arquivo:"Base - Geral: "+(X.arquivo||""),em:new Date(X.atualizadoEm||Date.now()),base:true,emps:new Set()};
   for(const emp of emps){if(E.emps.has(emp))continue;E.emps.add(emp);const d=await estEmpresa(emp);if(!d||!d.o)continue;
-    Object.entries(d.o).forEach(([ob,rs])=>{const eo=emp+"-"+ob;const o={nome:((X.eo||{})[eo]||[])[2]||"",P:new Map()};E.eo.set(eo,o);
-      rs.forEach(x=>{const [P,C,It,Sv,I,ina]=x;E.n++;let pp=o.P.get(P);if(!pp){pp={d:(X.dP||{})[P]||"",S:new Map()};o.P.set(P,pp)}let sv=pp.S.get(Sv);if(!sv){sv={d:(X.dS||{})[Sv]||"",I:new Map()};pp.S.set(Sv,sv)}
-        const old=sv.I.get(I);if(!old||(old.inat&&!ina))sv.I.set(I,{d:(X.dI||{})[I]||"",C:cod(C),It:cod(It),inat:ina?"inativo":""})})})}
+    const NN=d.n||{};const nP=NN.p||{},nS=NN.s||{},nH=NN.h||{},nI=NN.i||{};
+    Object.entries(d.o).forEach(([ob,rs])=>{const eo=emp+"-"+ob;const o={nome:((X.eo||{})[eo]||[])[2]||"",P:new Map(),H:new Map()};E.eo.set(eo,o);
+      rs.forEach(x=>{const [P,C,It,Sv,I,ina]=x;E.n++;let pp=o.P.get(P);if(!pp){pp={d:nP[ob+"|"+P]||(X.dP||{})[P]||"",S:new Map()};o.P.set(P,pp)}if(Sv==="-1"){const hk=P+"|"+cod(It);if(!o.H.has(hk))o.H.set(hk,{d:nH[ob+"|"+P+"|"+It]||"",C:cod(C)})}let sv=pp.S.get(Sv);if(!sv){sv={d:nS[ob+"|"+P+"|"+Sv]||(X.dS||{})[Sv]||"",I:new Map()};pp.S.set(Sv,sv)}
+        const old=sv.I.get(I);if(!old||(old.inat&&!ina))sv.I.set(I,{d:nI[I]||(X.dI||{})[I]||"",C:cod(C),It:cod(It),inat:ina?"inativo":""})})})}
   S.estr=E;return E}
 function validarEstrutura(aoa,corrigir){
   const E=S.estr;const head=aoa[0];const nv=head.length;const out=[head];const prob=[];const res=new Map();
@@ -3630,12 +3631,14 @@ function validarEstrutura(aoa,corrigir){
   aoa.slice(1).forEach(row0=>{const row=row0.slice();const eo=cod(row[0])+"-"+cod(row[1]);const P=cod(String(row[2]).split(" ")[0]);const S_=cod(row[5]),I=cod(row[6]);
     const isHead=S_==="-1"||S_==="";const val=isHead?0:valorDe(row);
     let rs=res.get(eo);if(!rs){rs={eo,ok:0,corr:0,err:0,rem:0,vErr:0};res.set(eo,rs)}
-    const o=E.eo.get(eo);let st="OK",mot="",sug="";
+    const o=E.eo.get(eo);let st="OK",mot="",sug="",altSI=null;
     if(!o){st="ERRO";mot="Empresa/obra não existe na estrutura"}
     else{const p=o.P.get(P);
       const altPI=isHead||!I?[]:[...o.P.entries()].filter(([k,pp])=>k!==P&&pp.S.has(S_)&&pp.S.get(S_).I.has(I)&&!pp.S.get(S_).I.get(I).inat);
       if((!p||!p.S.has(S_)||(I&&!p.S.get(S_).I.has(I)))&&altPI.length){const [nP,pp]=altPI[0];const ii=pp.S.get(S_).I.get(I);st="CORRIGIDO";mot=`produto ${P} → ${nP}${pp.d?" "+pp.d:""} (este serviço/insumo só existe nesse produto na estrutura)`;
         if(corrigir){row[2]=nP+(pp.d?" "+pp.d:"");if(ii.C)row[3]=+ii.C||ii.C;if(ii.It)row[4]=ii.It}}
+      else if((!p||!p.S.has(S_)||(I&&!p.S.get(S_).I.has(I)))&&!isHead&&I&&(()=>{let a=null;o.P.forEach((pp,k)=>pp.S.forEach((ss,sk)=>{const ii=ss.I.get(I);if(!a&&ii&&!ii.inat&&sk!=="-1")a=[k,pp,sk,ii]}));altSI=a;return !!a})()){const [nP,pp,nS,ii]=altSI;st="CORRIGIDO";mot=`serviço ${S_} → ${nS}${nP!==P?`, produto ${P} → ${nP}`:""} (na estrutura da obra o insumo está nesse serviço)`;
+        if(corrigir){row[2]=nP+(pp.d?" "+pp.d:"");row[5]=nS;if(ii.C)row[3]=+ii.C||ii.C;if(ii.It)row[4]=ii.It}}
       else if(!p){st="ERRO";mot="Produto não existe nesta obra";const alt=[...o.P.entries()].filter(([,pp])=>!isHead&&pp.S.has(S_)&&pp.S.get(S_).I.has(I)).map(([k,pp])=>k+" "+pp.d);sug=alt.length?"Produto(s) da obra com esse serviço/insumo: "+alt.slice(0,3).join("; "):"Produtos da obra: "+[...o.P.keys()].slice(0,8).join(", ")}
       else if(!isHead){const sv=p.S.get(S_);
         if(!sv){st="ERRO";mot="Serviço não existe neste produto";const alt=[...o.P.entries()].filter(([,pp])=>pp.S.has(S_)).map(([k])=>k);sug=alt.length?"Serviço existe nos produtos: "+alt.join(", "):""}
@@ -3648,6 +3651,7 @@ function validarEstrutura(aoa,corrigir){
     if(st==="ERRO"&&!val){st="REMOVER";mot+=" (sem valor orçado)"}
     if(st==="OK")rs.ok++;else if(st==="CORRIGIDO")rs.corr++;else if(st==="REMOVER")rs.rem++;else{rs.err++;rs.vErr=r2(rs.vErr+val)}
     if(st!=="OK")prob.push([st,numOr(row0[0]),numOr(row0[1]),o?o.nome:"",row0[2],row0[3],row0[4],row0[5],row0[6],row0[7],val,mot,sug]);
+    if(corrigir&&o&&(st==="OK"||st==="CORRIGIDO")&&!isHead&&I){const P2=cod(String(row[2]).split(" ")[0]);const pp2=o.P.get(P2);if(pp2){row[2]=P2+(pp2.d?" "+pp2.d:"");const ss2=pp2.S.get(cod(row[5]));const ii2=ss2&&ss2.I.get(I);if(ii2&&ii2.d)row[7]=ii2.d}}
     if(!corrigir||st==="OK"||st==="CORRIGIDO")out.push(row);
   });
   if(corrigir){const vis=new Map();const fin=[out[0]];out.slice(1).forEach(row=>{const S_=cod(row[5]);if(S_==="-1"||S_===""){fin.push(row);return}
@@ -3655,9 +3659,20 @@ function validarEstrutura(aoa,corrigir){
       for(let j=11;j<nv;j+=3){const q1=+a[j]||0,q2=+row[j]||0,p1=+a[j+1]||0,p2=+row[j+1]||0;if(q1===1&&q2===1)a[j+1]=r2(p1+p2);else if(!q1&&q2){a[j]=row[j];a[j+1]=row[j+1]}else if(q2&&p1===p2)a[j]=r2(q1+q2);else a[j+1]=r2((q1*p1+q2*p2)/((q1||1)));
         const t=a[j+2];const v=r2((+a[j]||0)*(+a[j+1]||0));if(t&&typeof t==="object")t.v=v;else a[j+2]=v}
       prob.push(["MESCLADO",numOr(row[0]),numOr(row[1]),"",row[2],row[3],row[4],row[5],row[6],row[7],0,"Linha repetida depois da correção do produto: valores somados na mesma linha",""])});
-    return {aoa:fin,prob,res:[...res.values()]}}
+    return {aoa:estrRefazGrupos(fin,E,nv),prob,res:[...res.values()]}}
   return {aoa:out,prob,res:[...res.values()]};
 }
+/* 12/11: na exportação corrigida, os títulos (serviço -1) e as linhas de serviço saem como estão no ERP da obra (código do item e nome exatos) */
+function estrRefazGrupos(fin,E,nv){const head=fin[0];const cmpIt=(a,b)=>{const x=String(a).split("."),y=String(b).split(".");for(let i=0;i<Math.max(x.length,y.length);i++){const d=(+x[i]||0)-(+y[i]||0);if(d)return d;if((x[i]||"")!==(y[i]||""))return String(x[i]||"").localeCompare(String(y[i]||""))}return 0};
+  const out=[head];const byEo=new Map();fin.slice(1).forEach(r=>{const eo=cod(r[0])+"-"+cod(r[1]);if(!byEo.has(eo))byEo.set(eo,[]);byEo.get(eo).push(r)});
+  const mk=(b,P,C,It,Sv,d,un,q,qt,stt)=>{const r=[b[0],b[1],P,C,It,Sv,"",d,un,qt,stt];for(let j=11;j<nv;j+=3){r.push(q,0,{t:"n",v:0,f:`(${XLSX.utils.encode_col(j)}1*${XLSX.utils.encode_col(j+1)}1)`})}return r};
+  byEo.forEach((rows,eo)=>{const o=E&&E.eo.get(eo);const fol=rows.filter(r=>{const s=cod(r[5]);return s&&s!=="-1"&&cod(r[6])});if(!o||!fol.length){rows.forEach(r=>out.push(r));return}
+    const ordP=[];const g=new Map();fol.forEach(r=>{const P=cod(String(r[2]).split(" ")[0]);if(!ordP.includes(P))ordP.push(P);const k=P+"|"+cod(r[4])+"|"+cod(r[5]);if(!g.has(k))g.set(k,{P,pn:r[2],C:r[3],It:cod(r[4]),S:cod(r[5]),rows:[]});g.get(k).rows.push(r)});
+    const gs=[...g.values()].sort((a,b)=>ordP.indexOf(a.P)-ordP.indexOf(b.P)||cmpIt(a.It,b.It)||a.S.localeCompare(b.S));const feito=new Set();
+    gs.forEach(x=>{const ps=x.It?x.It.split("."):[];for(let k=1;k<ps.length;k++){const pre=ps.slice(0,k).join(".");const hk=x.P+"|"+pre;if(feito.has(hk))continue;feito.add(hk);const h=o.H.get(hk);if(h)out.push(mk(x.rows[0],x.pn,h.C?(+h.C||h.C):x.C,pre,"-1",h.d,"",0,0,"0"))}
+      const sk=x.P+"|"+x.It+"|"+x.S;if(!feito.has(sk)){feito.add(sk);const pp=o.P.get(x.P);const sv=pp&&pp.S.get(x.S);out.push(mk(x.rows[0],x.pn,x.C,x.It,x.S,(sv&&sv.d)||x.rows[0][7],"VB",1,x.rows[0][9],x.rows[0][10]))}
+      x.rows.forEach(r=>out.push(r))})});
+  return out}
 function abasValidacao(wb,v){
   const r=[["Empresa-obra","Linhas OK","Corrigidas (contrato/item)","Com erro (com valor)","Valor com erro","Sem valor e fora da estrutura (removidas)"],...v.res.map(x=>[x.eo,x.ok,x.corr,x.err,x.vErr,x.rem])];
   const w1=XLSX.utils.aoa_to_sheet(r);w1["!cols"]=[{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:18}];XLSX.utils.book_append_sheet(wb,w1,"Validação - resumo");
@@ -4733,13 +4748,13 @@ const cadChave=v=>semAc(cadLimpo(v)).toUpperCase().replace(/[^A-Z0-9]/g,"");
 const cadNorm=v=>semAc(String(v==null?"":v)).replace(/[^a-z0-9]/g,"");
 function cadLerEstrutura(rows){const h=(rows[0]||[]).map(x=>String(x).trim());
   if(!((h[0]==="Empresa"||h[0]==="Empresa_plt")&&(h[3]==="Obra"||h[3]==="Obra_plt")&&h[6]==="Prod_plt"&&h[10]==="Serv_plt"&&h[12]==="Ins_cins"))return null;
-  const t=v=>String(v==null?"":v).trim();const eo={},dP={},dS={},dI={},E={};let n=0,inat=0;
+  const t=v=>String(v==null?"":v).trim();const eo={},dP={},dS={},dI={},E={},N={};let n=0,inat=0;
   for(let i=1;i<rows.length;i++){const r=rows[i];const emp=t(r[0]),ob=t(r[3]);if(!emp||!ob)continue;const k=emp+"-"+ob;
     if(!eo[k])eo[k]=[t(r[1]),t(r[2]),t(r[4]),t(r[5]),0];eo[k][4]++;const P=t(r[6]),S_=t(r[10]),I=t(r[12]);
     if(P&&!dP[P]&&t(r[7]))dP[P]=t(r[7]);if(S_&&!dS[S_]&&t(r[11]))dS[S_]=t(r[11]);if(I&&!dI[I]&&t(r[13]))dI[I]=t(r[13]);
-    const ina=[14,15,16].some(j=>String(r[j]).trim()==="1");if(ina)inat++;const L=[P,t(r[8]),t(r[9]),S_,I];if(ina)L.push(1);
+    const ina=[14,15,16].some(j=>String(r[j]).trim()==="1");if(ina)inat++;const L=[P,t(r[8]),t(r[9]),S_,I];if(ina)L.push(1);{/* 12/11: nomes exatos do ERP por obra (produto, serviço, título de item) e do insumo, para a exportação */const nn=(N[emp]=N[emp]||{p:{},s:{},h:{},i:{}});const pn=t(r[7]),sdn=t(r[11]),idn=t(r[13]);if(pn&&!nn.p[ob+"|"+P])nn.p[ob+"|"+P]=pn;if(S_==="-1"){const hk=ob+"|"+P+"|"+t(r[9]);if(sdn&&!nn.h[hk])nn.h[hk]=sdn}else if(sdn&&!nn.s[ob+"|"+P+"|"+S_])nn.s[ob+"|"+P+"|"+S_]=sdn;if(I&&idn&&!nn.i[I])nn.i[I]=idn}
     ((E[emp]=E[emp]||{})[ob]=(E[emp][ob]||[])).push(L);n++}
-  return {E,idx:{eo,dP,dS,dI,linhas:n,inativas:inat,empresas:Object.keys(E).length}}}
+  return {E,N,idx:{eo,dP,dS,dI,linhas:n,inativas:inat,empresas:Object.keys(E).length}}}
 function cadLerSituacao(rows){const h=(rows[0]||[]).map(cadNorm);const ach=(...ns)=>{for(const n of ns){const i=h.indexOf(n);if(i>=0)return i}return -1};
   const iCE=ach("codempresa","codigoempresa","empresacod"),iCO=ach("codobra","codigoobra","obracod");
   const iE=iCE>=0?iCE:ach("empresa"),iO=iCO>=0?iCO:ach("obra");if(iE<0||iO<0)return null;
@@ -5171,7 +5186,7 @@ async function cadSalvar(){const C=S.cad;const btn=$("#cad-salvar");const msg=$(
 
       if((S.cat&&S.cat.obras||[]).length&&!Object.keys(S.areasObra).length)throw new Error("as áreas das obras não foram carregadas do banco");
       if(C.gerDirty&&!(C.ger||[]).some(r=>r.email))throw new Error("a lista de gerentes está vazia; isso removeria todos os acessos");}
-    if(C.estr){const E=C.estr.E;const emps=Object.keys(E);let i=0;for(const emp of emps){i++;msg.textContent=`Gravando estrutura: empresa ${i}/${emps.length}…`;await S.db.doc("restrito/estr/"+emp).set({o:E[emp],atualizadoEm:em})}
+    if(C.estr){const E=C.estr.E;const emps=Object.keys(E);let i=0;for(const emp of emps){i++;msg.textContent=`Gravando estrutura: empresa ${i}/${emps.length}…`;await S.db.doc("restrito/estr/"+emp).set({o:E[emp],n:(C.estr.N||{})[emp]||{},atualizadoEm:em})}
       const idx={...C.estr.idx,arquivo:C.estr.arquivo,atualizadoEm:em};await S.db.doc("restrito/estr_idx").set(idx);S.estIdx=idx;S.estE={};S.estAp=null;feito.push("estrutura do ERP");C.estr=null}
     /* 1) catálogo: obras novas e ativa/inativa */
     const novasAgora=new Set(C.novas.map(c=>c[0]));
