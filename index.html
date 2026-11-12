@@ -1199,6 +1199,7 @@ async function boot(){
   await loadMine();
   if(S.owner)loadSolic().catch(()=>{});
   if(!S.offline)avisoMostrar().catch(()=>{});
+  if(!S.offline)setTimeout(()=>rascRecuperarTodos().catch(()=>{}),4000);
   if(!S.offline)novMostrar().then(()=>supIniciar()).then(()=>{if(!$("#nov-modal"))supDiaria()}).catch(()=>{});
   if(S.regional){$("#tabs").hidden=false;$("#tab-reg").hidden=false;$("#tab-fill").hidden=false;if(!S.owner){$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}}
 }
@@ -1467,6 +1468,8 @@ async function openObra(uid,o,fromAdm){
   const editable= (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,ov,inj,esp,prods:produtosDaObra(hist,lines,o,info.tipo,doc)};applyRules(S.cur);
   marcarBase(S.cur,raw);
+  /* 12/11: digitação que ficou só neste computador (gravação não confirmada) volta para a tela e é salva */
+  {const rs=S.offline?null:rascLer(uid,o);if(rs&&rs.p&&editable&&!travado(doc.status)&&rascValido(rs,raw)){const n=rascAplicar(S.cur.doc,rs.p);if(n){S.cur.lines=buildLines(info.tipo,hist,extOrf(S.cur.doc.ext,S.cur.doc.v),esp);applyRules(S.cur);S.cur.dirty=true;setTimeout(()=>{toast("Recuperamos o que você digitou nesta obra e não tinha sido salvo. Salvando…");try{changed()}catch(e){}},400)}else rascLimpar(S.cur)}}
   if(compart){const c=colegaDe(o,uid);S.cur.quem=(c&&c.nome)||"colega da mesma área";juntarMeuRascunho(S.cur)}
   semObra(false);S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}S.year="2027";
   document.querySelectorAll("#years button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.y===S.year));
@@ -2443,14 +2446,47 @@ function payload(){
   const pu=semAlheios(S.cur,{v:doc.v,pr:doc.pr,ext,sub:doc.sub||{},flag:doc.flag||{},lobs:doc.lobs||{},espM:doc.espM||{}});
   return {o:doc.o,tipo:doc.tipo,status:doc.status,v:pu.v,pr:pu.pr,ext:pu.ext,sub:pu.sub,flag:pu.flag,obs:doc.obs,lobs:pu.lobs,espM:pu.espM||{},totais:docTotals(pu,lines),atualizadoEm:nowISO(),enviadoEm:doc.enviadoEm||null,validadoEm:doc.validadoEm||null,validadoPor:doc.validadoPor||null,devolucao:doc.devolucao||null,rev:doc.rev||{}};
 }
+/* 12/11 (Valter): o que foi digitado fica guardado NESTE computador até o banco confirmar a gravação.
+   Se a sessão cair (senha trocada, token recusado, rede) nada se perde: pede a senha na própria tela e salva; ao abrir de novo, recupera. */
+const RASC_PRE=()=>"orc.rasc."+(S.me||"")+".";
+function rascGuardar(cur,p){if(!cur||S.offline)return;try{localStorage.setItem(RASC_PRE()+cur.uid+"|"+cur.o,JSON.stringify({em:Date.now(),base:cur.baseEm||null,p}))}catch(e){}}
+function rascLimpar(cur){try{localStorage.removeItem(RASC_PRE()+cur.uid+"|"+cur.o)}catch(e){}}
+function rascLer(uid,o){try{return JSON.parse(localStorage.getItem(RASC_PRE()+uid+"|"+o)||"null")}catch(e){return null}}
+function rascLista(){const out=[];try{const pre=RASC_PRE();for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(pre))out.push(k.slice(pre.length))}}catch(e){}return out}
+function rascValido(d,r){const em=r&&r.atualizadoEm;return !em||(d.base||null)===em||d.em>Date.parse(em)}
+function rascAplicar(doc,p){let n=0;CAMPOS_M.filter(k=>k!=="rev").forEach(k=>{const src=(p&&p[k])||{};doc[k]=doc[k]||{};Object.keys(src).forEach(key=>{if(JSON.stringify(doc[k][key])!==JSON.stringify(src[key])){doc[k][key]=cloneJ(src[key]);n++}})});if(p&&p.obs&&p.obs!==doc.obs){doc.obs=p.obs;n++}return n}
+async function rascRecuperarTodos(){if(S.offline||!S.me)return 0;let n=0,trav=0;
+  for(const k of rascLista()){const i=k.indexOf("|");const uid=k.slice(0,i),o=k.slice(i+1);if(S.cur&&S.cur.uid===uid&&S.cur.o===o)continue;const d=rascLer(uid,o);if(!d||!d.p)continue;
+    try{const path=`gerentes/${uid}/orc/${o}`;const rs=await S.db.doc(path).get();const r=rs.exists?rs.data():{};if(travado(r.status)){trav++;continue}if(!rascValido(d,r))continue;
+      const doc={...r};CAMPOS_M.forEach(c=>doc[c]=cloneJ(r[c]));if(!rascAplicar(doc,d.p)){localStorage.removeItem(RASC_PRE()+k);continue}
+      await S.db.doc(path).set({...d.p,...doc,o,tipo:d.p.tipo||r.tipo,status:r.status||d.p.status||"rascunho",totais:d.p.totais||r.totais||{},atualizadoEm:nowISO()});localStorage.removeItem(RASC_PRE()+k);n++}catch(e){}}
+  if(n)toast(`${n} obra(s) com digitação que não tinha sido salva foram recuperadas e salvas.`);if(trav)toast(`${trav} obra(s) com digitação guardada neste computador já foram enviadas; fale com a Controladoria.`);return n}
+let RELOG=null;
+async function sessaoOk(){try{const r=await window.ORC_SB.auth.getSession();return !!(r&&r.data&&r.data.session)}catch(e){return true}}
+async function sessaoVerificar(err){if(S.offline||!window.ORC_SB)return;const m=String((err&&err.message)||err||"");if(/permission denied|jwt|401|not authorized|row-level|refresh/i.test(m)||!(await sessaoOk()))sessaoRelogin()}
+function sessaoRelogin(){if(RELOG||!window.ORC_SB||S.offline)return RELOG;RELOG=new Promise(async res=>{let em="";try{em=(await S.user.me()).name||""}catch(e){}
+  const ov=document.createElement("div");ov.id="rl-ov";ov.style.cssText="position:fixed;inset:0;background:rgba(20,30,25,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px";
+  ov.innerHTML=`<form id="rl-f" class="card" style="max-width:440px;width:100%;margin:0" autocomplete="on"><h2 style="margin:0 0 6px">Sua sessão expirou</h2><p class="desc">O que você digitou <b>não foi perdido</b>: está guardado neste computador. Digite sua senha para continuar — o app salva tudo em seguida. <b>Não feche nem recarregue a página.</b></p>
+    <label class="lbl" for="rl-em">E-mail</label><input id="rl-em" type="email" autocomplete="username" style="width:100%" value="${esc(em)}">
+    <label class="lbl" for="rl-pw" style="margin-top:8px;display:block">Senha</label><input id="rl-pw" type="password" autocomplete="current-password" style="width:100%">
+    <div class="row" style="margin-top:12px;gap:8px;align-items:center"><button class="btn primary" type="submit" id="rl-ok">Entrar e salvar</button><span class="muted" id="rl-msg" style="font-size:13px"></span></div></form>`;
+  document.body.appendChild(ov);setTimeout(()=>{const p=$("#rl-pw");if(p)p.focus()},50);
+  $("#rl-f").addEventListener("submit",async e=>{e.preventDefault();const b=$("#rl-ok"),m=$("#rl-msg");b.disabled=true;m.textContent="Entrando…";
+    try{const r=await window.ORC_SB.auth.signInWithPassword({email:$("#rl-em").value.trim(),password:$("#rl-pw").value});
+      if(r.error){m.textContent="Senha não confere. Se esqueceu, peça a redefinição à Controladoria (sem fechar esta página).";b.disabled=false;return}
+      if(r.data&&r.data.user&&r.data.user.id!==S.me){m.textContent="Entre com o mesmo e-mail que estava usando nesta página.";b.disabled=false;await window.ORC_SB.auth.signOut().catch(()=>{});return}
+      ov.remove();RELOG=null;res(true);toast("Sessão renovada. Salvando o que você digitou…");if(S.cur&&S.cur.editable){S.cur.dirty=true;await save()}await rascRecuperarTodos()}
+    catch(x){m.textContent="Sem conexão. Confira a internet e tente de novo.";b.disabled=false}})});return RELOG}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&S.me&&!S.offline&&window.ORC_SB)setTimeout(async()=>{if(!(await sessaoOk()))sessaoRelogin()},1500)});
+setInterval(async()=>{if(S.me&&!S.offline&&window.ORC_SB&&S.cur&&S.cur.dirty&&!RELOG&&!(await sessaoOk()))sessaoRelogin()},90000);
 async function save(){
   if(!S.cur||!S.cur.editable||!S.cur.dirty)return;
   if(saving){await saving;return save()}
-  S.cur.dirty=false;const cur=S.cur;const p=payload();
+  S.cur.dirty=false;const cur=S.cur;const p=payload();rascGuardar(cur,p);
   $("#save-state").textContent="Salvando…";
   const vazioMeu=cur.inj&&!cur.doc.exists&&!Object.keys(p.v||{}).length&&!Object.keys(p.lobs||{}).length&&!Object.keys(p.ext||{}).length&&!(p.obs||"").trim();
-  saving=(vazioMeu?Promise.resolve(p):gravarOrc(cur,p).then(pf=>{cur.doc.exists=true;return pf})).then(async pf=>{await gravarOutros(cur);return pf}).then(pf=>{cur.doc.atualizadoEm=pf.atualizadoEm;guardarVis(cur,pf);if(S.cur===cur){$("#save-state").textContent="Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});renderStatus()}})
-   .catch(err=>{cur.dirty=true;$("#save-state").className="save-state err";$("#save-state").textContent=err&&err.message==="travado"?"Este orçamento já foi enviado por "+(cur.quem||"outra pessoa")+". Recarregue a página.":err&&err.code==="invalid_argument"?"Sem permissão para salvar. Peça acesso de Colaborador à Controladoria.":"Não foi possível salvar. Tentaremos de novo na próxima alteração.";})
+  saving=(vazioMeu?Promise.resolve(p):gravarOrc(cur,p).then(pf=>{cur.doc.exists=true;return pf})).then(async pf=>{await gravarOutros(cur);return pf}).then(pf=>{rascLimpar(cur);cur.doc.atualizadoEm=pf.atualizadoEm;guardarVis(cur,pf);if(S.cur===cur){$("#save-state").textContent="Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});renderStatus()}})
+   .catch(err=>{cur.dirty=true;rascGuardar(cur,p);sessaoVerificar(err).catch(()=>{});$("#save-state").className="save-state err";$("#save-state").textContent=err&&err.message==="travado"?"Este orçamento já foi enviado por "+(cur.quem||"outra pessoa")+". Recarregue a página.":err&&err.code==="invalid_argument"?"Sem permissão para salvar. Peça acesso de Colaborador à Controladoria.":"Não foi possível salvar — o que você digitou está guardado neste computador. Não feche a página.";})
    .finally(()=>{saving=null});
   await saving;
 }
