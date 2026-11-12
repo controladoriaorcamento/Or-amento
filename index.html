@@ -1441,8 +1441,8 @@ async function temItensMeus(o,info){
   return cur.lines.some(l=>l.kind==="leaf"&&l.mine&&(!prods||!l.P||l.extra||prods.has(l.P)));
 }
 async function refreshRegras(){if(S.rgEm&&Date.now()-S.rgEm<60000)return;S.rgEm=Date.now();
-  try{const [rg,dp,sb]=await Promise.all(["regras/atual","regras/depara","regras/subitens"].map(k=>S.db.doc(k).get()));
-    if(rg.exists){S.regras=rg.data();indexRegras()}S.dpR=dp.exists?dp.data():null;S.subR=sb.exists?sb.data():null}catch(e){}await carregarInsFora()}
+  try{const [rg,dp,sb,io]=await Promise.all(["regras/atual","regras/depara","regras/subitens","regras/itens_obra"].map(k=>S.db.doc(k).get()));
+    if(rg.exists){S.regras=rg.data();indexRegras()}S.dpR=dp.exists?dp.data():null;S.subR=sb.exists?sb.data():null;S.itensObra=io.exists?(io.data().m||{}):{}}catch(e){}await carregarInsFora()}
 async function openObra(uid,o,fromAdm){
   await refreshRegras();
   let compart=false;if(uid===S.me&&!fromAdm&&!S.owner&&!S.offline){const d=donoDoc(o);if(d!==S.me){uid=d;compart=true}}
@@ -1458,6 +1458,8 @@ async function openObra(uid,o,fromAdm){
   const raw=ds.exists?ds.data():{};
   const doc={o,tipo:info.tipo,status:raw.status||"rascunho",v:JSON.parse(JSON.stringify(raw.v||{})),pr:JSON.parse(JSON.stringify(raw.pr||{})),ext:JSON.parse(JSON.stringify(raw.ext||{})),sub:JSON.parse(JSON.stringify(raw.sub||{})),flag:JSON.parse(JSON.stringify(raw.flag||{})),obs:raw.obs||"",atualizadoEm:raw.atualizadoEm||null,enviadoEm:raw.enviadoEm||null,validadoEm:raw.validadoEm||null,validadoPor:raw.validadoPor||null,devolucao:raw.devolucao||null,rev:JSON.parse(JSON.stringify(raw.rev||{})),exists:ds.exists};
   doc.lobs=JSON.parse(JSON.stringify(raw.lobs||{}));doc.espM=JSON.parse(JSON.stringify(raw.espM||{}));
+  /* 12/11: item incluído pelo master (Adicionar item) vale para todos da obra, não só para o orçamento do master */
+  Object.entries((S.itensObra||{})[o]||{}).forEach(([k,x])=>{if(x&&!doc.ext[k])doc.ext[k]={d:x.d,un:x.un||"VB",item:x.item||"",...(x.area?{area:x.area}:{})}});
   if(S.foraApp===undefined){try{const fd=await S.db.doc("regras/fora_app").get();S.foraApp=fd.exists?(fd.data().m||{}):{}}catch(e){S.foraApp={}}}
   const esp=S.offline?null:await carregarEspelho(o);
   const ov=(!fromAdm&&(S.owner||info.reg)&&!S.offline)?await carregarOutros(o,uid):null;const inj=ov?injetarOutros(doc,ov):null;
@@ -2601,7 +2603,10 @@ function renderAdd(){const q=$("#add-q").value.trim().toLowerCase();const have=n
   $("#add-list").innerHTML=r.length?r.map(x=>`<button data-k="${esc(x.k)}">${esc(x.d)} <span class="muted">· ${esc(x.S)} ${esc(x.I)} · ${esc(x.P)} ${esc(x.pn)}</span>${x.erp==="g"?' <small class="cp-src">estrutura do ERP de outras obras · fora do modelo</small>':x.erp?' <small class="cp-src">estrutura do ERP desta obra · fora do modelo</small>':""}</button>`).join(""):`<div class="muted" style="padding:10px">Nenhum item encontrado.</div>`}
 $("#add-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const x=allLeaves().concat(S.cur._erp||[],S.cur._erpG||[]).find(z=>z.k===b.dataset.k);if(!x)return;
   S.cur.doc.ext[x.k]={d:x.d,un:x.un,item:x.item};if(x.erp){const a=areaPorServico(S.cur.info.tipo,x.S);if(a)S.cur.doc.ext[x.k].area=a}if(S.q&&!(x.d+" "+x.S+" "+x.I).toLowerCase().includes(S.q)){S.q="";const qq=$("#q");if(qq)qq.value=""}S.cur.lines=buildLines(S.cur.info.tipo,S.cur.hist,extOrf(S.cur.doc.ext,S.cur.doc.v),S.cur.esp);applyRules(S.cur);
-  const l=S.cur.lines.find(z=>z.key===x.k);l.desc=x.d;renderGrid();S.cur.dirty=true;changed();$("#add-box").hidden=true;syncAddBtn();toast("Item adicionado em Outros itens");});
+  const l=S.cur.lines.find(z=>z.key===x.k);l.desc=x.d;renderGrid();S.cur.dirty=true;changed();$("#add-box").hidden=true;syncAddBtn();toast("Item adicionado em Outros itens");
+  if(S.owner&&!S.offline)itensObraGravar(S.cur.o,x.k,{...S.cur.doc.ext[x.k],area:l.area||S.cur.doc.ext[x.k].area||""}).then(()=>toast(`Item adicionado e liberado para quem planeja ${l.area||"a área"} nesta obra. Para trocar a área ou tirar do app, use o botão da linha.`)).catch(err=>toast("Item ficou só no seu orçamento: "+(err&&err.message||err)));});
+async function itensObraGravar(o,k,e){const d=await S.db.doc("regras/itens_obra").get();const D=d.exists?d.data():{m:{}};D.m=D.m||{};const m=D.m[o]=D.m[o]||{};
+  m[k]={d:e.d||"",un:e.un||"VB",item:e.item||"",area:e.area||"",por:await quemSou(),em:nowISO()};D.atualizadoEm=nowISO();await S.db.doc("regras/itens_obra").set(D);S.itensObra=D.m}
 
 /* envio */
 $("#send-box").addEventListener("click",e=>{if(e.target.id==="btn-send")sendFlow()});
@@ -4401,11 +4406,16 @@ function cadNovo(){return {foraA:new Map(),aba:S.cad?S.cad.aba:"pend",pend:null,
 const cadAO=()=>({...(S.areasObra||{}),...((S.cad&&S.cad.aoNovas)||{})});
 function cadSujo(){const C=S.cad;if(!C)return 0;return C.cat.size+C.nomes.size+C.fora.size+C.reg.size+C.novas.length+Object.values(C.t).reduce((a,m)=>a+Object.keys(m).length,0)+Object.values(C.o).reduce((a,m)=>a+Object.keys(m).length,0)+(C.gerDirty?1:0)+(C.estr?1:0)+(C.foraA?C.foraA.size:0)+(C.insF?C.insF.size:0)+(C.pzIgn?C.pzIgn.size:0)+(C.base?C.base.size:0)}
 
+/* 12/11: decisões de “Insumos que não estão em nenhum modelo” ficam gravadas (regras/extra_dec) e não voltam a aparecer */
+let cadXdT=null;function cadExtraDecGravar(){clearTimeout(cadXdT);cadXdT=setTimeout(async()=>{try{const d=await S.db.doc("regras/extra_dec").get();const D=d.exists?d.data():{m:{}};const m={...(D.m||{})};
+  const C=S.cad;(C._xdMexeu||new Set()).forEach(k=>{if(C.extraDec.has(k))m[k]=C.extraDec.get(k);else delete m[k]});C._xdMexeu=new Set();
+  await S.db.doc("regras/extra_dec").set({m,atualizadoEm:nowISO(),por:await quemSou()})}catch(e){toast("Decisão não foi gravada: "+(e&&e.message||e))}},800)}
 async function abrirCadastros(){
   const v=$("#v-cad");if(!v)return;S.cad=S.cad||cadNovo();$("#cad-msg").textContent="Carregando cadastros…";
   await loadCat();
   const ler=async p=>{const d=await S.db.doc(p).get();return d.exists?d.data():null};/* erro de leitura interrompe: nunca abrir com listas vazias por falha de rede */
-  const [ao,fo,ro,pp,cg,rv]=await Promise.all([ler("restrito/areasobra"),ler("regras/fora_app"),ler("regras/regional_obra"),ler("restrito/pessoas"),ler("restrito/cad_gerentes"),ler("restrito/cad_resolvidas")]);S.cad.resolv=rv||{itens:[]};
+  const [ao,fo,ro,pp,cg,rv,xd]=await Promise.all([ler("restrito/areasobra"),ler("regras/fora_app"),ler("regras/regional_obra"),ler("restrito/pessoas"),ler("restrito/cad_gerentes"),ler("restrito/cad_resolvidas"),ler("regras/extra_dec").catch(()=>null)]);S.cad.resolv=rv||{itens:[]};
+  if(xd&&xd.m)Object.entries(xd.m).forEach(([k,a])=>{if(a&&!S.cad.extraDec.has(k))S.cad.extraDec.set(k,a)});
   S.areasObra=(ao&&ao.m)||{};S.foraApp=(fo&&fo.m)||{};S.regObra=(ro&&ro.m)||null;S.pessoas=(pp&&pp.lista)||[];
   const C=S.cad;C.gerDoc=cg;
   if(!C.ger){if(cg&&Array.isArray(cg.linhas)){C.ger=cg.linhas.map(r=>({...r}));C.gerBase=cg.linhas.map(r=>({...r}));C.gerOrigem=`Cadastro salvo em ${fmtDate(cg.atualizadoEm)}${cg.por?" por "+cg.por:""}.`}
@@ -4854,7 +4864,7 @@ function cadRenderExtras(){const C=S.cad;const AR=cadAreas();const L=cadExtrasGl
   $("#cx-n").textContent=`${cadN(L.length)} insumo(s) sem referência · ${cadN(falta)} ainda sem decisão${F.length>MAX?` · mostrando ${MAX} de ${cadN(F.length)}`:""}`;
   $("#cx-card").hidden=!L.length;
   $("#cx-tbl").innerHTML=F.length?`<thead><tr><th>Serviço</th><th>Insumo</th><th>Descrição</th><th>Obras novas</th><th>Quem planeja</th></tr></thead><tbody>${F.slice(0,MAX).map(g=>`<tr><td><span class="cad-cod">${esc(g.S)}</span> ${esc(g.sd)}</td><td class="cad-cod">${esc(g.I||"—")}</td><td>${esc(g.d)}</td><td>${cadN(g.n)}</td><td><select class="cad-in${C.extraDec.has(g.k)?"":" cp-req"}" data-cx="${esc(g.k)}" aria-label="Quem planeja">${cadOptsExt(C.extraDec.get(g.k)||"",AR)}</select></td></tr>`).join("")}</tbody>`:`<tbody><tr><td class="muted">Nada para decidir com esse filtro.</td></tr></tbody>`}
-function cadDecidir(keys,v){const C=S.cad;keys.forEach(k=>{if(v)C.extraDec.set(k,v);else C.extraDec.delete(k)});const K=new Set(keys);
+function cadDecidir(keys,v){const C=S.cad;keys.forEach(k=>{if(v)C.extraDec.set(k,v);else C.extraDec.delete(k)});const K=new Set(keys);C._xdMexeu=C._xdMexeu||new Set();keys.forEach(k=>C._xdMexeu.add(k));cadExtraDecGravar();
   C.pend.forEach(p=>{if(!p.extras.some(x=>K.has(x.S+"|"+x.I)))return;cadPendCalc(p);if(p.st){const st=p.st;if(cadPendAplicar(p,st,true)===false)p.st=""}})}
 /* ---------- padronizar gerentes e e-mails (nome+e-mail das linhas de gerente) ---------- */
 const cadMail=v=>{const m=String(v||"").replace(/\s+/g,"").toLowerCase();return m.includes("@")?m:""};
