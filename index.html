@@ -1878,7 +1878,7 @@ $("#grid").addEventListener("click",e=>{
     refreshRowInputs(idx);changed();}
 });
 function refreshAllInputs(){document.querySelectorAll("#grid tbody tr").forEach(tr=>{if(tr.dataset.i===undefined)return;const idx=+tr.dataset.i;const l=S.cur.lines[idx];if(!l||l.kind!=="leaf")return;if(tr.dataset.s!==undefined)refreshSubInputs(idx,tr.dataset.s);else{refreshRowInputs(idx);marcaObs(idx)}})}
-function changed(){if(S.cur.doc.flag&&Object.values(S.cur.doc.flag).some(o=>Object.values(o).some(f=>flagAuto(f)))){recalcFlags();refreshAllInputs()}updateTotals();if(!S.cur.editable)return;S.cur.dirty=true;$("#save-state").className="save-state";$("#save-state").textContent="Alterações não salvas…";clearTimeout(changed.t);changed.t=setTimeout(save,1200)}
+function changed(){if(S.cur.doc.flag&&Object.values(S.cur.doc.flag).some(o=>Object.values(o).some(f=>flagAuto(f)))){recalcFlags();refreshAllInputs()}updateTotals();if(!S.cur.editable)return;S.cur.dirty=true;clearTimeout(changed.rg);changed.rg=setTimeout(()=>{try{if(S.cur&&S.cur.dirty)rascGuardar(S.cur,payload())}catch(e){}},300);$("#save-state").className="save-state";$("#save-state").textContent="Alterações não salvas…";clearTimeout(changed.t);changed.t=setTimeout(save,1200)}
 $("#obs").addEventListener("input",()=>{S.cur.doc.obs=$("#obs").value;changed()});
 
 
@@ -2482,17 +2482,18 @@ setInterval(async()=>{if(S.me&&!S.offline&&window.ORC_SB&&S.cur&&S.cur.dirty&&!R
 async function save(){
   if(!S.cur||!S.cur.editable||!S.cur.dirty)return;
   if(saving){await saving;return save()}
+  if(!S.offline&&window.ORC_SB&&!(await sessaoOk())){try{rascGuardar(S.cur,payload())}catch(e){}$("#save-state").className="save-state err";$("#save-state").textContent="Sessão expirada — o que você digitou está guardado neste computador. Entre de novo para salvar.";sessaoRelogin();return}
   S.cur.dirty=false;const cur=S.cur;const p=payload();rascGuardar(cur,p);
   $("#save-state").textContent="Salvando…";
   const vazioMeu=cur.inj&&!cur.doc.exists&&!Object.keys(p.v||{}).length&&!Object.keys(p.lobs||{}).length&&!Object.keys(p.ext||{}).length&&!(p.obs||"").trim();
   saving=(vazioMeu?Promise.resolve(p):gravarOrc(cur,p).then(pf=>{cur.doc.exists=true;return pf})).then(async pf=>{await gravarOutros(cur);return pf}).then(pf=>{rascLimpar(cur);cur.doc.atualizadoEm=pf.atualizadoEm;guardarVis(cur,pf);if(S.cur===cur){$("#save-state").textContent="Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});renderStatus()}})
-   .catch(err=>{cur.dirty=true;rascGuardar(cur,p);sessaoVerificar(err).catch(()=>{});$("#save-state").className="save-state err";$("#save-state").textContent=err&&err.message==="travado"?"Este orçamento já foi enviado por "+(cur.quem||"outra pessoa")+". Recarregue a página.":err&&err.code==="invalid_argument"?"Sem permissão para salvar. Peça acesso de Colaborador à Controladoria.":"Não foi possível salvar — o que você digitou está guardado neste computador. Não feche a página.";})
+   .catch(err=>{cur.dirty=true;rascGuardar(cur,p);sessaoVerificar(err).catch(()=>{});clearTimeout(save.rt);save.rt=setTimeout(()=>{if(S.cur===cur&&cur.dirty&&!RELOG)save().catch(()=>{})},30000);$("#save-state").className="save-state err";$("#save-state").textContent=err&&err.message==="travado"?"Este orçamento já foi enviado por "+(cur.quem||"outra pessoa")+". Recarregue a página.":err&&err.code==="invalid_argument"?"Sem permissão para salvar. Peça acesso de Colaborador à Controladoria.":"Não foi possível salvar — o que você digitou está guardado neste computador. Não feche a página.";})
    .finally(()=>{saving=null});
   await saving;
 }
 async function flush(){clearTimeout(changed.t);await save()}
 window.ORC_FLUSH=()=>flush();
-window.addEventListener("beforeunload",e=>{if(S.cur&&S.cur.dirty){e.preventDefault();e.returnValue=""}});
+window.addEventListener("beforeunload",e=>{if(S.cur&&S.cur.dirty){try{rascGuardar(S.cur,payload())}catch(_){}e.preventDefault();e.returnValue=""}});
 
 /* ano, filtros, ferramentas */
 $("#years").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.year=b.dataset.y;document.querySelectorAll("#years button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderGrid()});
