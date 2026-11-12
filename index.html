@@ -2604,7 +2604,11 @@ function renderAdd(){const q=$("#add-q").value.trim().toLowerCase();const have=n
 $("#add-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const x=allLeaves().concat(S.cur._erp||[],S.cur._erpG||[]).find(z=>z.k===b.dataset.k);if(!x)return;
   S.cur.doc.ext[x.k]={d:x.d,un:x.un,item:x.item};if(x.erp){const a=areaPorServico(S.cur.info.tipo,x.S);if(a)S.cur.doc.ext[x.k].area=a}if(S.q&&!(x.d+" "+x.S+" "+x.I).toLowerCase().includes(S.q)){S.q="";const qq=$("#q");if(qq)qq.value=""}S.cur.lines=buildLines(S.cur.info.tipo,S.cur.hist,extOrf(S.cur.doc.ext,S.cur.doc.v),S.cur.esp);applyRules(S.cur);
   const l=S.cur.lines.find(z=>z.key===x.k);l.desc=x.d;renderGrid();S.cur.dirty=true;changed();$("#add-box").hidden=true;syncAddBtn();toast("Item adicionado em Outros itens");
-  if(S.owner&&!S.offline)itensObraGravar(S.cur.o,x.k,{...S.cur.doc.ext[x.k],area:l.area||S.cur.doc.ext[x.k].area||""}).then(()=>toast(`Item adicionado e liberado para quem planeja ${l.area||"a área"} nesta obra. Para trocar a área ou tirar do app, use o botão da linha.`)).catch(err=>toast("Item ficou só no seu orçamento: "+(err&&err.message||err)));});
+  /* 12/11 (2): item fora do padrão da base: o master decide se libera para os gerentes da obra */
+  if(S.owner&&!S.offline){const tp=(T.tipos||{})[S.cur.info.tipo];const noPadrao=!!(tp&&tp.rows.some(r=>r[6]&&(r[0]+"|"+r[2]+"|"+r[3])===x.k));
+    if(!noPadrao){const lib=confirm(`⚠ ITEM FORA DO PADRÃO\n\n"${x.d}" (${x.k}) não está no padrão da base ${S.cur.info.tipo||"—"} da obra ${S.cur.o}.\n\nLiberar para os gerentes desta obra preencherem? Quem planeja: ${l.area||"(sem área)"}.\n\nOK = liberar para os gerentes\nCancelar = fica só no seu orçamento`);
+      if(lib)itensObraGravar(S.cur.o,x.k,{...S.cur.doc.ext[x.k],area:l.area||S.cur.doc.ext[x.k].area||""}).then(()=>toast(`Item fora do padrão liberado para quem planeja ${l.area||"a área"} nesta obra. Para trocar a área ou tirar do app, use o botão da linha.`)).catch(err=>toast("Item ficou só no seu orçamento: "+(err&&err.message||err)));
+      else toast("Item fora do padrão: ficou só no seu orçamento (os gerentes não veem).")}}});
 async function itensObraGravar(o,k,e){const d=await S.db.doc("regras/itens_obra").get();const D=d.exists?d.data():{m:{}};D.m=D.m||{};const m=D.m[o]=D.m[o]||{};
   m[k]={d:e.d||"",un:e.un||"VB",item:e.item||"",area:e.area||"",por:await quemSou(),em:nowISO()};D.atualizadoEm=nowISO();await S.db.doc("regras/itens_obra").set(D);S.itensObra=D.m}
 
