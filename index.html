@@ -407,6 +407,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
 @media (max-width:760px){.pq-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cad-col>h2.cad-col-h{cursor:pointer;user-select:none}.cad-col>h2.cad-col-h::before{content:"▾ ";color:var(--muted)}
 .cad-col.fechado>h2.cad-col-h::before{content:"▸ "}.cad-col.fechado>*:not(h2){display:none!important}
+#lote-box .tbl-box{max-height:50vh}#lote-box td.num{text-align:right;white-space:nowrap}.lote-ok{color:var(--good)}.lote-x{color:var(--bad)}
 </style>
 
 <header class="top"><div class="top-in">
@@ -515,9 +516,11 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
           <button class="btn primary" id="btn-validar" hidden>Validar e travar</button>
           <button class="btn" id="btn-reopen" hidden>Devolver ao gerente</button>
           <span id="send-box"><button class="btn primary" id="btn-send">Enviar para a Controladoria</button></span>
+          <button class="btn" id="btn-lote" hidden title="Enviar de uma vez as obras que você já terminou">Enviar várias obras</button>
         </div>
       </div>
       <div id="sem-obra" class="card sem-obra-msg" hidden></div>
+      <div id="lote-box" class="card" hidden></div>
       <div id="orc-quem" class="orc-quem" hidden></div>
       <div id="guia" class="guia" hidden></div>
       <div id="consol" class="card consol" hidden></div>
@@ -1196,13 +1199,21 @@ async function boot(){
   $("#v-fill").hidden=false;
   /* Gerente Regional: as obras dele entram na tela Preencher (visão completa) e há a aba Regional com o resumo */
   if(!S.owner&&!S.offline){try{const pr=window.ORC_HOOKS&&window.ORC_HOOKS.regionalPainel?await window.ORC_HOOKS.regionalPainel():null;if(pr&&pr.obras&&pr.obras.length)S.regional=pr}catch(e){console.warn("regional",e)}}
+  /* 13/11: perfil Somente visualização (tabela visualizadores) */
+  if(!S.owner&&!S.offline&&!S.regional&&window.ORC_SB){try{const rv=await window.ORC_SB.rpc("visualizador_painel");const pv=rv&&rv.data;if(pv&&pv.obras&&pv.obras.length){S.vis=pv;S.regional=visRegional(pv)}}catch(e){console.warn("visualizador",e)}}
   await loadMine();
   if(S.owner)loadSolic().catch(()=>{});
   if(!S.offline)avisoMostrar().catch(()=>{});
   if(!S.offline)setTimeout(()=>rascRecuperarTodos().catch(()=>{}),4000);
   if(!S.offline)novMostrar().then(()=>supIniciar()).then(()=>{if(!$("#nov-modal"))supDiaria()}).catch(()=>{});
   if(S.regional){$("#tabs").hidden=false;$("#tab-reg").hidden=false;$("#tab-fill").hidden=false;if(!S.owner){$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}}
+  if(S.vis){$("#tab-ind").hidden=false;const sb=$("#send-box");if(sb)sb.style.display="none";const rq=$("#btn-req");if(rq)rq.style.display="none";toast("Acesso somente para visualização: "+(S.vis.regionais||[]).join(", ")+" · "+(S.vis.areas||[]).join(" e "))}
 }
+/* 13/11: Somente visualização — obras da Regional e áreas liberadas (tabela visualizadores), sem gravar. Dados vêm filtrados do banco (visualizador_painel). */
+function visRegional(pv){const orcs=(pv.docs||[]).map(d=>{const x=d.data||{};return {uid:d.uid,o:d.o,email:d.email,nome:d.nome,status:x.status,totais:x.totais,atualizadoEm:x.atualizadoEm,enviadoEm:x.enviadoEm,devolucao:x.devolucao,tipo:x.tipo}});return {obras:pv.obras||[],info:pv.info||{},gerentes:pv.gerentes||[],orcs}}
+function visPreparar(){const V=S.vis;if(!V||S._visPrep)return;S._visPrep=true;S.cat={obras:(V.cat||[]).map(c=>c.slice())};S.baseOrig=new Map();bfAplicarCat();S.areasObra=V.areasObra||{};
+  const P=new Map();(V.gerentes||[]).forEach(g=>{const e=String(g.email||"").toLowerCase();if(!P.has(e))P.set(e,{email:e,nome:g.nome||e,acc:{}});const a=P.get(e).acc;a[g.o]=a[g.o]||[];if(!a[g.o].includes(g.dep))a[g.o].push(g.dep)});S.pessoas=[...P.values()];
+  S.acomp=(V.docs||[]).map(d=>{const c=S.catMap&&S.catMap.get(d.o);const inf=c?catInfo(c):{...((V.info||{})[d.o]||{})};return {uid:d.uid,o:d.o,info:inf,orc:d.data||{},nomeG:d.nome||d.email||"",email:d.email||""}});S.acompEm=Date.now()}
 /* ---------- aba Regional ---------- */
 async function carregarRegional(){const m=$("#rg-res");if(!m)return;m.textContent="Carregando…";
   try{const pr=await window.ORC_HOOKS.regionalPainel();if(pr)S.regional=pr}catch(e){m.textContent="Não foi possível carregar.";return}
@@ -1259,7 +1270,7 @@ async function loadMine(){
   if(!S.owner&&obras.length){const keep=[];for(const [o,i] of obras){try{if(await temItensMeus(o,i))keep.push([o,i])}catch(e){keep.push([o,i])}}obras=keep}
   /* obras do Gerente Regional: todas as áreas, com a visão completa (o que cada gerente preencheu) */
   if(!S.owner&&S.regional&&S.regional.obras){const ri=S.regional.info||{};const tem=new Set(obras.map(x=>x[0]));
-    S.regional.obras.forEach(x=>{if(tem.has(x.o))return;const i={...(ri[x.o]||{nome:x.o}),todas:true,reg:true,regNome:x.reg||"",areas:[]};S.perfil.obras[x.o]=i;obras.push([x.o,i]);tem.add(x.o)})}
+    S.regional.obras.forEach(x=>{if(tem.has(x.o))return;const i={...(ri[x.o]||{nome:x.o}),todas:true,reg:true,regNome:x.reg||"",areas:S.vis?(S.vis.areas||[]).slice():[]};S.perfil.obras[x.o]=i;obras.push([x.o,i]);tem.add(x.o)})}
   if(!obras.length){$("#fill-empty").hidden=false;$("#fill-main").hidden=true;$("#req-card").hidden=!!S.owner||!!S.offline;
     return}
   $("#fill-empty").hidden=true;$("#fill-main").hidden=false;$("#req-card").hidden=true;$("#btn-req").hidden=!!S.owner||!!S.offline;
@@ -1465,7 +1476,7 @@ async function openObra(uid,o,fromAdm){
   const esp=S.offline?null:await carregarEspelho(o);
   const ov=(!fromAdm&&(S.owner||info.reg)&&!S.offline)?await carregarOutros(o,uid):null;const inj=ov?injetarOutros(doc,ov):null;
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v),esp);
-  const editable= (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
+  const editable= !S.vis && (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,ov,inj,esp,prods:produtosDaObra(hist,lines,o,info.tipo,doc)};applyRules(S.cur);
   marcarBase(S.cur,raw);
   /* 12/11: digitação que ficou só neste computador (gravação não confirmada) volta para a tela e é salva */
@@ -1505,6 +1516,7 @@ function renderStatus(){
   $("#send-box").hidden=!mine||travado(st)||!!(S.cur.info&&S.cur.info.reg&&!S.cur.doc.exists);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
+  {const bl=$("#btn-lote");if(bl)bl.hidden=!!S.vis||!lotePodeUsar()||loteObras().length<2}
   renderGuia();
   $("#btn-add").hidden=!S.cur.editable;$("#btn-savever").hidden=!S.cur.editable;
 }
@@ -2095,13 +2107,13 @@ function indAreasApp(o,catBy){const key=[S.insFora,S.dpR,S.regras,S.foraApp,S.it
 function indAreaForaIns(tipo,area){if(!tipo||!area||!(T.tipos||{})[tipo])return false;/* 09/11: cache pela referência do objeto (antes contava as chaves a cada chamada e travava os Indicadores) */if(S._afiM!==S.insFora){S._afi={};S._afiM=S.insFora}S._afi=S._afi||{};const ck=tipo;
   if(!S._afi[ck]){const tot={},den={};buildLines(tipo,null,{}).forEach(l=>{if(l.kind!=="leaf")return;const r=ruleFor(tipo,l);const a=(r&&r[1])||"";if(!a)return;tot[a]=(tot[a]||0)+1;if(!foraIns(tipo,l))den[a]=(den[a]||0)+1});S._afi[ck]={tot,den}}
   const x=S._afi[ck];return !!(x.tot[area]&&!x.den[area])}
-async function dadosIndicadores(){await carregarInsFora();S._afi={};if(!S.areasObra){try{const d=await S.db.doc("restrito/areasobra").get();S.areasObra=d.exists?d.data().m:{}}catch(e){S.areasObra={}}}if(S.foraApp===undefined){try{const fd=await S.db.doc("regras/fora_app").get();S.foraApp=fd.exists?(fd.data().m||{}):{}}catch(e){S.foraApp={}}}if(!S.acompEm){$("#ind-msg").textContent="Carregando orçamentos…";await loadAdm()}await loadCat();
+async function dadosIndicadores(){if(S.vis)visPreparar();await carregarInsFora();S._afi={};if(!S.areasObra){try{const d=await S.db.doc("restrito/areasobra").get();S.areasObra=d.exists?d.data().m:{}}catch(e){S.areasObra={}}}if(S.foraApp===undefined){try{const fd=await S.db.doc("regras/fora_app").get();S.foraApp=fd.exists?(fd.data().m||{}):{}}catch(e){S.foraApp={}}}if(!S.vis){if(!S.acompEm){$("#ind-msg").textContent="Carregando orçamentos…";await loadAdm()}await loadCat();}
   if(!S.regObra){try{const rd=await S.db.doc("regras/regional_obra").get();S.regObra=rd.exists?(rd.data().m||null):null}catch(e){}}
   const pess=S.pessoas||[];const depsDe=new Map(pess.map(p=>[p.email,p.acc||{}]));
   const orcObra=new Map();const vistos=new Set();(S.acomp||[]).forEach(r=>{if(!r.orc)return;const k=r.uid+"|"+r.o;if(vistos.has(k))return;vistos.add(k);if(!orcObra.has(r.o))orcObra.set(r.o,[]);orcObra.get(r.o).push(r)});
   const logados=new Set((S.acomp||[]).map(r=>(r.email||"").toLowerCase()).filter(Boolean));
   const catBy=new Map((S.cat.obras||[]).map(c=>[c[0],c]));
-  let espIdx={};try{const ei=await S.db.doc("restrito/esp_idx").get();espIdx=ei.exists?(ei.data().obras||{}):{}}catch(e){}
+  let espIdx={};if(S.vis)espIdx=S.vis.espIdx||{};else try{const ei=await S.db.doc("restrito/esp_idx").get();espIdx=ei.exists?(ei.data().obras||{}):{}}catch(e){}
   const U=[];pess.forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>{if(!indObraConta(o,catBy))return;const tb=(catBy.get(o)||[])[3];deps=deps.filter(d=>insAppObraArea(o,d)||(!foraDe(o,d)&&!indAreaForaIns(tb,d)));if(!deps.length)return;const L=orcObra.get(o)||[];
     let r=L.find(x=>(x.email||"").toLowerCase()===p.email);
     if(!r)r=L.find(x=>{const d2=(depsDe.get((x.email||"").toLowerCase())||{})[o]||[];return d2.some(d=>deps.includes(d))});
@@ -2125,7 +2137,7 @@ async function fatosIndicadores(D,prog){const F=[];let i=0;const N=D.orcObra.siz
     const cesp=(esp&&esp.h&&Object.keys(esp.h).length)||D.espIdx[o]?"Com espelho":"Sem espelho";
     for(const r of L){const tipo=r.info.tipo||c[3]||"";const deps=(D.depsDe.get((r.email||"").toLowerCase())||{})[o]||null;const doc={v:r.orc.v||{},pr:r.orc.pr||{}};
       const lines=buildLines(tipo,hist,extOrf(r.orc.ext,r.orc.v),esp);const pd={};lines.forEach(l=>{if(l.kind==="prod")pd[l.P]=l.desc});
-      lines.forEach(l=>{if(l.kind!=="leaf")return;const rule=ruleFor(tipo,l,o);const area=(rule&&rule[1])||"Sem regra";const temV=YEARS.some(y=>lineTotal(doc,l,y));
+      lines.forEach(l=>{if(l.kind!=="leaf")return;const rule=ruleFor(tipo,l,o);const area=(rule&&rule[1])||"Sem regra";if(S.vis&&!(S.vis.areas||[]).includes(area))return;const temV=YEARS.some(y=>lineTotal(doc,l,y));
         if(deps?!(deps.includes(area))&&!temV:!temV)return;/* 30/10: fora do app (obra/área ou insumo) não entra nos Indicadores, mesmo com valor digitado */if((!insAppObra(o,l)&&foraDe(o,area))||foraIns(tipo,l,o))return;
         const f={o,uid:r.uid,emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",obraNome:c[2]||"",obraLb:`${o} ${c[2]||""}`.trim(),reg:S.regObra?regDe(o):"Sem regional",tipo:tipo||"Sem base",cesp,ger:r.nomeG||"",email:r.email||"",st:r.orc.status||"rascunho",area,
           P:l.P||"",Pd:pd[l.P]||(l.extra?"Itens fora do modelo":"Produto "+(l.P||"")),S:l.S||"",Sd:SDESC[l.S]||(l.S?"Serviço "+l.S:"Sem serviço"),I:l.I||l.key,Id:`${l.desc}${l.I?" ("+l.I+")":""}`,
@@ -2441,7 +2453,7 @@ async function sincronizarCur(){const cur=S.cur;if(!cur||cur.dirty||saving||!(cu
   try{const rs=await S.db.doc(`gerentes/${cur.uid}/orc/${cur.o}`).get();if(!rs.exists||S.cur!==cur||cur.dirty)return;const r=rs.data();
     if((r.atualizadoEm||null)===(cur.baseEm||null))return;
     CAMPOS_M.forEach(k=>cur.doc[k]=cloneJ(r[k]));cur.doc.obs=r.obs||"";["status","atualizadoEm","enviadoEm","validadoEm","validadoPor","devolucao"].forEach(k=>cur.doc[k]=r[k]===undefined?cur.doc[k]:r[k]);
-    cur.editable=(cur.uid===S.me||cur.compart||S.voltarPara==="reg")&&!travado(cur.doc.status);marcarBase(cur,r);guardarVis(cur,r);
+    cur.editable=!S.vis&&(cur.uid===S.me||cur.compart||S.voltarPara==="reg")&&!travado(cur.doc.status);marcarBase(cur,r);guardarVis(cur,r);
     if($("#obs")){$("#obs").value=cur.doc.obs||"";$("#obs").disabled=!cur.editable}renderStatus();renderGrid();renderSummary();toast("Atualizado com o que "+(cur.quem||"o colega")+" salvou.")}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sincronizarCur()});
 setInterval(sincronizarCur,60000);
@@ -2488,7 +2500,7 @@ function sessaoRelogin(){if(RELOG||!window.ORC_SB||S.offline)return RELOG;RELOG=
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&S.me&&!S.offline&&window.ORC_SB)setTimeout(async()=>{if(!(await sessaoOk()))sessaoRelogin()},1500)});
 setInterval(async()=>{if(S.me&&!S.offline&&window.ORC_SB&&S.cur&&S.cur.dirty&&!RELOG&&!(await sessaoOk()))sessaoRelogin()},90000);
 async function save(){
-  if(!S.cur||!S.cur.editable||!S.cur.dirty)return;
+  if(!S.cur||!S.cur.editable||!S.cur.dirty||S.vis)return;
   if(saving){await saving;return save()}
   if(!S.offline&&window.ORC_SB&&!(await sessaoOk())){try{rascGuardar(S.cur,payload())}catch(e){}$("#save-state").className="save-state err";$("#save-state").textContent="Sessão expirada — o que você digitou está guardado neste computador. Entre de novo para salvar.";sessaoRelogin();return}
   S.cur.dirty=false;const cur=S.cur;const p=payload();rascGuardar(cur,p);
@@ -2673,6 +2685,40 @@ function sendFlow(){
     try{const pl=await gravarOrc(S.cur,payload());await saveVersion(S.cur.uid,S.cur.o,pl,"Envio").catch(()=>{});S.cur.dirty=false;restoreSend();toast("Orçamento enviado à Controladoria");if(S.offline)offlineAfterSend();else await loadMine();}
     catch(err){S.cur.doc.status=prev;S.cur.doc.enviadoEm=null;restoreSend();toast("Não foi possível enviar. Verifique sua conexão e tente de novo.")}};
 }
+/* 13/11: envio de várias obras de uma vez (todas as áreas). Mesmo caminho do envio de uma obra: abre a obra, mesmas conferências, gravarOrc + versão "Envio (várias obras)". */
+function lotePodeUsar(){return !!(S.perfil&&!S.owner&&!S.offline&&!S.vis&&S.me&&!(S.cur&&S.cur.uid!==S.me&&!S.cur.compart))&&Object.values(S.perfil.obras||{}).some(i=>!i.reg)}
+function loteObras(){const P=(S.perfil&&S.perfil.obras)||{};return (S.selIds||[]).filter(o=>{const i=P[o]||{};return !i.reg})}
+function renderLote(res){const box=$("#lote-box");const P=S.perfil.obras||{};const L=loteObras();S.loteSel=S.loteSel||new Set();
+  const lin=L.map(o=>{const d=orcVis(o)||{};const st=d.status||"não iniciado";const tr=travado(st);const tt=d.totais||{};const r=res&&res.get(o);
+    return `<tr><td><input type="checkbox" data-lote="${esc(o)}" ${tr?"disabled":""} ${!tr&&S.loteSel.has(o)?"checked":""} aria-label="Marcar ${esc(o)}"></td><td>${esc(obraLbl(o,P[o]||{}))}</td><td><span class="pill ${esc(d.status||"")}">${esc(st)}</span></td>${YEARS.map(y=>`<td class="num">${f0(+tt[y]||0)}</td>`).join("")}<td>${r?`<span class="${r[0]==="ok"?"lote-ok":"lote-x"}">${esc(r[1])}</span>`:""}</td></tr>`}).join("");
+  const n=L.filter(o=>S.loteSel.has(o)&&!travado((orcVis(o)||{}).status)).length;
+  box.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2 style="margin:0">Enviar várias obras para a Controladoria</h2><button class="btn sm" id="lote-x">Fechar</button></div>
+    <p class="desc">Marque as obras e clique em Enviar. Cada obra passa pelas mesmas conferências do envio normal (subitem “Detalhe” sem nome, justificativa do espelho, sem valor). As que tiverem pendência ficam de fora e o motivo aparece na última coluna. Depois de enviada, só a Controladoria reabre. Obras já enviadas ou validadas não podem ser marcadas. A lista segue os filtros da tela (ex.: Situação da obra = Não finalizadas).</p>
+    <div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap"><button class="btn sm" id="lote-todas">Marcar todas não enviadas</button><button class="btn sm" id="lote-nenhuma">Desmarcar</button><span style="flex:1"></span><span class="muted" id="lote-msg" style="font-size:12px"></span><button class="btn primary" id="lote-env" ${n?"":"disabled"}>Enviar ${n} obra(s)</button></div>
+    <div class="tbl-box"><table class="list"><thead><tr><th></th><th>Obra</th><th>Situação</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th>Resultado</th></tr></thead><tbody>${lin}</tbody></table></div>`;
+  box.hidden=false}
+async function loteEnviar(){const ids=loteObras().filter(o=>S.loteSel.has(o)&&!travado((orcVis(o)||{}).status));if(!ids.length)return;
+  if(window.ORC_SB&&!(await sessaoOk())){toast("Sessão expirada. Entre de novo e repita o envio.");sessaoRelogin();return}
+  const msg=$("#lote-msg");const btn=$("#lote-env");btn.disabled=true;const res=new Map();let ok=0;
+  for(let i=0;i<ids.length;i++){const o=ids[i];msg.textContent=`Enviando ${i+1} de ${ids.length}…`;
+    try{await flush();await openObra(S.me,o,false);const c=S.cur;
+      if(!c.editable||travado(c.doc.status)){res.set(o,["x","já enviada ou travada"]);continue}
+      const sn=subsSemNome();if(sn.length){res.set(o,["x",`${sn.length} subitem(ns) “Detalhe” sem nome`]);continue}
+      const fo=faltandoObs();if(fo.length){res.set(o,["x",`${fo.length} justificativa(s) do espelho faltando`]);continue}
+      const t=docTotals(c.doc,c.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));if(!YEARS.some(y=>+t[y])){res.set(o,["x","sem valor preenchido"]);continue}
+      const prev=c.doc.status;c.doc.status="enviado";c.doc.enviadoEm=nowISO();c.doc.validadoEm=null;c.doc.validadoPor=null;
+      try{const pl=await gravarOrc(c,payload());await saveVersion(c.uid,c.o,pl,"Envio (várias obras)").catch(()=>{});c.dirty=false;ok++;S.loteSel.delete(o);res.set(o,["ok","enviada"])}
+      catch(err){c.doc.status=prev;c.doc.enviadoEm=null;res.set(o,["x","não foi possível gravar; tente de novo"])}}
+    catch(e){res.set(o,["x","não abriu: "+(e&&e.message||e)])}}
+  try{await loadMine()}catch(e){}
+  renderLote(res);$("#lote-msg").textContent=`${ok} de ${ids.length} obra(s) enviada(s).`;toast(`${ok} obra(s) enviada(s) à Controladoria${ok<ids.length?` · ${ids.length-ok} ficaram de fora (veja o motivo)`:""}`)}
+document.addEventListener("click",e=>{const t=e.target;if(t.id==="btn-lote"){S.loteSel=new Set();renderLote();$("#lote-box").scrollIntoView({block:"start"});return}
+  if(!t.closest||!t.closest("#lote-box"))return;
+  if(t.id==="lote-x"){$("#lote-box").hidden=true;return}
+  if(t.id==="lote-todas"){loteObras().forEach(o=>{if(!travado((orcVis(o)||{}).status))S.loteSel.add(o)});renderLote();return}
+  if(t.id==="lote-nenhuma"){S.loteSel.clear();renderLote();return}
+  if(t.id==="lote-env"){if(!t.dataset.arm){t.dataset.arm=1;t.textContent=`Confirmar envio de ${loteObras().filter(o=>S.loteSel.has(o)).length} obra(s)`;setTimeout(()=>{if(t.isConnected&&t.dataset.arm){delete t.dataset.arm;renderLote()}},6000);return}loteEnviar();return}
+  if(t.dataset&&t.dataset.lote){t.checked?S.loteSel.add(t.dataset.lote):S.loteSel.delete(t.dataset.lote);const n=loteObras().filter(o=>S.loteSel.has(o)).length;const b=$("#lote-env");if(b){b.disabled=!n;delete b.dataset.arm;b.textContent=`Enviar ${n} obra(s)`}}});
 function restoreSend(){$("#send-box").innerHTML=`<button class="btn primary" id="btn-send">Enviar para a Controladoria</button>`;renderStatus()}
 
 function travado(st){return st==="enviado"||st==="validado"}
