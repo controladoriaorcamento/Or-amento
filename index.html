@@ -2086,6 +2086,12 @@ const fP=(a,b)=>!b?(a?"novo":"—"):((a/b-1)*100>0?"+":"")+nf0.format((a/b-1)*10
 function barraSt(c,tot){return `<div class="ind-bar" title="${IND_STO.map(k=>IND_STN[k]+": "+(c[k]||0)).join(" · ")}">${IND_STO.map(k=>c[k]?`<span class="st-${k}" style="width:${(c[k]/tot*100).toFixed(2)}%"></span>`:"").join("")}</div>`}
 /* andamento: gerente × obra (aba 3) */
 /* 30/10 (2): área que, na base da obra, só tem insumos marcados fora do app → o par obra × área não conta nos Indicadores */
+/* 13/11: áreas que têm pelo menos um insumo no app NESTA obra (base efetiva, produtos visíveis, exceções e itens incluídos). Área sem nada para preencher não conta no Indicadores (ex.: 267-71300 Engenharia). */
+function indAreasApp(o,catBy){const key=[S.insFora,S.dpR,S.regras,S.foraApp,S.itensObra];if(!S._iaaK||S._iaaK.some((x,i)=>x!==key[i])){S._iaa=new Map();S._iaaK=key}
+  if(S._iaa.has(o))return S._iaa.get(o);const st=new Set();const c=(catBy||S.catMap||new Map()).get(o);const tipo=c&&c[3];const tp=tipo&&T.tipos[tipo];
+  if(tp){const oc=(S.regras&&S.regras.ocSet)||new Set();const bf=typeof baseFixa==="function"?baseFixa(o,(S.baseOrig&&S.baseOrig.get(o))||tipo):null;const ocP=new Set((bf&&bf.ocultar)||[]);let pv=null;try{pv=produtosDaObra0(null,[],o,tipo)}catch(e){}
+    tp.rows.forEach(r=>{if(!r[6])return;const l={P:r[0],S:r[2],I:r[3],key:r[0]+"|"+r[2]+"|"+r[3]};if(oc.has(tipo+"|"+l.key)||ocP.has(l.P)||(pv&&!pv.has(l.P)))return;const rr=ruleFor(tipo,l,o);const a=(rr&&rr[1])||"";if(!a||st.has(a))return;if(foraIns(tipo,l,o))return;if(!insAppObra(o,l)&&foraDe(o,a))return;st.add(a)})}
+  Object.values((S.itensObra||{})[o]||{}).forEach(x=>{if(x&&x.area)st.add(x.area)});S._iaa.set(o,st);return st}
 function indAreaForaIns(tipo,area){if(!tipo||!area||!(T.tipos||{})[tipo])return false;/* 09/11: cache pela referência do objeto (antes contava as chaves a cada chamada e travava os Indicadores) */if(S._afiM!==S.insFora){S._afi={};S._afiM=S.insFora}S._afi=S._afi||{};const ck=tipo;
   if(!S._afi[ck]){const tot={},den={};buildLines(tipo,null,{}).forEach(l=>{if(l.kind!=="leaf")return;const r=ruleFor(tipo,l);const a=(r&&r[1])||"";if(!a)return;tot[a]=(tot[a]||0)+1;if(!foraIns(tipo,l))den[a]=(den[a]||0)+1});S._afi[ck]={tot,den}}
   const x=S._afi[ck];return !!(x.tot[area]&&!x.den[area])}
@@ -2099,6 +2105,7 @@ async function dadosIndicadores(){await carregarInsFora();S._afi={};if(!S.areasO
   const U=[];pess.forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>{if(!indObraConta(o,catBy))return;const tb=(catBy.get(o)||[])[3];deps=deps.filter(d=>insAppObraArea(o,d)||(!foraDe(o,d)&&!indAreaForaIns(tb,d)));if(!deps.length)return;const L=orcObra.get(o)||[];
     let r=L.find(x=>(x.email||"").toLowerCase()===p.email);
     if(!r)r=L.find(x=>{const d2=(depsDe.get((x.email||"").toLowerCase())||{})[o]||[];return d2.some(d=>deps.includes(d))});
+    if(!r){deps=deps.filter(d=>insAppObraArea(o,d)||indAreasApp(o,catBy).has(d));if(!deps.length)return}
     const c=catBy.get(o)||[];const todasFora=deps.length&&deps.every(d=>foraDe(o,d));U.push({nome:p.nome||p.email,email:p.email,o,deps,st:r?r.orc.status||"rascunho":todasFora?"fora":"vazio",emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",reg:S.regObra?regDe(o):"Sem regional",tipo:c[3]||"Sem base",cesp:espIdx[o]?"Com espelho":"Sem espelho",entrou:logados.has(p.email)})}));
   /* andamento por EMPRESA/OBRA × QUEM PLANEJA (independe do gerente; não conta o que é feito fora do app).
      Áreas da obra = áreas com insumo na obra (aba 2) + áreas liberadas na aba 3. Situação = a mais avançada entre os orçamentos dos responsáveis. */
@@ -2107,6 +2114,7 @@ async function dadosIndicadores(){await carregarInsFora();S._afi={};if(!S.areasO
   const pares=new Set();Object.entries(S.areasObra||{}).forEach(([o,as])=>(as||[]).forEach(a=>pares.add(o+"|"+a)));resp.forEach((_,k)=>pares.add(k));
   const UA=[];pares.forEach(k=>{const i=k.indexOf("|");const o=k.slice(0,i),a=k.slice(i+1);if(!a||!indObraConta(o,catBy)||(!insAppObraArea(o,a)&&(foraDe(o,a)||indAreaForaIns((catBy.get(o)||[])[3],a))))return;const c=catBy.get(o)||[];const ps=resp.get(k)||[];
     let st="vazio";ps.forEach(p=>{const s2=stDe.get(p.email+"|"+o);if(s2&&RK[s2]>RK[st])st=s2});
+    if(st==="vazio"&&!insAppObraArea(o,a)&&!indAreasApp(o,catBy).has(a))return;
     UA.push({o,area:a,deps:[a],nome:ps.length?ps.map(p=>p.nome||p.email):["Sem responsável"],sem:!ps.length,st,emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",obraNome:c[2]||"",reg:S.regObra?regDe(o):"Sem regional",tipo:c[3]||"Sem base",cesp:espIdx[o]?"Com espelho":"Sem espelho"})});
   return {U,UA,orcObra,catBy,logados,pess,depsDe,espIdx}}
 /* fatos por orçamento × insumo: meses orçados, histórico 2025/2026 e espelho (só insumos da área de quem orçou ou com valor) */
