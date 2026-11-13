@@ -408,6 +408,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
 .cad-col>h2.cad-col-h{cursor:pointer;user-select:none}.cad-col>h2.cad-col-h::before{content:"▾ ";color:var(--muted)}
 .cad-col.fechado>h2.cad-col-h::before{content:"▸ "}.cad-col.fechado>*:not(h2){display:none!important}
 #lote-box .tbl-box{max-height:50vh}#lote-box td.num{text-align:right;white-space:nowrap}.lote-ok{color:var(--good)}.lote-x{color:var(--bad)}
+.prazo-bar{margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid #E0B44A;background:#FFF6DC;color:#5A4300;font-size:14px}.prazo-bar.fechado{border-color:#C9473F;background:#FDECEA;color:#7A1F17}
 </style>
 
 <header class="top"><div class="top-in">
@@ -519,6 +520,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
           <button class="btn" id="btn-lote" hidden title="Enviar de uma vez as obras que você já terminou">Enviar várias obras</button>
         </div>
       </div>
+      <div id="prazo-bar" class="prazo-bar" hidden></div>
       <div id="sem-obra" class="card sem-obra-msg" hidden></div>
       <div id="lote-box" class="card" hidden></div>
       <div id="orc-quem" class="orc-quem" hidden></div>
@@ -1005,6 +1007,25 @@ function parseNum(s){s=String(s??"").trim().replace(/[R$\s]/g,"");if(!s)return 0
   if(s.includes(",")) s=s.replace(/\./g,"").replace(",",".");
   else if(/^\-?\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,"");
   const n=Number(s);return isFinite(n)?Math.round(n*100)/100:NaN}
+/* 13/11 (Evaldo): prazo do preenchimento — até 16/11/2026 00:00 (Brasília). Aviso para todos a partir de 14/11 00:00.
+   Depois do prazo o gerente só consulta (masters continuam editando). Pode ser alterado em regras/prazo {ate, aviso}. */
+const PRAZO={ate:"2026-11-16T03:00:00Z",aviso:"2026-11-14T03:00:00Z"};
+function prazoFechado(){return !S.owner&&Date.now()>=Date.parse(PRAZO.ate)}
+function prazoTxt(){const ms=Date.parse(PRAZO.ate)-Date.now();if(ms<=0)return "";const h=Math.floor(ms/3600000),d=Math.floor(h/24),hh=h%24,mm=Math.floor(ms%3600000/60000);return d?`${d} dia(s) e ${hh} h`:h?`${h} h e ${mm} min`:`${mm} min`}
+function prazoRender(){const b=$("#prazo-bar");if(!b)return;const agora=Date.now();const fim=new Date(Date.parse(PRAZO.ate)-60000);
+  const quando=fim.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+" às 23:59";
+  if(agora>=Date.parse(PRAZO.ate)){b.className="prazo-bar fechado";b.innerHTML=S.owner?`<b>Prazo encerrado</b> para os gerentes (16/11 às 00:00). Masters continuam editando.`:`<b>Preenchimento encerrado</b> em 16/11 às 00:00. O orçamento fica só para consulta; para algum ajuste, fale com a Controladoria.`;b.hidden=false;return}
+  if(agora>=Date.parse(PRAZO.aviso)){b.className="prazo-bar";b.innerHTML=`<b>Prazo do preenchimento: até ${esc(quando)}</b> — o sistema fecha em 16/11 às 00:00. Faltam <b>${prazoTxt()}</b>. Salve e clique em <b>Enviar para a Controladoria</b> em cada obra.`;b.hidden=false;return}
+  b.hidden=true}
+function prazoModal(){if(S.owner||S.vis||S.offline)return;const agora=Date.now();if(agora<Date.parse(PRAZO.aviso)||agora>=Date.parse(PRAZO.ate))return;
+  const k="orc-prazo-"+new Date().toISOString().slice(0,10);try{if(localStorage.getItem(k))return}catch(e){}
+  const ov=document.createElement("div");ov.id="prazo-modal";ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9998";
+  ov.innerHTML=`<div class="card" style="max-width:480px;width:92vw;padding:22px" role="dialog" aria-modal="true" aria-labelledby="pz-t"><h2 id="pz-t" style="margin-top:0">Prazo do Orçamento 2027–2029</h2><p>O preenchimento vai até <b>domingo, 15/11, às 23:59</b>. Em <b>16/11 às 00:00</b> o sistema fecha e o orçamento fica só para consulta.</p><p>Faltam <b>${prazoTxt()}</b>. Termine as suas obras e clique em <b>Enviar para a Controladoria</b> (ou use <b>Enviar várias obras</b>).</p><div style="text-align:right"><button class="btn primary" id="pz-ok">Entendi</button></div></div>`;
+  document.body.appendChild(ov);$("#pz-ok").onclick=()=>{try{localStorage.setItem(k,"1")}catch(e){}ov.remove()};$("#pz-ok").focus()}
+let PRAZO_FECHADO_ANT=null;
+function prazoTick(){prazoRender();const f=prazoFechado();if(PRAZO_FECHADO_ANT===false&&f&&S.cur){flush().catch(()=>{}).finally(()=>{if(S.cur){S.cur.editable=false;try{applyRules(S.cur);renderGrid();renderStatus()}catch(e){}}toast("Prazo encerrado: o orçamento agora fica só para consulta.")})}PRAZO_FECHADO_ANT=f}
+async function prazoInit(){try{const d=await S.db.doc("regras/prazo").get();if(d.exists){const x=d.data()||{};if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso}}catch(e){}
+  PRAZO_FECHADO_ANT=prazoFechado();prazoRender();prazoModal();clearInterval(prazoInit.t);prazoInit.t=setInterval(()=>{prazoTick();prazoModal()},60000)}
 function toast(m){try{if(S.cargaAtiva)(S.cargaLog=S.cargaLog||[]).push(m)}catch(_){}const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,3200)}
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 const sum=a=>a.reduce((x,y)=>x+(+y||0),0);
@@ -1207,6 +1228,7 @@ async function boot(){
   if(!S.offline)setTimeout(()=>rascRecuperarTodos().catch(()=>{}),4000);
   if(!S.offline)novMostrar().then(()=>supIniciar()).then(()=>{if(!$("#nov-modal"))supDiaria()}).catch(()=>{});
   if(S.regional){$("#tabs").hidden=false;$("#tab-reg").hidden=false;$("#tab-fill").hidden=false;if(!S.owner){$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}}
+  prazoInit().catch(()=>{});
   if(S.vis){$("#tab-ind").hidden=false;const sb=$("#send-box");if(sb)sb.style.display="none";const rq=$("#btn-req");if(rq)rq.style.display="none";toast("Acesso somente para visualização: "+(S.vis.regionais||[]).join(", ")+" · "+(S.vis.areas||[]).join(" e "))}
 }
 /* 13/11: Somente visualização — obras da Regional e áreas liberadas (tabela visualizadores), sem gravar. Dados vêm filtrados do banco (visualizador_painel). */
@@ -1476,7 +1498,7 @@ async function openObra(uid,o,fromAdm){
   const esp=S.offline?null:await carregarEspelho(o);
   const ov=(!fromAdm&&(S.owner||info.reg)&&!S.offline)?await carregarOutros(o,uid):null;const inj=ov?injetarOutros(doc,ov):null;
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v),esp);
-  const editable= !S.vis && (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
+  const editable= !S.vis && !prazoFechado() && (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,ov,inj,esp,prods:produtosDaObra(hist,lines,o,info.tipo,doc)};applyRules(S.cur);
   marcarBase(S.cur,raw);
   /* 12/11: digitação que ficou só neste computador (gravação não confirmada) volta para a tela e é salva */
@@ -1513,7 +1535,7 @@ function renderStatus(){
   const mot=st==="reaberto"&&d.devolucao&&d.devolucao.motivo?` <span style="font-size:12px;color:var(--bad)"><b>Motivo da devolução:</b> ${esc(d.devolucao.motivo)}</span>`:"";
   $("#obra-status").innerHTML=`<span class="pill ${st}">${lab}</span> <span class="muted" style="font-size:12px">${esc(quando)}</span>${mot}`;
   const mine=meuCur()||(S.voltarPara==="reg"&&S.cur.editable!==undefined&&!S.owner);
-  $("#send-box").hidden=!mine||travado(st)||!!(S.cur.info&&S.cur.info.reg&&!S.cur.doc.exists);
+  $("#send-box").hidden=prazoFechado()||!mine||travado(st)||!!(S.cur.info&&S.cur.info.reg&&!S.cur.doc.exists);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
   {const bl=$("#btn-lote");if(bl)bl.hidden=!!S.vis||!lotePodeUsar()||loteObras().length<2}
@@ -2453,7 +2475,7 @@ async function sincronizarCur(){const cur=S.cur;if(!cur||cur.dirty||saving||!(cu
   try{const rs=await S.db.doc(`gerentes/${cur.uid}/orc/${cur.o}`).get();if(!rs.exists||S.cur!==cur||cur.dirty)return;const r=rs.data();
     if((r.atualizadoEm||null)===(cur.baseEm||null))return;
     CAMPOS_M.forEach(k=>cur.doc[k]=cloneJ(r[k]));cur.doc.obs=r.obs||"";["status","atualizadoEm","enviadoEm","validadoEm","validadoPor","devolucao"].forEach(k=>cur.doc[k]=r[k]===undefined?cur.doc[k]:r[k]);
-    cur.editable=!S.vis&&(cur.uid===S.me||cur.compart||S.voltarPara==="reg")&&!travado(cur.doc.status);marcarBase(cur,r);guardarVis(cur,r);
+    cur.editable=!S.vis&&!prazoFechado()&&(cur.uid===S.me||cur.compart||S.voltarPara==="reg")&&!travado(cur.doc.status);marcarBase(cur,r);guardarVis(cur,r);
     if($("#obs")){$("#obs").value=cur.doc.obs||"";$("#obs").disabled=!cur.editable}renderStatus();renderGrid();renderSummary();toast("Atualizado com o que "+(cur.quem||"o colega")+" salvou.")}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sincronizarCur()});
 setInterval(sincronizarCur,60000);
