@@ -1479,7 +1479,7 @@ async function refreshRegras(){if(S.rgEm&&Date.now()-S.rgEm<60000)return;S.rgEm=
     if(rg.exists){S.regras=rg.data();indexRegras()}S.dpR=dp.exists?dp.data():null;S.subR=sb.exists?sb.data():null;S.itensObra=io.exists?(io.data().m||{}):{}}catch(e){}await carregarInsFora()}
 async function openObra(uid,o,fromAdm){
   await refreshRegras();
-  let compart=false;if(uid===S.me&&!fromAdm&&!S.owner&&!S.offline){const d=donoDoc(o);if(d!==S.me){uid=d;compart=true}}
+  let compart=false;if(uid===S.me&&!fromAdm&&!S.owner&&!S.offline){/* 13/11: atualiza a lista de colegas (mesma área) ao abrir a obra — antes só no carregamento da página */if(!S._colEm||Date.now()-S._colEm>30000){S._colEm=Date.now();try{await carregarColegas()}catch(e){}}const d=donoDoc(o);if(d!==S.me){uid=d;compart=true}}
   const perfil=(uid===S.me||compart)?S.perfil:(((await S.db.doc("gerentes/"+uid).get()).data())||{obras:{}});perfil.obras=perfil.obras||{};baseFixaPerfil(perfil);
   let info=perfil.obras[o]||((S.acomp||[]).find(r=>r.uid===uid&&r.o===o)||{}).info;
   if(!info&&S.voltarPara==="reg"&&S.regional){const ri=(S.regional.info||{})[o];const oc=(S.regional.orcs||[]).find(x=>x.uid===uid&&x.o===o)||{};
