@@ -2124,7 +2124,7 @@ async function dadosIndicadores(){if(S.vis)visPreparar();await carregarInsFora()
   const RK={vazio:0,rascunho:1,reaberto:2,enviado:3,validado:4};const stDe=new Map();(S.acomp||[]).forEach(r=>{if(!r.orc)return;const k=(r.email||"").toLowerCase()+"|"+r.o;const st=r.orc.status||"rascunho";if(!stDe.has(k)||RK[st]>RK[stDe.get(k)])stDe.set(k,st)});
   const resp=new Map();pess.forEach(p=>Object.entries(p.acc||{}).forEach(([o,deps])=>deps.forEach(d=>{const k=o+"|"+d;if(!resp.has(k))resp.set(k,[]);resp.get(k).push(p)})));
   const pares=new Set();Object.entries(S.areasObra||{}).forEach(([o,as])=>(as||[]).forEach(a=>pares.add(o+"|"+a)));resp.forEach((_,k)=>pares.add(k));
-  const UA=[];pares.forEach(k=>{const i=k.indexOf("|");const o=k.slice(0,i),a=k.slice(i+1);if(!a||!indObraConta(o,catBy)||(!insAppObraArea(o,a)&&(foraDe(o,a)||indAreaForaIns((catBy.get(o)||[])[3],a))))return;const c=catBy.get(o)||[];const ps=resp.get(k)||[];
+  const UA=[];pares.forEach(k=>{const i=k.indexOf("|");const o=k.slice(0,i),a=k.slice(i+1);if(!a||(S.vis&&!(S.vis.areas||[]).includes(a))||!indObraConta(o,catBy)||(!insAppObraArea(o,a)&&(foraDe(o,a)||indAreaForaIns((catBy.get(o)||[])[3],a))))return;const c=catBy.get(o)||[];const ps=resp.get(k)||[];
     let st="vazio";ps.forEach(p=>{const s2=stDe.get(p.email+"|"+o);if(s2&&RK[s2]>RK[st])st=s2});
     if(st==="vazio"&&!insAppObraArea(o,a)&&!indAreasApp(o,catBy).has(a))return;
     UA.push({o,area:a,deps:[a],nome:ps.length?ps.map(p=>p.nome||p.email):["Sem responsável"],sem:!ps.length,st,emp:String(c[6]||o.split("-")[0]),empNome:c[7]||"",obraNome:c[2]||"",reg:S.regObra?regDe(o):"Sem regional",tipo:c[3]||"Sem base",cesp:espIdx[o]?"Com espelho":"Sem espelho"})});
