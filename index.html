@@ -1018,24 +1018,35 @@ function parseNum(s){s=String(s??"").trim().replace(/[R$\s]/g,"");if(!s)return 0
 const PRAZO={ate:"2026-11-17T03:00:00Z",aviso:"2026-11-14T03:00:00Z"};
 function prazoQuando(){const f=new Date(Date.parse(PRAZO.ate)-60000);return f.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+" às "+f.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}
 /* 16/11: orçamento DEVOLVIDO pela Controladoria tem prazo próprio (regras/prazo.devolvidosAte = 19/11 23:59) */
-function prazoFechado(st){if(S.owner)return false;const ate=(st==="reaberto"&&PRAZO.devAte)?PRAZO.devAte:PRAZO.ate;return Date.now()>=Date.parse(ate)}
+function prazoFimPara(st,areas){let t=Date.parse(PRAZO.ate);if(st==="reaberto"&&PRAZO.devAte)t=Math.max(t,Date.parse(PRAZO.devAte));const pa=PRAZO.porArea||{};(areas||[]).forEach(a=>{if(pa[a])t=Math.max(t,Date.parse(pa[a]))});return t}
+/* 16/11 (v60): prorrogação por quem planeja (regras/prazo.porArea) */
+function prazoFechado(st,areas){if(S.owner)return false;return Date.now()>=prazoFimPara(st,areas)}
+function prazoMinhasAreas(){const st=new Set();Object.values((S.perfil&&S.perfil.obras)||{}).forEach(i=>(i.areas||[]).forEach(a=>st.add(a)));return [...st]}
 function prazoTxt(){const ms=Date.parse(PRAZO.ate)-Date.now();if(ms<=0)return "";const h=Math.floor(ms/3600000),d=Math.floor(h/24),hh=h%24,mm=Math.floor(ms%3600000/60000);return d?`${d} dia(s) e ${hh} h`:h?`${h} h e ${mm} min`:`${mm} min`}
 /* 16/11: master altera o prazo pela própria faixa (grava regras/prazo) */
 function prazoDono(){return !!(S.owner&&S.meEmail&&(PRAZO.donos||[]).includes(S.meEmail))}
 function prazoRender(){if($("#pz-form"))return;prazoRender0();const b=$("#prazo-bar");if(!b||!prazoDono()||S.offline)return;
   if(b.hidden){b.className="prazo-bar";b.innerHTML=`Prazo dos gerentes: até <b>${esc(prazoQuando())}</b>.`;b.hidden=false}
   if(!$("#pz-alt"))b.insertAdjacentHTML("beforeend",' <button class="btn sm" id="pz-alt">Alterar prazo</button>')}
-document.addEventListener("click",async e=>{const t=e.target;if(!t||!t.id||!/^pz-(alt|salvar|cancel)$/.test(t.id))return;
+document.addEventListener("click",async e=>{const t=e.target;if(t&&t.dataset&&t.dataset.pzrm){const a=t.dataset.pzrm;try{const cur=await S.db.doc("regras/prazo").get();const x=cur.exists?(cur.data()||{}):{};const pa={...(x.porArea||{})};delete pa[a];await S.db.doc("regras/prazo").set({...x,porArea:pa,alteradoEm:nowISO(),por:await quemSou()});PRAZO.porArea=pa;$("#pz-form")&&$("#pz-form").remove();prazoRender();toast("Prorrogação de "+a+" removida")}catch(err){toast("Não foi possível salvar: "+(err&&err.message||err))}return}
+  if(!t||!t.id||!/^pz-(alt|salvar|cancel)$/.test(t.id))return;
   if(t.id==="pz-alt"){const f=new Date(Date.parse(PRAZO.ate)-60000);const loc=new Date(f.getTime()-f.getTimezoneOffset()*60000).toISOString().slice(0,16);
-    t.insertAdjacentHTML("afterend",`<span id="pz-form" style="margin-left:8px;white-space:nowrap">Último minuto para os gerentes: <input type="datetime-local" id="pz-dt" value="${loc}" aria-label="Novo prazo"> <button class="btn sm primary" id="pz-salvar">Salvar</button> <button class="btn sm" id="pz-cancel">Cancelar</button></span>`);t.remove();return}
+    const ars=new Set();Object.values(S.areasObra||{}).forEach(L=>(L||[]).forEach(a=>ars.add(a)));(S.pessoas||[]).forEach(p=>Object.values(p.acc||{}).forEach(L=>(L||[]).forEach(a=>ars.add(a))));Object.keys(PRAZO.porArea||{}).forEach(a=>ars.add(a));
+    const pa=PRAZO.porArea||{};const fmt=v=>new Date(Date.parse(v)-60000).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+    t.insertAdjacentHTML("afterend",`<span id="pz-form" style="margin-left:8px;display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center">Aplicar a <select id="pz-area" aria-label="Quem planeja"><option value="*">Todos (prazo geral)</option>${[...ars].sort((a,b)=>a.localeCompare(b,"pt-BR")).map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join("")}</select> último minuto: <input type="datetime-local" id="pz-dt" value="${loc}" aria-label="Novo prazo"> <button class="btn sm primary" id="pz-salvar">Salvar</button> <button class="btn sm" id="pz-cancel">Cancelar</button>${Object.keys(pa).length?`<span class="muted">Prorrogações por área: ${Object.entries(pa).map(([a,v])=>`${esc(a)} até ${esc(fmt(v))} <button class="btn sm" data-pzrm="${esc(a)}" title="Tirar a prorrogação desta área">✕</button>`).join(" · ")}</span>`:""}</span>`);t.remove();return}
   if(t.id==="pz-cancel"){$("#pz-form").remove();prazoRender();return}
   if(t.id==="pz-salvar"){const v=$("#pz-dt").value;const d=new Date(v);if(!v||isNaN(d)){toast("Data inválida");return}
     const ate=new Date(d.getTime()+60000).toISOString().replace(/\.\d{3}Z$/,"Z");t.disabled=true;
+    const area=($("#pz-area")||{}).value||"*";
     try{const cur=await S.db.doc("regras/prazo").get();const x=cur.exists?(cur.data()||{}):{};
-      await S.db.doc("regras/prazo").set({...x,ate,antes:x.ate||PRAZO.ate,alteradoEm:nowISO(),por:await quemSou()});
-      PRAZO.ate=ate;$("#pz-form").remove();prazoRender();toast("Prazo alterado: os gerentes editam até "+prazoQuando())}
+      if(area==="*"){await S.db.doc("regras/prazo").set({...x,ate,antes:x.ate||PRAZO.ate,alteradoEm:nowISO(),por:await quemSou()});PRAZO.ate=ate;$("#pz-form").remove();prazoRender();toast("Prazo geral alterado: os gerentes editam até "+prazoQuando())}
+      else{const pa={...(x.porArea||{}),[area]:ate};await S.db.doc("regras/prazo").set({...x,porArea:pa,alteradoEm:nowISO(),por:await quemSou()});PRAZO.porArea=pa;$("#pz-form").remove();prazoRender();toast("Prazo de "+area+" prorrogado até "+new Date(Date.parse(ate)-60000).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))}}
     catch(err){t.disabled=false;toast("Não foi possível salvar o prazo: "+(err&&err.message||err))}}});
-function prazoRender0(){const b=$("#prazo-bar");if(!b)return;const agora=Date.now();const fim=new Date(Date.parse(PRAZO.ate)-60000);
+function prazoRender0(){const b=$("#prazo-bar");if(!b)return;const agora=Date.now();
+  {const pa=PRAZO.porArea||{};const ab=S.owner?[]:prazoMinhasAreas().filter(a=>pa[a]&&agora<Date.parse(pa[a]));
+   if(ab.length&&agora>=Date.parse(PRAZO.ate)){const d=a=>new Date(Date.parse(pa[a])-60000).toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+" às "+new Date(Date.parse(pa[a])-60000).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+     b.className="prazo-bar";b.innerHTML=`<b>Prazo prorrogado</b> para ${ab.map(a=>`<b>${esc(a)}</b> até ${esc(d(a))}`).join("; ")}. As demais áreas já estão encerradas. Salve e clique em <b>Enviar para a Controladoria</b> em cada obra.`;b.hidden=false;return}}
+  const fim=new Date(Date.parse(PRAZO.ate)-60000);
   const quando=fim.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+" às 23:59";
   if(agora>=Date.parse(PRAZO.ate)){b.className="prazo-bar fechado";b.innerHTML=S.owner?`<b>Prazo encerrado</b> para os gerentes (${esc(prazoQuando())}). Masters continuam editando.`:`<b>Preenchimento encerrado</b> (${esc(prazoQuando())}). O orçamento fica só para consulta; para algum ajuste, fale com a Controladoria.${PRAZO.devAte&&agora<Date.parse(PRAZO.devAte)?` <b>Orçamentos devolvidos pela Controladoria</b> podem ser ajustados e reenviados até ${esc(new Date(Date.parse(PRAZO.devAte)-60000).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}))} às 23:59.`:""}`;b.hidden=false;return}
   if(agora>=Date.parse(PRAZO.aviso)){b.className="prazo-bar";b.innerHTML=`<b>Prazo do preenchimento: até ${esc(quando)}</b> — depois disso o sistema fecha. Faltam <b>${prazoTxt()}</b>. Salve e clique em <b>Enviar para a Controladoria</b> em cada obra.`;b.hidden=false;return}
@@ -1046,11 +1057,11 @@ function prazoModal(){if(S.owner||S.vis||S.offline)return;const agora=Date.now()
   ov.innerHTML=`<div class="card" style="max-width:480px;width:92vw;padding:22px" role="dialog" aria-modal="true" aria-labelledby="pz-t"><h2 id="pz-t" style="margin-top:0">Prazo do Orçamento 2027–2029</h2><p>O preenchimento vai até <b>${esc(prazoQuando())}</b>. Depois disso o sistema fecha e o orçamento fica só para consulta.</p><p>Faltam <b>${prazoTxt()}</b>. Termine as suas obras e clique em <b>Enviar para a Controladoria</b> (ou use <b>Enviar várias obras</b>).</p><div style="text-align:right"><button class="btn primary" id="pz-ok">Entendi</button></div></div>`;
   document.body.appendChild(ov);$("#pz-ok").onclick=()=>{try{localStorage.setItem(k,"1")}catch(e){}ov.remove()};$("#pz-ok").focus()}
 let PRAZO_FECHADO_ANT=null;
-function prazoTick(){prazoRender();const f=prazoFechado(S.cur&&S.cur.doc&&S.cur.doc.status);if(PRAZO_FECHADO_ANT===false&&f&&S.cur){flush().catch(()=>{}).finally(()=>{if(S.cur){S.cur.editable=false;try{applyRules(S.cur);renderGrid();renderStatus()}catch(e){}}toast("Prazo encerrado: o orçamento agora fica só para consulta.")})}PRAZO_FECHADO_ANT=f}
-async function prazoInit(){try{S.meEmail=String(await quemSou()||"").trim().toLowerCase()}catch(e){}try{const d=await S.db.doc("regras/prazo").get();if(d.exists){const x=d.data()||{};if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso;PRAZO.devAte=x.devolvidosAte||null;PRAZO.donos=(x.donos||[]).map(e=>String(e).trim().toLowerCase())}}catch(e){}
-  PRAZO_FECHADO_ANT=prazoFechado();prazoRender();prazoModal();clearInterval(prazoInit.t);prazoInit.t=setInterval(()=>{prazoTick();prazoModal()},60000);clearInterval(prazoInit.r);prazoInit.r=setInterval(prazoReler,300000)}
+function prazoTick(){prazoRender();const f=prazoFechado(S.cur&&S.cur.doc&&S.cur.doc.status,S.cur&&S.cur.info&&S.cur.info.areas);if(PRAZO_FECHADO_ANT===false&&f&&S.cur){flush().catch(()=>{}).finally(()=>{if(S.cur){S.cur.editable=false;try{applyRules(S.cur);renderGrid();renderStatus()}catch(e){}}toast("Prazo encerrado: o orçamento agora fica só para consulta.")})}PRAZO_FECHADO_ANT=f}
+async function prazoInit(){try{S.meEmail=String(await quemSou()||"").trim().toLowerCase()}catch(e){}try{const d=await S.db.doc("regras/prazo").get();if(d.exists){const x=d.data()||{};if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso;PRAZO.devAte=x.devolvidosAte||null;PRAZO.porArea=x.porArea||{};PRAZO.donos=(x.donos||[]).map(e=>String(e).trim().toLowerCase())}}catch(e){}
+  PRAZO_FECHADO_ANT=prazoFechado(null,prazoMinhasAreas());prazoRender();prazoModal();clearInterval(prazoInit.t);prazoInit.t=setInterval(()=>{prazoTick();prazoModal()},60000);clearInterval(prazoInit.r);prazoInit.r=setInterval(prazoReler,300000)}
 /* 16/11: relê regras/prazo a cada 5 min — se a Controladoria prorrogar, quem está com a página aberta é avisado */
-async function prazoReler(){try{const d=await S.db.doc("regras/prazo").get();if(!d.exists)return;const x=d.data()||{};const antes=prazoFechado();if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso;PRAZO.devAte=x.devolvidosAte||null;prazoRender();if(antes&&!prazoFechado())toast("Prazo prorrogado até "+prazoQuando()+". Recarregue a página (Ctrl+F5) para editar.");PRAZO_FECHADO_ANT=prazoFechado()}catch(e){}}
+async function prazoReler(){try{const d=await S.db.doc("regras/prazo").get();if(!d.exists)return;const x=d.data()||{};const antes=prazoFechado(null,prazoMinhasAreas());if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso;PRAZO.devAte=x.devolvidosAte||null;PRAZO.porArea=x.porArea||{};prazoRender();if(antes&&!prazoFechado(null,prazoMinhasAreas()))toast("Prazo prorrogado até "+prazoQuando()+". Recarregue a página (Ctrl+F5) para editar.");PRAZO_FECHADO_ANT=prazoFechado(null,prazoMinhasAreas())}catch(e){}}
 function toast(m){try{if(S.cargaAtiva)(S.cargaLog=S.cargaLog||[]).push(m)}catch(_){}const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,3200)}
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 const sum=a=>a.reduce((x,y)=>x+(+y||0),0);
@@ -1528,7 +1539,7 @@ async function openObra(uid,o,fromAdm){
   const esp=S.offline?null:await carregarEspelho(o);
   const ov=(!fromAdm&&(S.owner||info.reg)&&!S.offline)?await carregarOutros(o,uid):null;const inj=ov?injetarOutros(doc,ov):null;
   const lines=buildLines(info.tipo,hist,extOrf(doc.ext,doc.v),esp);
-  const editable= !S.vis && !prazoFechado(doc.status) && (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
+  const editable= !S.vis && !prazoFechado(doc.status,info&&info.areas) && (uid===S.me || compart || (fromAdm&&S.voltarPara==="reg")) && !travado(doc.status);
   S.cur={uid,o,info,hist,doc,lines,editable,dirty:false,compart,ov,inj,esp,prods:produtosDaObra(hist,lines,o,info.tipo,doc)};applyRules(S.cur);
   marcarBase(S.cur,raw);
   /* 12/11: digitação que ficou só neste computador (gravação não confirmada) volta para a tela e é salva */
@@ -1565,7 +1576,7 @@ function renderStatus(){
   const mot=st==="reaberto"&&d.devolucao&&d.devolucao.motivo?` <span style="font-size:12px;color:var(--bad)"><b>Motivo da devolução:</b> ${esc(d.devolucao.motivo)}</span>`:"";
   $("#obra-status").innerHTML=`<span class="pill ${st}">${lab}</span> <span class="muted" style="font-size:12px">${esc(quando)}</span>${mot}`;
   const mine=meuCur()||(S.voltarPara==="reg"&&S.cur.editable!==undefined&&!S.owner);
-  $("#send-box").hidden=prazoFechado(st)||!mine||travado(st)||!!(S.cur.info&&S.cur.info.reg&&!S.cur.doc.exists);
+  $("#send-box").hidden=prazoFechado(st,S.cur.info&&S.cur.info.areas)||!mine||travado(st)||!!(S.cur.info&&S.cur.info.reg&&!S.cur.doc.exists);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
   {const bl=$("#btn-lote");if(bl)bl.hidden=!!S.vis||!lotePodeUsar()||loteObras().length<2}{const bm=$("#btn-lote-m");if(bm)bm.hidden=!S.owner||!!S.offline}
@@ -2517,7 +2528,7 @@ async function sincronizarCur(){const cur=S.cur;if(!cur||cur.dirty||saving||!(cu
   try{const rs=await S.db.doc(`gerentes/${cur.uid}/orc/${cur.o}`).get();if(!rs.exists||S.cur!==cur||cur.dirty)return;const r=rs.data();
     if((r.atualizadoEm||null)===(cur.baseEm||null))return;
     CAMPOS_M.forEach(k=>cur.doc[k]=cloneJ(r[k]));cur.doc.obs=r.obs||"";["status","atualizadoEm","enviadoEm","validadoEm","validadoPor","devolucao"].forEach(k=>cur.doc[k]=r[k]===undefined?cur.doc[k]:r[k]);
-    cur.editable=!S.vis&&!prazoFechado(cur.doc.status)&&(cur.uid===S.me||cur.compart||S.voltarPara==="reg")&&!travado(cur.doc.status);marcarBase(cur,r);guardarVis(cur,r);
+    cur.editable=!S.vis&&!prazoFechado(cur.doc.status,cur.info&&cur.info.areas)&&(cur.uid===S.me||cur.compart||S.voltarPara==="reg")&&!travado(cur.doc.status);marcarBase(cur,r);guardarVis(cur,r);
     if($("#obs")){$("#obs").value=cur.doc.obs||"";$("#obs").disabled=!cur.editable}renderStatus();renderGrid();renderSummary();toast("Atualizado com o que "+(cur.quem||"o colega")+" salvou.")}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sincronizarCur()});
 setInterval(sincronizarCur,60000);
@@ -2814,12 +2825,12 @@ function renderLote(res){const box=$("#lote-box");const P=S.perfil.obras||{};con
   box.hidden=false}
 async function loteEnviar(){const ids=loteObras().filter(o=>S.loteSel.has(o)&&!travado((orcVis(o)||{}).status));if(!ids.length)return;
   /* 16/11: página aberta antes de uma prorrogação ficava com o prazo antigo e recusava tudo ("já enviada ou travada") */
-  if(prazoFechado("reaberto")){try{await prazoReler()}catch(e){}if(prazoFechado("reaberto")){toast("O prazo de preenchimento terminou ("+prazoQuando()+"). Fale com a Controladoria.");return}}
+  if(prazoFechado("reaberto",prazoMinhasAreas())){try{await prazoReler()}catch(e){}if(prazoFechado("reaberto",prazoMinhasAreas())){toast("O prazo de preenchimento terminou ("+prazoQuando()+"). Fale com a Controladoria.");return}}
   if(window.ORC_SB&&!(await sessaoOk())){toast("Sessão expirada. Entre de novo e repita o envio.");sessaoRelogin();return}
   const msg=$("#lote-msg");const btn=$("#lote-env");btn.disabled=true;const res=new Map();let ok=0;
   for(let i=0;i<ids.length;i++){const o=ids[i];msg.textContent=`Enviando ${i+1} de ${ids.length}…`;
     try{await flush();await openObra(S.me,o,false);const c=S.cur;
-      if(!c.editable||travado(c.doc.status)){res.set(o,["x",travado(c.doc.status)?"já enviada ou validada":prazoFechado(c.doc.status)?"prazo encerrado — recarregue a página (Ctrl+F5)":"sem permissão para editar esta obra"]);continue}
+      if(!c.editable||travado(c.doc.status)){res.set(o,["x",travado(c.doc.status)?"já enviada ou validada":prazoFechado(c.doc.status,c.info&&c.info.areas)?"prazo encerrado — recarregue a página (Ctrl+F5)":"sem permissão para editar esta obra"]);continue}
       const sn=subsSemNome();if(sn.length){res.set(o,["x",`${sn.length} subitem(ns) “Detalhe” sem nome`]);continue}
       const fo=faltandoObs();if(fo.length){res.set(o,["x",`${fo.length} justificativa(s) do espelho faltando`]);continue}
       const t=docTotals(c.doc,c.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));if(!YEARS.some(y=>+t[y])){res.set(o,["x","sem valor preenchido"]);continue}
