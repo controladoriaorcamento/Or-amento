@@ -543,6 +543,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
         <label class="row" style="gap:6px"><input type="checkbox" id="only-mine"> Só itens que eu preencho</label>
         <label class="row" style="gap:6px"><input type="checkbox" id="only-empty"> Só itens ainda não preenchidos</label>
         <label class="row" style="gap:6px"><input type="checkbox" id="only-filled"> Só itens preenchidos</label>
+        <label class="row" style="gap:6px" title="Mostra só os insumos que têm valor em 2027, 2028 ou 2029 e ainda estão sem texto na coluna “Observação e ações”"><input type="checkbox" id="only-semobs"> Só itens com valor e sem observação <span class="muted" id="only-semobs-n"></span></label>
         <label class="row" style="gap:6px" title="Mostra só os insumos que têm valor no espelho (já planejado) em algum ano de 2026 a 2029"><input type="checkbox" id="only-esp"> Só itens com espelho</label>
         <label class="row" style="gap:6px" id="lb-only-rev" hidden><input type="checkbox" id="only-rev"> Só itens com apontamento <span class="pill reaberto" id="n-rev"></span></label>
         <button class="btn sm" id="btn-copy-prev" hidden>Copiar ano anterior</button>
@@ -1412,7 +1413,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
 $("#f-sit").addEventListener("change",async()=>{if($("#f-sit").value&&S.owner){try{await carregarOrcIndex(true)}catch(e){}}filtrarObras()});
 $("#f-limpar-tudo").addEventListener("click",()=>{Object.keys(S.fSel).forEach(k=>S.fSel[k]=[]);{const fs=$("#f-sit");if(fs)fs.value=""}document.querySelectorAll(".sl-q").forEach(x=>x.value="");
   const bo=$("#busca-obra");if(bo)bo.value="";S.q="";$("#q").value="";
-  S.onlyUsed=S.onlyMine=S.onlyEmpty=S.onlyFilled=S.onlyRev=S.onlyEsp=false;["#only-used","#only-mine","#only-empty","#only-filled","#only-rev","#only-esp"].forEach(q=>{const c=$(q);if(c)c.checked=false});
+  S.onlyUsed=S.onlyMine=S.onlyEmpty=S.onlyFilled=S.onlyRev=S.onlyEsp=S.onlySemObs=false;["#only-used","#only-mine","#only-empty","#only-filled","#only-rev","#only-esp","#only-semobs"].forEach(q=>{const c=$(q);if(c)c.checked=false});
   S.fDeps=null;S.fDepsKey=null;S.hm={a25:false,a26:false};S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}
   document.querySelectorAll(".sl-pop").forEach(p=>p.hidden=true);
   filtrarObras();if(S.cur&&S.cur.lines)renderGrid();toast("Filtros limpos")});
@@ -1605,10 +1606,10 @@ function visible(l){
     const manual=S.owner&&l.extra&&!l.orf&&S.cur.doc.ext&&S.cur.doc.ext[l.key];
     if(restrito()&&!l.mine&&!manual)return false;
     if(S.onlyEmpty&&linhaPreenchida(l))return false;
-    if(S.onlyFilled&&!temValor(S.cur.doc,l))return false;
+    if(S.onlyFilled&&!temValor(S.cur.doc,l))return false;     if(S.onlySemObs&&!(temValor(S.cur.doc,l)&&!String((S.cur.doc.lobs||{})[l.key]||"").trim()))return false;
     if(S.onlyRev&&!revDe(l))return false;
     if(S.fDeps&&!S.fDeps.has(l.area)&&!manual)return false;
-  } else if(S.onlyUsed||S.q||S.onlyMine||S.onlyEmpty||S.onlyFilled||S.onlyRev||restrito()||S.fDeps){ /* o grupo continua aparecendo quando recolhido: avalia os filhos ignorando o recolher (como a matriz do Power BI) */ if(!l.ch.some(visivelFiltro))return false }
+  } else if(S.onlyUsed||S.q||S.onlyMine||S.onlyEmpty||S.onlyFilled||S.onlySemObs||S.onlyRev||restrito()||S.fDeps){ /* o grupo continua aparecendo quando recolhido: avalia os filhos ignorando o recolher (como a matriz do Power BI) */ if(!l.ch.some(visivelFiltro))return false }
   if(l.parents&&l.parents.some(p=>S.collapsed.has(p.key)))return false;
   return true;
 }
@@ -1750,7 +1751,7 @@ function gridHdrPagina(){const g=$("#grid"),gb=$("#grid-box");if(!g||!gb||!gb.of
   const lim=tb&&tb.offsetParent?tb.getBoundingClientRect().bottom:0;const r=gb.getBoundingClientRect();const th=g.tHead?g.tHead.getBoundingClientRect().height:0;
   const off=Math.max(0,Math.min(lim-r.top,r.height-th-40));const v=Math.round(off)+"px";if(g.style.getPropertyValue("--pgOff")!==v)g.style.setProperty("--pgOff",v)}
 window.addEventListener("scroll",()=>{if(S._hdrRaf)return;S._hdrRaf=requestAnimationFrame(()=>{S._hdrRaf=0;try{gridHdrPagina()}catch(e){}})},{passive:true});
-function renderGrid(){if(!S.cur||!S.cur.lines)return;
+function renderGrid(){if(!S.cur||!S.cur.lines)return;try{setTimeout(semObsAtualizar,0)}catch(e){}
   const {lines,doc,editable}=S.cur, y=S.year;
   $("#btn-copy-prev").hidden=!(editable&&y!=="2027");
   $("#btn-copy-prev").textContent="Copiar valores de "+(+y-1)+" para "+y;
@@ -1891,7 +1892,7 @@ $("#grid").addEventListener("change",e=>{
     if(sf&&sf.m==="rep"){for(let i=0;i<12;i++)setValKey(sk,i,n);refreshSubInputs(+el.dataset.sk,el.dataset.sid)}else setValKey(sk,+el.dataset.m,n);syncLeaf(l);el.value=f2(n);el.classList.toggle("has",!!n);refreshRowInputs(+el.dataset.sk);marcaObs(+el.dataset.sk);
     {const sb=subsOf(l).find(x=>x.id===el.dataset.sid);const sn=document.getElementById(`sn-${el.dataset.sk}-${el.dataset.sid}`);if(sb&&sn&&nomeGenerico(sb.n)){const tem=YEARS.some(yy=>((S.cur.doc.v[sk]||{})[yy]||[]).some(v=>+v));sn.classList.toggle("need",tem);sn.classList.toggle("gen",!tem)}}
     changed();}
-  if(el.dataset.lobs!==undefined){const l=S.cur.lines[+el.dataset.lobs];const d=S.cur.doc;if(!d.lobs)d.lobs={};const t=el.value.trim();if(t)d.lobs[l.key]=t;else delete d.lobs[l.key];el.title=t;marcaObs(+el.dataset.lobs);changed();return}
+  if(el.dataset.lobs!==undefined){const l=S.cur.lines[+el.dataset.lobs];const d=S.cur.doc;if(!d.lobs)d.lobs={};const t=el.value.trim();if(t)d.lobs[l.key]=t;else delete d.lobs[l.key];el.title=t;marcaObs(+el.dataset.lobs);changed();try{semObsAtualizar()}catch(e){}return}
   if(el.dataset.sn!==undefined){const l=S.cur.lines[+el.dataset.sn];const sb=subsOf(l).find(x=>x.id===el.dataset.sid);if(sb){sb.n=el.value.trim()||"Detalhe";{const tem=YEARS.some(yy=>((S.cur.doc.v[subKey(l,sb)]||{})[yy]||[]).some(v=>+v));el.classList.toggle("need",nomeGenerico(sb.n)&&tem);el.classList.toggle("gen",nomeGenerico(sb.n)&&!tem)}changed()}}
   if(el.dataset.pr!==undefined){const n=parseNum(el.value);const l=S.cur.lines[+el.dataset.pr],d=S.cur.doc;if(isNaN(n)){el.value="";return}
     if(!d.pr[l.key])d.pr[l.key]={};if(n)d.pr[l.key][S.year]=n;else delete d.pr[l.key][S.year];if(!Object.keys(d.pr[l.key]).length)delete d.pr[l.key];el.value=f2(n);changed();}
@@ -2631,6 +2632,10 @@ $("#btn-exp-me").addEventListener("click",e=>{e.stopPropagation();menuMeuExcel()
 $("#only-esp").addEventListener("change",e=>{S.onlyEsp=e.target.checked;renderGrid()});
 $("#only-empty").addEventListener("change",e=>{S.onlyEmpty=e.target.checked;if(S.onlyEmpty){S.onlyFilled=false;$("#only-filled").checked=false}renderGrid()});
 $("#only-filled").addEventListener("change",e=>{S.onlyFilled=e.target.checked;if(S.onlyFilled){S.onlyEmpty=false;$("#only-empty").checked=false}renderGrid()});
+/* 16/11: só insumos com valor e sem observação (para os gerentes completarem a coluna "Observação e ações") */
+function semObsN(){if(!S.cur||!S.cur.lines)return 0;const d=S.cur.doc;return S.cur.lines.filter(l=>l.kind==="leaf"&&prodOk(l)&&(!restrito()||l.mine)&&!l.foraIns&&temValor(d,l)&&!String((d.lobs||{})[l.key]||"").trim()).length}
+function semObsAtualizar(){const n=$("#only-semobs-n");if(n)n.textContent=S.cur&&S.cur.lines?"("+semObsN()+")":""}
+$("#only-semobs").addEventListener("change",e=>{S.onlySemObs=e.target.checked;if(S.onlySemObs){S.onlyEmpty=false;$("#only-empty").checked=false;const n=semObsN();toast(n?n+" insumo(s) com valor sem observação nesta obra.":"Nesta obra todos os insumos com valor já têm observação.")}renderGrid()});
 $("#only-rev").addEventListener("change",e=>{S.onlyRev=e.target.checked;renderGrid()});
 /* Estrutura: recolhe de baixo para cima e abre de cima para baixo, um nível por clique.
    Ordem: Subitem → Insumo → Serviço/grupos → Produto (fica a linha da Empresa/Obra no topo). */
