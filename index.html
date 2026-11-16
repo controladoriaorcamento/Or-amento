@@ -1009,23 +1009,26 @@ function parseNum(s){s=String(s??"").trim().replace(/[R$\s]/g,"");if(!s)return 0
   const n=Number(s);return isFinite(n)?Math.round(n*100)/100:NaN}
 /* 13/11 (Evaldo): prazo do preenchimento — até 16/11/2026 00:00 (Brasília). Aviso para todos a partir de 14/11 00:00.
    Depois do prazo o gerente só consulta (masters continuam editando). Pode ser alterado em regras/prazo {ate, aviso}. */
-const PRAZO={ate:"2026-11-16T03:00:00Z",aviso:"2026-11-14T03:00:00Z"};
+const PRAZO={ate:"2026-11-17T03:00:00Z",aviso:"2026-11-14T03:00:00Z"};
+function prazoQuando(){const f=new Date(Date.parse(PRAZO.ate)-60000);return f.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+" às "+f.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}
 function prazoFechado(){return !S.owner&&Date.now()>=Date.parse(PRAZO.ate)}
 function prazoTxt(){const ms=Date.parse(PRAZO.ate)-Date.now();if(ms<=0)return "";const h=Math.floor(ms/3600000),d=Math.floor(h/24),hh=h%24,mm=Math.floor(ms%3600000/60000);return d?`${d} dia(s) e ${hh} h`:h?`${h} h e ${mm} min`:`${mm} min`}
 function prazoRender(){const b=$("#prazo-bar");if(!b)return;const agora=Date.now();const fim=new Date(Date.parse(PRAZO.ate)-60000);
   const quando=fim.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})+" às 23:59";
-  if(agora>=Date.parse(PRAZO.ate)){b.className="prazo-bar fechado";b.innerHTML=S.owner?`<b>Prazo encerrado</b> para os gerentes (16/11 às 00:00). Masters continuam editando.`:`<b>Preenchimento encerrado</b> em 16/11 às 00:00. O orçamento fica só para consulta; para algum ajuste, fale com a Controladoria.`;b.hidden=false;return}
-  if(agora>=Date.parse(PRAZO.aviso)){b.className="prazo-bar";b.innerHTML=`<b>Prazo do preenchimento: até ${esc(quando)}</b> — o sistema fecha em 16/11 às 00:00. Faltam <b>${prazoTxt()}</b>. Salve e clique em <b>Enviar para a Controladoria</b> em cada obra.`;b.hidden=false;return}
+  if(agora>=Date.parse(PRAZO.ate)){b.className="prazo-bar fechado";b.innerHTML=S.owner?`<b>Prazo encerrado</b> para os gerentes (${esc(prazoQuando())}). Masters continuam editando.`:`<b>Preenchimento encerrado</b> (${esc(prazoQuando())}). O orçamento fica só para consulta; para algum ajuste, fale com a Controladoria.`;b.hidden=false;return}
+  if(agora>=Date.parse(PRAZO.aviso)){b.className="prazo-bar";b.innerHTML=`<b>Prazo do preenchimento: até ${esc(quando)}</b> — depois disso o sistema fecha. Faltam <b>${prazoTxt()}</b>. Salve e clique em <b>Enviar para a Controladoria</b> em cada obra.`;b.hidden=false;return}
   b.hidden=true}
 function prazoModal(){if(S.owner||S.vis||S.offline)return;const agora=Date.now();if(agora<Date.parse(PRAZO.aviso)||agora>=Date.parse(PRAZO.ate))return;
   const k="orc-prazo-"+new Date().toISOString().slice(0,10);try{if(localStorage.getItem(k))return}catch(e){}
   const ov=document.createElement("div");ov.id="prazo-modal";ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9998";
-  ov.innerHTML=`<div class="card" style="max-width:480px;width:92vw;padding:22px" role="dialog" aria-modal="true" aria-labelledby="pz-t"><h2 id="pz-t" style="margin-top:0">Prazo do Orçamento 2027–2029</h2><p>O preenchimento vai até <b>domingo, 15/11, às 23:59</b>. Em <b>16/11 às 00:00</b> o sistema fecha e o orçamento fica só para consulta.</p><p>Faltam <b>${prazoTxt()}</b>. Termine as suas obras e clique em <b>Enviar para a Controladoria</b> (ou use <b>Enviar várias obras</b>).</p><div style="text-align:right"><button class="btn primary" id="pz-ok">Entendi</button></div></div>`;
+  ov.innerHTML=`<div class="card" style="max-width:480px;width:92vw;padding:22px" role="dialog" aria-modal="true" aria-labelledby="pz-t"><h2 id="pz-t" style="margin-top:0">Prazo do Orçamento 2027–2029</h2><p>O preenchimento vai até <b>${esc(prazoQuando())}</b>. Depois disso o sistema fecha e o orçamento fica só para consulta.</p><p>Faltam <b>${prazoTxt()}</b>. Termine as suas obras e clique em <b>Enviar para a Controladoria</b> (ou use <b>Enviar várias obras</b>).</p><div style="text-align:right"><button class="btn primary" id="pz-ok">Entendi</button></div></div>`;
   document.body.appendChild(ov);$("#pz-ok").onclick=()=>{try{localStorage.setItem(k,"1")}catch(e){}ov.remove()};$("#pz-ok").focus()}
 let PRAZO_FECHADO_ANT=null;
 function prazoTick(){prazoRender();const f=prazoFechado();if(PRAZO_FECHADO_ANT===false&&f&&S.cur){flush().catch(()=>{}).finally(()=>{if(S.cur){S.cur.editable=false;try{applyRules(S.cur);renderGrid();renderStatus()}catch(e){}}toast("Prazo encerrado: o orçamento agora fica só para consulta.")})}PRAZO_FECHADO_ANT=f}
 async function prazoInit(){try{const d=await S.db.doc("regras/prazo").get();if(d.exists){const x=d.data()||{};if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso}}catch(e){}
-  PRAZO_FECHADO_ANT=prazoFechado();prazoRender();prazoModal();clearInterval(prazoInit.t);prazoInit.t=setInterval(()=>{prazoTick();prazoModal()},60000)}
+  PRAZO_FECHADO_ANT=prazoFechado();prazoRender();prazoModal();clearInterval(prazoInit.t);prazoInit.t=setInterval(()=>{prazoTick();prazoModal()},60000);clearInterval(prazoInit.r);prazoInit.r=setInterval(prazoReler,300000)}
+/* 16/11: relê regras/prazo a cada 5 min — se a Controladoria prorrogar, quem está com a página aberta é avisado */
+async function prazoReler(){try{const d=await S.db.doc("regras/prazo").get();if(!d.exists)return;const x=d.data()||{};const antes=prazoFechado();if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso;prazoRender();if(antes&&!prazoFechado())toast("Prazo prorrogado até "+prazoQuando()+". Recarregue a página (Ctrl+F5) para editar.");PRAZO_FECHADO_ANT=prazoFechado()}catch(e){}}
 function toast(m){try{if(S.cargaAtiva)(S.cargaLog=S.cargaLog||[]).push(m)}catch(_){}const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,3200)}
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 const sum=a=>a.reduce((x,y)=>x+(+y||0),0);
