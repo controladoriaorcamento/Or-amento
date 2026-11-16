@@ -2776,11 +2776,13 @@ function renderLote(res){const box=$("#lote-box");const P=S.perfil.obras||{};con
     <div class="tbl-box"><table class="list"><thead><tr><th></th><th>Obra</th><th>Situação</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th>Resultado</th></tr></thead><tbody>${lin}</tbody></table></div>`;
   box.hidden=false}
 async function loteEnviar(){const ids=loteObras().filter(o=>S.loteSel.has(o)&&!travado((orcVis(o)||{}).status));if(!ids.length)return;
+  /* 16/11: página aberta antes de uma prorrogação ficava com o prazo antigo e recusava tudo ("já enviada ou travada") */
+  if(prazoFechado()){try{await prazoReler()}catch(e){}if(prazoFechado()){toast("O prazo de preenchimento terminou ("+prazoQuando()+"). Fale com a Controladoria.");return}}
   if(window.ORC_SB&&!(await sessaoOk())){toast("Sessão expirada. Entre de novo e repita o envio.");sessaoRelogin();return}
   const msg=$("#lote-msg");const btn=$("#lote-env");btn.disabled=true;const res=new Map();let ok=0;
   for(let i=0;i<ids.length;i++){const o=ids[i];msg.textContent=`Enviando ${i+1} de ${ids.length}…`;
     try{await flush();await openObra(S.me,o,false);const c=S.cur;
-      if(!c.editable||travado(c.doc.status)){res.set(o,["x","já enviada ou travada"]);continue}
+      if(!c.editable||travado(c.doc.status)){res.set(o,["x",travado(c.doc.status)?"já enviada ou validada":prazoFechado()?"prazo encerrado — recarregue a página (Ctrl+F5)":"sem permissão para editar esta obra"]);continue}
       const sn=subsSemNome();if(sn.length){res.set(o,["x",`${sn.length} subitem(ns) “Detalhe” sem nome`]);continue}
       const fo=faltandoObs();if(fo.length){res.set(o,["x",`${fo.length} justificativa(s) do espelho faltando`]);continue}
       const t=docTotals(c.doc,c.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));if(!YEARS.some(y=>+t[y])){res.set(o,["x","sem valor preenchido"]);continue}
