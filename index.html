@@ -1014,7 +1014,8 @@ function prazoQuando(){const f=new Date(Date.parse(PRAZO.ate)-60000);return f.to
 function prazoFechado(){return !S.owner&&Date.now()>=Date.parse(PRAZO.ate)}
 function prazoTxt(){const ms=Date.parse(PRAZO.ate)-Date.now();if(ms<=0)return "";const h=Math.floor(ms/3600000),d=Math.floor(h/24),hh=h%24,mm=Math.floor(ms%3600000/60000);return d?`${d} dia(s) e ${hh} h`:h?`${h} h e ${mm} min`:`${mm} min`}
 /* 16/11: master altera o prazo pela própria faixa (grava regras/prazo) */
-function prazoRender(){if($("#pz-form"))return;prazoRender0();const b=$("#prazo-bar");if(!b||!S.owner||S.offline)return;
+function prazoDono(){return !!(S.owner&&S.meEmail&&(PRAZO.donos||[]).includes(S.meEmail))}
+function prazoRender(){if($("#pz-form"))return;prazoRender0();const b=$("#prazo-bar");if(!b||!prazoDono()||S.offline)return;
   if(b.hidden){b.className="prazo-bar";b.innerHTML=`Prazo dos gerentes: até <b>${esc(prazoQuando())}</b>.`;b.hidden=false}
   if(!$("#pz-alt"))b.insertAdjacentHTML("beforeend",' <button class="btn sm" id="pz-alt">Alterar prazo</button>')}
 document.addEventListener("click",async e=>{const t=e.target;if(!t||!t.id||!/^pz-(alt|salvar|cancel)$/.test(t.id))return;
@@ -1039,7 +1040,7 @@ function prazoModal(){if(S.owner||S.vis||S.offline)return;const agora=Date.now()
   document.body.appendChild(ov);$("#pz-ok").onclick=()=>{try{localStorage.setItem(k,"1")}catch(e){}ov.remove()};$("#pz-ok").focus()}
 let PRAZO_FECHADO_ANT=null;
 function prazoTick(){prazoRender();const f=prazoFechado();if(PRAZO_FECHADO_ANT===false&&f&&S.cur){flush().catch(()=>{}).finally(()=>{if(S.cur){S.cur.editable=false;try{applyRules(S.cur);renderGrid();renderStatus()}catch(e){}}toast("Prazo encerrado: o orçamento agora fica só para consulta.")})}PRAZO_FECHADO_ANT=f}
-async function prazoInit(){try{const d=await S.db.doc("regras/prazo").get();if(d.exists){const x=d.data()||{};if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso}}catch(e){}
+async function prazoInit(){try{S.meEmail=String(await quemSou()||"").trim().toLowerCase()}catch(e){}try{const d=await S.db.doc("regras/prazo").get();if(d.exists){const x=d.data()||{};if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso;PRAZO.donos=(x.donos||[]).map(e=>String(e).trim().toLowerCase())}}catch(e){}
   PRAZO_FECHADO_ANT=prazoFechado();prazoRender();prazoModal();clearInterval(prazoInit.t);prazoInit.t=setInterval(()=>{prazoTick();prazoModal()},60000);clearInterval(prazoInit.r);prazoInit.r=setInterval(prazoReler,300000)}
 /* 16/11: relê regras/prazo a cada 5 min — se a Controladoria prorrogar, quem está com a página aberta é avisado */
 async function prazoReler(){try{const d=await S.db.doc("regras/prazo").get();if(!d.exists)return;const x=d.data()||{};const antes=prazoFechado();if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso;prazoRender();if(antes&&!prazoFechado())toast("Prazo prorrogado até "+prazoQuando()+". Recarregue a página (Ctrl+F5) para editar.");PRAZO_FECHADO_ANT=prazoFechado()}catch(e){}}
