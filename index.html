@@ -1407,7 +1407,7 @@ $("#f-limpar-tudo").addEventListener("click",()=>{Object.keys(S.fSel).forEach(k=
   document.querySelectorAll(".sl-pop").forEach(p=>p.hidden=true);
   filtrarObras();if(S.cur&&S.cur.lines)renderGrid();toast("Filtros limpos")});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".sl-pop").forEach(x=>x.hidden=true)});
-function filtrarObras(){if(!S.selAll)return;atualizarListas();const q="";
+function filtrarObras(){if(!S.selAll)return;setTimeout(()=>{const lb=$("#lote-box");if(lb&&!lb.hidden&&typeof renderLote==="function")renderLote()},0);atualizarListas();const q="";
   const sel=$("#sel-obra");sel.disabled=false;const atual=sel.value;const okIds=new Set(obrasFiltradas());
   const tmp=document.createElement("select");tmp.innerHTML=S.selAll;
   const ok=[...tmp.options].filter(o=>okIds.has(o.value)&&(!q||q.split(/\s+/).every(w=>semAc(o.textContent+" "+o.value).includes(w))));
@@ -2727,7 +2727,7 @@ function sendFlow(){
 }
 /* 13/11: envio de várias obras de uma vez (todas as áreas). Mesmo caminho do envio de uma obra: abre a obra, mesmas conferências, gravarOrc + versão "Envio (várias obras)". */
 function lotePodeUsar(){return !!(S.perfil&&!S.owner&&!S.offline&&!S.vis&&S.me&&!(S.cur&&S.cur.uid!==S.me&&!S.cur.compart))&&Object.values(S.perfil.obras||{}).some(i=>!i.reg)}
-function loteObras(){const P=(S.perfil&&S.perfil.obras)||{};return (S.selIds||[]).filter(o=>{const i=P[o]||{};return !i.reg})}
+function loteObras(){const P=(S.perfil&&S.perfil.obras)||{};/* 16/11: respeita os filtros da tela (Regional, Empresa, Obra, Situação…) */return (typeof obrasFiltradas==="function"?obrasFiltradas():(S.selIds||[])).filter(o=>{const i=P[o]||{};return !i.reg})}
 function renderLote(res){const box=$("#lote-box");const P=S.perfil.obras||{};const L=loteObras();S.loteSel=S.loteSel||new Set();
   const lin=L.map(o=>{const d=orcVis(o)||{};const st=d.status||"não iniciado";const tr=travado(st);const tt=d.totais||{};const r=res&&res.get(o);
     return `<tr><td><input type="checkbox" data-lote="${esc(o)}" ${tr?"disabled":""} ${!tr&&S.loteSel.has(o)?"checked":""} aria-label="Marcar ${esc(o)}"></td><td>${esc(obraLbl(o,P[o]||{}))}</td><td><span class="pill ${esc(d.status||"")}">${esc(st)}</span></td>${YEARS.map(y=>`<td class="num">${f0(+tt[y]||0)}</td>`).join("")}<td>${r?`<span class="${r[0]==="ok"?"lote-ok":"lote-x"}">${esc(r[1])}</span>`:""}</td></tr>`}).join("");
