@@ -696,7 +696,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
             <button class="btn primary" id="btn-exp-mod">Excel no layout do modelo</button>
           </div>
         </div>
-        <div class="an-bar"><label class="lbl" for="an-filtro" style="margin:0">Analista da Controladoria</label><select id="an-filtro"><option value="">Todos</option></select><label class="row" style="gap:6px"><input type="checkbox" id="an-agrupar"> Agrupar por analista</label><button class="btn sm" id="an-cfg" title="Definir quem da Controladoria analisa cada Regional, empresa ou obra">Analistas da Controladoria…</button></div>
+        <div class="an-bar"><label class="lbl" for="an-filtro" style="margin:0">Analista da Controladoria</label><select id="an-filtro"><option value="">Todos</option></select><label class="row" style="gap:6px"><input type="checkbox" id="an-agrupar"> Agrupar por analista</label><label class="lbl" for="ac-val" style="margin:0">Valor</label><select id="ac-val" title="Orçamentos enviados à Controladoria com ou sem valor em 2027, 2028 e 2029"><option value="">Todos</option><option value="branco">Em branco (sem valor nos 3 anos)</option><option value="valor">Com valor</option></select><label class="lbl" for="ac-area" style="margin:0">Quem planeja</label><select id="ac-area"><option value="">Todos</option></select><button class="btn sm" id="an-cfg" title="Definir quem da Controladoria analisa cada Regional, empresa ou obra">Analistas da Controladoria…</button></div>
         <div id="an-box" hidden></div>
         <div class="tbl-box"><table class="list" id="tbl-acomp"></table></div>
       </div>
@@ -3455,7 +3455,10 @@ function acOculto(r,ocl){return false;/* 15/10/2026: botão Remover retirado —
 const EST=[["enviado","Aguardando validação"],["validado","Validadas"]];
 /* Acompanhamento mostra só o que já foi ENVIADO à Controladoria (o resto ainda está com os gerentes) */
 const ST_ACOMP=new Set(["enviado","validado"]);
-function renderAcomp(){
+/* 16/11 (v58): filtros "Valor" (em branco / com valor) e "Quem planeja" no Acompanhamento */
+function acAreasOpts(){const sel=$("#ac-area");if(!sel)return;const st=new Set();(S.acomp||[]).forEach(r=>{if(r.orc&&ST_ACOMP.has(r.orc.status))((r.info&&r.info.areas)||[]).forEach(a=>st.add(a))});const L=[...st].sort((a,b)=>a.localeCompare(b,"pt-BR"));const k=L.join("|");if(sel.dataset.k!==k){sel.dataset.k=k;sel.innerHTML=`<option value="">Todos</option>`+L.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join("")}sel.value=S.acArea||"";const v=$("#ac-val");if(v)v.value=S.acVal||""}
+document.addEventListener("change",e=>{if(e.target.id==="ac-val"){S.acVal=e.target.value;renderAcomp()}if(e.target.id==="ac-area"){S.acArea=e.target.value;renderAcomp()}});
+function renderAcomp(){try{acAreasOpts()}catch(e){}
   const ocl=(S.acOcultos&&S.acOcultos.k)||{};S.acEst=S.acEst||new Set();S.acSel=S.acSel||new Set();
   const stOf=r=>r.orc?r.orc.status:"vazio";const cnt0={removidas:0};S.acomp.forEach(r=>{if(!ST_ACOMP.has(stOf(r)))return;if(acOculto(r,ocl))cnt0.removidas++;else cnt0[stOf(r)]=(cnt0[stOf(r)]||0)+1});
   $("#est-list").innerHTML=EST.map(([v,lb])=>`<label class="sl-it${S.acEst.has(v)?" on":""}"><input type="checkbox" data-est="${v}" ${S.acEst.has(v)?"checked":""}><span>${lb}</span><span class="muted">${cnt0[v]||0}</span></label>`).join("");
@@ -3463,6 +3466,8 @@ function renderAcomp(){
   const qq=semAc(($("#acomp-q")&&$("#acomp-q").value)||"").trim();const verRem=S.acEst.size===1&&S.acEst.has("removidas");
   const rows=S.acomp.filter(r=>{if(!ST_ACOMP.has(stOf(r)))return false;const rem=acOculto(r,ocl);if(S.acEst.size){if(rem){if(!S.acEst.has("removidas"))return false}else if(!S.acEst.has(stOf(r)))return false}else if(rem)return false;
     if(S.anF){const a=anDe(r);if(S.anF==="__sem"?a:a!==S.anF)return false}
+    if(S.acVal){const t=YEARS.reduce((s2,y)=>s2+Math.abs(+((r.orc&&r.orc.totais)||{})[y]||0),0);if(S.acVal==="branco"?t>0.004:t<=0.004)return false}
+    if(S.acArea&&!((r.info&&r.info.areas)||[]).includes(S.acArea))return false;
     return !qq||semAc(`${r.nomeG} ${r.email} ${r.info.emp||""} ${r.info.empNome||""} ${r.info.obra||r.o} ${r.info.nome||""} ${((r.info&&r.info.areas)||[]).join(" ")} ${anDe(r)}`).includes(qq)});
   if(S.anAgr)rows.sort((a,b)=>(anDe(a)||"~").localeCompare(anDe(b)||"~","pt-BR")||a.nomeG.localeCompare(b.nomeG));S.acRows=rows;
   if(verRem&&!rows.length){$("#tbl-acomp").innerHTML=`<tr><td class="muted">Nenhuma obra removida do acompanhamento.</td></tr>`;return}
