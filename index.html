@@ -518,6 +518,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
           <button class="btn" id="btn-reopen" hidden>Devolver ao gerente</button>
           <span id="send-box"><button class="btn primary" id="btn-send">Enviar para a Controladoria</button></span>
           <button class="btn" id="btn-lote" hidden title="Enviar de uma vez as obras que você já terminou">Enviar várias obras</button>
+          <button class="btn" id="btn-lote-m" hidden title="Controladoria: enviar de uma vez os orçamentos dos gerentes que ainda não enviaram (respeita os filtros)">Enviar orçamentos dos gerentes</button>
         </div>
       </div>
       <div id="prazo-bar" class="prazo-bar" hidden></div>
@@ -1556,7 +1557,7 @@ function renderStatus(){
   $("#send-box").hidden=prazoFechado()||!mine||travado(st)||!!(S.cur.info&&S.cur.info.reg&&!S.cur.doc.exists);
   $("#btn-reopen").hidden=!(S.owner&&travado(st));
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
-  {const bl=$("#btn-lote");if(bl)bl.hidden=!!S.vis||!lotePodeUsar()||loteObras().length<2}
+  {const bl=$("#btn-lote");if(bl)bl.hidden=!!S.vis||!lotePodeUsar()||loteObras().length<2}{const bm=$("#btn-lote-m");if(bm)bm.hidden=!S.owner||!!S.offline}
   renderGuia();
   $("#btn-add").hidden=!S.cur.editable;$("#btn-savever").hidden=!S.cur.editable;
 }
@@ -2759,6 +2760,40 @@ document.addEventListener("click",e=>{const t=e.target;if(t.id==="btn-lote"){S.l
   if(t.id==="lote-nenhuma"){S.loteSel.clear();renderLote();return}
   if(t.id==="lote-env"){if(!t.dataset.arm){t.dataset.arm=1;t.textContent=`Confirmar envio de ${loteObras().filter(o=>S.loteSel.has(o)).length} obra(s)`;setTimeout(()=>{if(t.isConnected&&t.dataset.arm){delete t.dataset.arm;renderLote()}},6000);return}loteEnviar();return}
   if(t.dataset&&t.dataset.lote){t.checked?S.loteSel.add(t.dataset.lote):S.loteSel.delete(t.dataset.lote);const n=loteObras().filter(o=>S.loteSel.has(o)).length;const b=$("#lote-env");if(b){b.disabled=!n;delete b.dataset.arm;b.textContent=`Enviar ${n} obra(s)`}}});
+/* 16/11 (Evaldo): master envia de uma vez o orçamento COMPLETO dos gerentes que ainda não enviaram (respeita os filtros da tela). */
+function mPend(orc){let ds=0,ej=0;const v=orc.v||{};const tv=k=>["2027","2028","2029"].some(y=>((v[k]||{})[y]||[]).some(x=>+x));
+  Object.entries(orc.sub||{}).forEach(([k,L])=>(Array.isArray(L)?L:[]).forEach(sb=>{if(nomeGenerico(sb.n)&&tv(k+"#"+sb.id))ds++}));
+  Object.keys(orc.espM||{}).forEach(k=>{const comV=tv(k)||Object.keys(v).some(x=>x.startsWith(k+"#")&&tv(x));if(comV&&((orc.lobs||{})[k]||"").trim().length<OBS_MIN)ej++});return [ds,ej]}
+function lotemLista(){const ok=new Set(obrasFiltradas());const ger=fVals("f-ger").map(x=>String(x).toLowerCase());
+  return (S.acomp||[]).filter(r=>{if(!r.orc||r.uid===S.me||!ok.has(r.o))return false;const st=r.orc.status||"rascunho";if(st!=="rascunho"&&st!=="reaberto")return false;
+    const t=r.orc.totais||{};if(!YEARS.some(y=>+t[y]))return false;if(ger.length&&!ger.includes(String(r.email||"").toLowerCase()))return false;return true})
+   .sort((a,b)=>String(a.nomeG).localeCompare(String(b.nomeG))||a.o.localeCompare(b.o,undefined,{numeric:true}))}
+function renderLoteM(res){const box=$("#lote-box");const L=lotemLista();S.lotemSel=S.lotemSel||new Set();const k=r=>r.uid+"|"+r.o;
+  const lin=L.map(r=>{const t=r.orc.totais||{};const [ds,ej]=mPend(r.orc);const pend=[ds?`${ds} “Detalhe” sem nome`:"",ej?`${ej} espelho sem justificativa`:""].filter(Boolean).join(" · ");const x=res&&res.get(k(r));
+    return `<tr><td><input type="checkbox" data-lotem="${esc(k(r))}" ${S.lotemSel.has(k(r))?"checked":""} aria-label="Marcar ${esc(r.o)}"></td><td>${esc(regDe(r.o))}</td><td>${esc(obraLbl(r.o,r.info||{}))}</td><td>${esc(r.nomeG||r.email||"")}</td><td><span class="pill ${esc(r.orc.status||"rascunho")}">${esc(STN[r.orc.status||"rascunho"]||r.orc.status)}</span></td>${YEARS.map(y=>`<td class="num">${f0(+t[y]||0)}</td>`).join("")}<td class="${pend?"lote-x":"muted"}">${esc(pend||"—")}</td><td>${x?`<span class="${x[0]==="ok"?"lote-ok":"lote-x"}">${esc(x[1])}</span>`:""}</td></tr>`}).join("");
+  const n=L.filter(r=>S.lotemSel.has(k(r))).length;
+  box.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2 style="margin:0">Enviar orçamentos dos gerentes (Controladoria)</h2><button class="btn sm" id="lotem-x">Fechar</button></div>
+    <p class="desc">Orçamentos de gerentes ainda <b>em preenchimento ou devolvidos</b>, com valor, das obras do filtro da tela (Regional, Empresa, Gerente, Obra…). O envio leva o orçamento <b>completo</b> do gerente, como está, e fica registrado como “Envio pela Controladoria”. A coluna Pendências mostra o que o gerente ainda não ajustou (não impede o envio). Depois de enviado, o gerente não edita mais; só a Controladoria devolve.</p>
+    <div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap"><button class="btn sm" id="lotem-sem">Marcar os sem pendência</button><button class="btn sm" id="lotem-todas">Marcar todos</button><button class="btn sm" id="lotem-nenhuma">Desmarcar</button><span style="flex:1"></span><span class="muted" id="lotem-msg" style="font-size:12px">${L.length} orçamento(s) no filtro</span><button class="btn primary" id="lotem-env" ${n?"":"disabled"}>Enviar ${n} orçamento(s)</button></div>
+    <div class="tbl-box"><table class="list"><thead><tr><th></th><th>Regional</th><th>Obra</th><th>Gerente</th><th>Situação</th>${YEARS.map(y=>`<th class="num">${y}</th>`).join("")}<th>Pendências</th><th>Resultado</th></tr></thead><tbody>${lin||`<tr><td colspan="${7+YEARS.length}" class="muted">Nenhum orçamento pendente com valor neste filtro.</td></tr>`}</tbody></table></div>`;
+  box.hidden=false}
+async function loteMEnviar(){const L=lotemLista().filter(r=>S.lotemSel.has(r.uid+"|"+r.o));if(!L.length)return;const msg=$("#lotem-msg");const btn=$("#lotem-env");btn.disabled=true;const res=new Map();let ok=0;const por=await quemSou();
+  for(let i=0;i<L.length;i++){const r=L[i];const k=r.uid+"|"+r.o;msg.textContent=`Enviando ${i+1} de ${L.length}…`;
+    try{const ref=S.db.doc(`gerentes/${r.uid}/orc/${r.o}`);const d=await ref.get();if(!d.exists){res.set(k,["x","orçamento não encontrado"]);continue}const raw=d.data()||{};
+      if(travado(raw.status)){res.set(k,["x","já enviado ou validado"]);S.lotemSel.delete(k);continue}
+      const em=nowISO();const pl={...raw,status:"enviado",enviadoEm:em,enviadoPor:por,validadoEm:null,validadoPor:null,atualizadoEm:em};
+      await ref.set(pl);await saveVersion(r.uid,r.o,pl,"Envio pela Controladoria").catch(()=>{});r.orc=pl;ok++;S.lotemSel.delete(k);res.set(k,["ok","enviado"])}
+    catch(e){res.set(k,["x","não gravou: "+(e&&e.message||e)])}}
+  S.ind=null;renderLoteM(res);$("#lotem-msg").textContent=`${ok} de ${L.length} orçamento(s) enviado(s).`;toast(`${ok} orçamento(s) enviado(s) pela Controladoria`)}
+document.addEventListener("click",async e=>{const t=e.target;
+  if(t.id==="btn-lote-m"){if(!S.acompEm){toast("Carregando os orçamentos dos gerentes…");try{await loadAdm()}catch(err){toast("Não foi possível carregar os orçamentos.");return}}S.lotemSel=new Set();renderLoteM();$("#lote-box").scrollIntoView({block:"start"});return}
+  if(!t.closest||!t.closest("#lote-box")||!$("#lotem-env"))return;
+  if(t.id==="lotem-x"){$("#lote-box").hidden=true;return}
+  if(t.id==="lotem-todas"){lotemLista().forEach(r=>S.lotemSel.add(r.uid+"|"+r.o));renderLoteM();return}
+  if(t.id==="lotem-sem"){S.lotemSel=new Set();lotemLista().forEach(r=>{const [a,b]=mPend(r.orc);if(!a&&!b)S.lotemSel.add(r.uid+"|"+r.o)});renderLoteM();return}
+  if(t.id==="lotem-nenhuma"){S.lotemSel.clear();renderLoteM();return}
+  if(t.id==="lotem-env"){if(!t.dataset.arm){t.dataset.arm=1;t.textContent=`Confirmar envio de ${lotemLista().filter(r=>S.lotemSel.has(r.uid+"|"+r.o)).length} orçamento(s)`;setTimeout(()=>{if(t.isConnected&&t.dataset.arm){delete t.dataset.arm;renderLoteM()}},6000);return}loteMEnviar();return}
+  if(t.dataset&&t.dataset.lotem){t.checked?S.lotemSel.add(t.dataset.lotem):S.lotemSel.delete(t.dataset.lotem);const n=lotemLista().filter(r=>S.lotemSel.has(r.uid+"|"+r.o)).length;const b=$("#lotem-env");if(b){b.disabled=!n;delete b.dataset.arm;b.textContent=`Enviar ${n} orçamento(s)`}}});
 function restoreSend(){$("#send-box").innerHTML=`<button class="btn primary" id="btn-send">Enviar para a Controladoria</button>`;renderStatus()}
 
 function travado(st){return st==="enviado"||st==="validado"}
