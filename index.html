@@ -200,6 +200,9 @@ table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:
 .grid td.acts button.rev-on{color:var(--bad);border-color:var(--bad)}
 .rev-box{display:inline-flex;gap:3px;align-items:center}.rev-box input{width:240px;height:24px;font-size:12px;border:1px solid var(--bad);border-radius:4px;padding:0 6px}
 .grid td.acts input.lobs.need,.grid .sname.need{border-color:var(--bad);background:var(--bad-soft)}
+#pend-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:49;background:var(--bad-soft);border:1px solid var(--bad);color:var(--ink);border-radius:8px;padding:8px 10px 8px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:0 4px 14px rgba(0,0,0,.18);font-size:13px;max-width:calc(100% - 32px)}
+#pend-bar[hidden]{display:none}
+.grid .pend-foco{outline:3px solid var(--bad);outline-offset:1px}
 .grid .sname.gen{border:1px dashed var(--line-strong);font-style:italic;color:var(--muted)}
 .grid th.hmb{text-align:left!important;padding-left:10px!important;border-left:2px solid var(--line-strong)}.grid td.hm:first-of-type{}
 .grid .orient{color:var(--accent);max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;display:inline-block;white-space:nowrap}
@@ -1523,7 +1526,7 @@ async function openObra(uid,o,fromAdm){
   /* 12/11: digitação que ficou só neste computador (gravação não confirmada) volta para a tela e é salva */
   {const rs=S.offline?null:rascLer(uid,o);if(rs&&rs.p&&editable&&!travado(doc.status)&&rascValido(rs,raw)){const n=rascAplicar(S.cur.doc,rs.p);if(n){S.cur.lines=buildLines(info.tipo,hist,extOrf(S.cur.doc.ext,S.cur.doc.v),esp);applyRules(S.cur);S.cur.dirty=true;setTimeout(()=>{toast("Recuperamos o que você digitou nesta obra e não tinha sido salvo. Salvando…");try{changed()}catch(e){}},400)}else rascLimpar(S.cur)}}
   if(compart){const c=colegaDe(o,uid);S.cur.quem=(c&&c.nome)||"colega da mesma área";juntarMeuRascunho(S.cur)}
-  semObra(false);S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}S.year="2027";
+  try{pendFim(false)}catch(e){}semObra(false);S.collapsed=new Set();S.niv=null;S.hideSubs=false;try{marcarNivel()}catch(e){}S.year="2027";
   document.querySelectorAll("#years button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.y===S.year));
   $("#detail").hidden=true;$("#add-box").hidden=true;$("#btn-add").textContent="Adicionar item";$("#ver-box").hidden=true;$("#ver-banner").hidden=true;
   $("#obs").value=doc.obs;$("#obs").disabled=!editable;
@@ -2712,14 +2715,30 @@ async function itensObraGravar(o,k,e){const d=await S.db.doc("regras/itens_obra"
 
 /* envio */
 $("#send-box").addEventListener("click",e=>{if(e.target.id==="btn-send")sendFlow()});
+/* pendências de envio (v52): leva direto ao campo com erro e, ao resolver, vai para o próximo até não sobrar nenhum */
+function pendLista(){if(!S.cur||!S.cur.lines)return[];const a=subsSemNome().map(([idx,sb])=>({t:"sn",idx,sb}));faltandoObs().forEach(l=>a.push({t:"lo",idx:S.cur.lines.indexOf(l)}));return a}
+function pendMostrar(l,sub){
+  if(!visible(l)){if(S.q){S.q="";const q=$("#q");if(q)q.value=""}
+    S.onlyEmpty=S.onlyRev=S.onlyEsp=S.onlyUsed=false;["#only-empty","#only-rev","#only-esp","#only-used"].forEach(q=>{const c=$(q);if(c)c.checked=false});
+    if(S.fDeps&&!S.fDeps.has(l.area)){S.fDeps=null;S.fDepsKey=null}}
+  (l.parents||[]).forEach(p=>S.collapsed.delete(p.key));if(sub)S.hideSubs=false;S.curFechado=false;S.niv=null;try{marcarNivel()}catch(e){}}
+function pendIr(){const a=pendLista();if(!a.length)return pendFim(true);S.pendOn=S.cur.o;const p=a[0],l=S.cur.lines[p.idx];pendMostrar(l,p.t==="sn");renderGrid();
+  const el=p.t==="sn"?document.getElementById(`sn-${p.idx}-${p.sb.id}`):$("#lo-"+p.idx);
+  if(el){el.hidden=false;el.scrollIntoView({block:"center",inline:"nearest"});el.focus();if(p.t==="sn"&&el.select)el.select();el.classList.add("pend-foco");setTimeout(()=>el.classList.remove("pend-foco"),1800)}
+  pendBar(a)}
+function pendBar(a){let b=$("#pend-bar");if(!b){b=document.createElement("div");b.id="pend-bar";document.body.appendChild(b);
+    b.addEventListener("click",e=>{if(e.target.id==="pend-prox")pendIr();if(e.target.id==="pend-fechar")pendFim(false)})}
+  if(!a.length){b.hidden=true;return}
+  const nS=a.filter(x=>x.t==="sn").length,nL=a.length-nS,p=a[0];
+  const oque=p.t==="sn"?"Dê um nome ao subitem “Detalhe” em vermelho (ex.: Aluguel da sede, Energia).":"Escreva a justificativa do espelho mantido (mínimo "+OBS_MIN+" caracteres).";
+  b.innerHTML=`<span><b>Falta${a.length>1?"m":""} ${a.length} para poder enviar</b>${nS&&nL?` (${nS} nome${nS>1?"s":""} de subitem · ${nL} justificativa${nL>1?"s":""})`:""}. ${oque} Ao terminar, a tela vai para o próximo.</span><button class="btn" id="pend-prox">Ir para o próximo</button><button class="btn" id="pend-fechar" title="Esconder este aviso">✕</button>`;b.hidden=false}
+function pendFim(ok){const tinha=!!S.pendOn;S.pendOn=null;const b=$("#pend-bar");if(b)b.hidden=true;
+  if(ok&&tinha){toast("Pronto, não há mais pendências. Clique em “Enviar para a Controladoria”.");const bs=$("#btn-send");if(bs){bs.scrollIntoView({block:"nearest"});bs.focus()}}}
+$("#grid").addEventListener("change",e=>{if(!S.pendOn||!S.cur||S.pendOn!==S.cur.o)return;const el=e.target;if(!el.dataset||(el.dataset.lobs===undefined&&el.dataset.sn===undefined))return;
+  setTimeout(()=>{if(el.classList.contains("need")){pendBar(pendLista());return}pendIr()},80)});
 function sendFlow(){
   const box=$("#send-box");
-  const semNome=subsSemNome();
-  if(semNome.length){renderGrid();const [idx,sb]=semNome[0];const el=document.getElementById(`sn-${idx}-${sb.id}`);if(el){el.scrollIntoView({block:"center",inline:"nearest"});el.focus();el.select()}
-    toast(`Dê um nome aos ${semNome.length} subitem(ns) “Detalhe” que têm valor (ex.: Aluguel da sede, Energia, Vale-alimentação). Eles estão em vermelho.`);return}
-  const falta=faltandoObs();
-  if(falta.length){renderGrid();const l=falta[0];const idx=S.cur.lines.indexOf(l);const el=$("#lo-"+idx);if(el){el.scrollIntoView({block:"center",inline:"nearest"});el.focus()}
-    toast(`Justifique ${falta.length} insumo(s) em que você manteve o espelho (mínimo ${OBS_MIN} caracteres; campos em vermelho na coluna “Observação e ações”).`);return}const t=docTotals(S.cur.doc,S.cur.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));
+  if(pendLista().length){pendIr();return}const t=docTotals(S.cur.doc,S.cur.lines.filter(l=>prodOk(l)&&(!restrito()||l.kind!=="leaf"||l.mine)));
   box.innerHTML=`<span class="confirm"><span class="muted">Enviar ${YEARS.map(y=>y+": R$ "+f0(t[y])).join(" · ")}? Depois de enviado, só a Controladoria reabre.</span><button class="btn primary" id="send-ok">Confirmar envio</button><button class="btn" id="send-no">Cancelar</button></span>`;
   $("#send-no").onclick=restoreSend;
   $("#send-ok").onclick=async()=>{$("#send-ok").disabled=true;await flush();const prev=S.cur.doc.status;S.cur.doc.status="enviado";S.cur.doc.enviadoEm=nowISO();S.cur.doc.validadoEm=null;S.cur.doc.validadoPor=null;
@@ -2770,7 +2789,7 @@ function lotemLista(){const ok=new Set(obrasFiltradas());const ger=fVals("f-ger"
    .sort((a,b)=>String(a.nomeG).localeCompare(String(b.nomeG))||a.o.localeCompare(b.o,undefined,{numeric:true}))}
 function renderLoteM(res){const box=$("#lote-box");const L=lotemLista();S.lotemSel=S.lotemSel||new Set();const k=r=>r.uid+"|"+r.o;
   const lin=L.map(r=>{const t=r.orc.totais||{};const [ds,ej]=mPend(r.orc);const pend=[ds?`${ds} “Detalhe” sem nome`:"",ej?`${ej} espelho sem justificativa`:""].filter(Boolean).join(" · ");const x=res&&res.get(k(r));
-    return `<tr><td><input type="checkbox" data-lotem="${esc(k(r))}" ${S.lotemSel.has(k(r))?"checked":""} aria-label="Marcar ${esc(r.o)}"></td><td>${esc(regDe(r.o))}</td><td>${esc(obraLbl(r.o,r.info||{}))}</td><td>${esc(r.nomeG||r.email||"")}</td><td><span class="pill ${esc(r.orc.status||"rascunho")}">${esc(STN[r.orc.status||"rascunho"]||r.orc.status)}</span></td>${YEARS.map(y=>`<td class="num">${f0(+t[y]||0)}</td>`).join("")}<td class="${pend?"lote-x":"muted"}">${esc(pend||"—")}</td><td>${x?`<span class="${x[0]==="ok"?"lote-ok":"lote-x"}">${esc(x[1])}</span>`:""}</td></tr>`}).join("");
+    return `<tr><td><input type="checkbox" data-lotem="${esc(k(r))}" ${S.lotemSel.has(k(r))?"checked":""} aria-label="Marcar ${esc(r.o)}"></td><td>${esc(regDe(r.o))}</td><td>${esc(obraLbl(r.o,r.info||{}))}</td><td>${esc(r.nomeG||r.email||"")}</td><td><span class="pill ${esc(r.orc.status||"rascunho")}">${esc(ST_NOME[r.orc.status||"rascunho"]||r.orc.status)}</span></td>${YEARS.map(y=>`<td class="num">${f0(+t[y]||0)}</td>`).join("")}<td class="${pend?"lote-x":"muted"}">${esc(pend||"—")}</td><td>${x?`<span class="${x[0]==="ok"?"lote-ok":"lote-x"}">${esc(x[1])}</span>`:""}</td></tr>`}).join("");
   const n=L.filter(r=>S.lotemSel.has(k(r))).length;
   box.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2 style="margin:0">Enviar orçamentos dos gerentes (Controladoria)</h2><button class="btn sm" id="lotem-x">Fechar</button></div>
     <p class="desc">Orçamentos de gerentes ainda <b>em preenchimento ou devolvidos</b>, com valor, das obras do filtro da tela (Regional, Empresa, Gerente, Obra…). O envio leva o orçamento <b>completo</b> do gerente, como está, e fica registrado como “Envio pela Controladoria”. A coluna Pendências mostra o que o gerente ainda não ajustou (não impede o envio). Depois de enviado, o gerente não edita mais; só a Controladoria devolve.</p>
