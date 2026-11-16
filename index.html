@@ -1663,7 +1663,7 @@ function renderGuia(){const g=$("#guia");if(!S.cur){g.hidden=true;return}const s
   g.className="guia";g.innerHTML=`<b>Como preencher</b><ol><li>Escolha a <b>obra</b> no quadro verde.</li><li>Em cada insumo, preencha os <b>subitens</b>: troque “Detalhe 1” pelo nome do gasto (ex.: Aluguel da sede) e digite os valores dos meses. Use <b>Como preencher</b> para repetir o valor ou aplicar reajuste. O histórico 2025/2026 fica à esquerda como referência.</li><li>Confira os anos <b>2027, 2028 e 2029</b> e clique em <b>Enviar para a Controladoria</b>. Tudo é salvo sozinho enquanto você digita.</li></ol><button class="btn sm" id="guia-ok">Entendi, esconder</button>`;g.hidden=false}
 document.addEventListener("click",e=>{if(e.target.id==="guia-ok"){try{localStorage.setItem("orc.guia.ok","1")}catch(_){}$("#guia").hidden=true}
   if(e.target.id==="guia-rev"){S.onlyRev=true;$("#only-rev").checked=true;renderGrid()}});
-function precisaObs(l){return !!(S.cur&&S.cur.doc&&S.cur.doc.espM&&S.cur.doc.espM[l.key]) /* opcional desde 05/10/2026; obrigatória quando o gerente mantém o espelho */}
+function precisaObs(l){/* 16/11: só exige justificativa se o insumo tem valor — marca de espelho antiga em linha zerada não trava o envio */return !!(S.cur&&S.cur.doc&&S.cur.doc.espM&&S.cur.doc.espM[l.key]&&temValor(S.cur.doc,l)) /* opcional desde 05/10/2026; obrigatória quando o gerente mantém o espelho */}
 const nomeGenerico=n=>/^\s*detalhe\s*\d*\s*$/i.test(n||"");
 function subsSemNome(){const d=S.cur.doc,out=[];S.cur.lines.forEach((l,idx)=>{if(l.kind!=="leaf"||!prodOk(l)||(restrito()&&!l.mine)||!l.canEdit)return;
   subsOf(l).forEach(sb=>{if(nomeGenerico(sb.n)&&YEARS.some(y=>((d.v[subKey(l,sb)]||{})[y]||[]).some(v=>+v)))out.push([idx,sb])})});return out}
