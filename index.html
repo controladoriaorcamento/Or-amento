@@ -411,6 +411,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
 .cad-col>h2.cad-col-h{cursor:pointer;user-select:none}.cad-col>h2.cad-col-h::before{content:"▾ ";color:var(--muted)}
 .cad-col.fechado>h2.cad-col-h::before{content:"▸ "}.cad-col.fechado>*:not(h2){display:none!important}
 #lote-box .tbl-box{max-height:50vh}#lote-box td.num{text-align:right;white-space:nowrap}.lote-ok{color:var(--good)}.lote-x{color:var(--bad)}
+#pz-areas h3{margin:0}#pz-areas .tbl-box{max-height:46vh;overflow:auto;margin-top:8px}#pz-areas td.num,#pz-areas th.num{text-align:right;white-space:nowrap}.pza-bar{display:inline-block;width:90px;height:8px;border-radius:4px;background:var(--line);vertical-align:middle;margin-right:6px;overflow:hidden}.pza-bar i{display:block;height:100%;background:var(--good)}.pza-x{color:var(--bad)}.pza-ok{color:var(--good)}
 .prazo-bar{margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid #E0B44A;background:#FFF6DC;color:#5A4300;font-size:14px}.prazo-bar.fechado{border-color:#C9473F;background:#FDECEA;color:#7A1F17}
 </style>
 
@@ -509,7 +510,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
           <div class="fcol" id="fc-ger" hidden><label class="lbl">Gerente</label><div class="slicer" id="sl-ger" data-f="f-ger"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todos</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Gerente"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
           <div class="fcol" id="fc-cargo" hidden><label class="lbl">Quem planeja</label><div class="slicer" id="sl-cargo" data-f="f-cargo"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todos</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar…" aria-label="Pesquisar em Quem planeja"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div></div>
           <div class="fcol fobra"><label class="lbl">Obra / centro de custo <span class="muted" id="busca-obra-n" style="font-size:11px;text-transform:none;letter-spacing:0"></span></label><div class="slicer" id="sl-obra" data-f="f-obra"><button type="button" class="sl-btn" aria-haspopup="true"><span class="sl-txt">Todas</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><input class="sl-q" type="search" placeholder="Pesquisar nº ou nome da obra…" aria-label="Pesquisar obra"><div class="sl-acts"><button type="button" data-sla="todos">Marcar todos</button><button type="button" data-sla="limpar">Limpar</button><span class="sl-n muted"></span></div><div class="sl-list" role="listbox" aria-multiselectable="true"></div></div></div><input id="busca-obra" type="hidden"><select id="sel-obra" hidden aria-hidden="true"></select></div>
-          <div class="fcol"><label class="lbl" for="f-sit">Situação da obra</label><select id="f-sit" class="sl-btn" style="min-width:200px" title="Finalizada = orçamento enviado à Controladoria (aguardando validação) ou validado. Não iniciada = nenhum gerente digitou valor nem enviou."><option value="">Todas</option><option value="aberta">Não finalizadas</option><option value="fin">Enviadas ou validadas</option><option value="nini">Não iniciadas por nenhum gerente</option></select></div>
+          <div class="fcol"><label class="lbl" for="f-sit">Situação da obra</label><select id="f-sit" class="sl-btn" style="min-width:200px" title="Finalizada = orçamento enviado à Controladoria (aguardando validação) ou validado. Não iniciada = nenhum gerente digitou valor nem enviou. Devolvida = a Controladoria devolveu o orçamento para ajuste."><option value="">Todas</option><option value="aberta">Não finalizadas</option><option value="fin">Enviadas ou validadas</option><option value="nini">Não iniciadas por nenhum gerente</option><option value="dev">Devolvidas pela Controladoria</option></select></div>
           <div class="fcol" style="align-self:flex-end;flex-direction:row;gap:6px"><button type="button" class="btn sm" id="f-limpar-tudo" title="Tirar todos os filtros">Limpar filtros</button><button type="button" class="btn sm" id="f-recolher" title="Mostrar os filtros em uma linha">▴ Recolher</button></div>
           <div class="f-resumo" id="f-resumo"></div>
         </div>
@@ -526,6 +527,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
         </div>
       </div>
       <div id="prazo-bar" class="prazo-bar" hidden></div>
+      <div id="pz-areas" class="card" style="margin-bottom:12px" hidden></div>
       <div id="sem-obra" class="card sem-obra-msg" hidden></div>
       <div id="lote-box" class="card" hidden></div><div id="semobs-box" class="card" hidden></div>
       <div id="orc-quem" class="orc-quem" hidden></div>
@@ -1025,7 +1027,7 @@ function prazoMinhasAreas(){const st=new Set();Object.values((S.perfil&&S.perfil
 function prazoTxt(){const ms=Date.parse(PRAZO.ate)-Date.now();if(ms<=0)return "";const h=Math.floor(ms/3600000),d=Math.floor(h/24),hh=h%24,mm=Math.floor(ms%3600000/60000);return d?`${d} dia(s) e ${hh} h`:h?`${h} h e ${mm} min`:`${mm} min`}
 /* 16/11: master altera o prazo pela própria faixa (grava regras/prazo) */
 function prazoDono(){return !!(S.owner&&S.meEmail&&(PRAZO.donos||[]).includes(S.meEmail))}
-function prazoRender(){if($("#pz-form"))return;prazoRender0();const b=$("#prazo-bar");if(!b||!prazoDono()||S.offline)return;
+function prazoRender(){if($("#pz-form"))return;prazoRender0();try{pzaDesenhar()}catch(e){}const b=$("#prazo-bar");if(!b||!prazoDono()||S.offline)return;
   if(b.hidden){b.className="prazo-bar";b.innerHTML=`Prazo dos gerentes: até <b>${esc(prazoQuando())}</b>.`;b.hidden=false}
   if(!$("#pz-alt"))b.insertAdjacentHTML("beforeend",' <button class="btn sm" id="pz-alt">Alterar prazo</button>')}
 document.addEventListener("click",async e=>{const t=e.target;if(t&&t.dataset&&t.dataset.pzrm){const a=t.dataset.pzrm;try{const cur=await S.db.doc("regras/prazo").get();const x=cur.exists?(cur.data()||{}):{};const pa={...(x.porArea||{})};delete pa[a];await S.db.doc("regras/prazo").set({...x,porArea:pa,alteradoEm:nowISO(),por:await quemSou()});PRAZO.porArea=pa;$("#pz-form")&&$("#pz-form").remove();prazoRender();toast("Prorrogação de "+a+" removida")}catch(err){toast("Não foi possível salvar: "+(err&&err.message||err))}return}
@@ -1058,6 +1060,26 @@ function prazoModal(){if(S.owner||S.vis||S.offline)return;const agora=Date.now()
   document.body.appendChild(ov);$("#pz-ok").onclick=()=>{try{localStorage.setItem(k,"1")}catch(e){}ov.remove()};$("#pz-ok").focus()}
 let PRAZO_FECHADO_ANT=null;
 function prazoTick(){prazoRender();const f=prazoFechado(S.cur&&S.cur.doc&&S.cur.doc.status,S.cur&&S.cur.info&&S.cur.info.areas);if(PRAZO_FECHADO_ANT===false&&f&&S.cur){flush().catch(()=>{}).finally(()=>{if(S.cur){S.cur.editable=false;try{applyRules(S.cur);renderGrid();renderStatus()}catch(e){}}toast("Prazo encerrado: o orçamento agora fica só para consulta.")})}PRAZO_FECHADO_ANT=f}
+/* 17/11 (v62): MASTERS — prazo de cada QUEM PLANEJA e % de preenchimento (empresa/obra × quem planeja, mesma base do Indicadores › Andamento) */
+function pzaFim(a){let t=Date.parse(PRAZO.ate);const pa=PRAZO.porArea||{};if(pa[a])t=Math.max(t,Date.parse(pa[a]));return t}
+function pzaFmt(t){const f=new Date(t-60000);return f.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})+" "+f.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}
+function pzaDesenhar(){const el=$("#pz-areas");if(!el)return;if(!S.owner||S.vis||S.offline){el.hidden=true;return}el.hidden=false;
+  const ag=Date.now();const dev=PRAZO.devAte?Date.parse(PRAZO.devAte):0;
+  const cab=`<div class="row" style="justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3>Prazo e preenchimento por quem planeja</h3><span class="row" style="gap:6px"><button class="btn sm" id="pza-ref" title="Recalcular com os dados atuais">Atualizar</button><button class="btn sm" id="pza-tg">${S.pzaFech?"Mostrar":"Recolher"}</button></span></div>`;
+  const info=`<p class="muted" style="margin:6px 0 0">Prazo geral: <b>${esc(pzaFmt(Date.parse(PRAZO.ate)))}</b>${ag>=Date.parse(PRAZO.ate)?' <span class="pza-x">(encerrado)</span>':""}${dev?` · Devolvidos: até <b>${esc(pzaFmt(dev))}</b>${ag>=dev?' <span class="pza-x">(encerrado)</span>':""}`:""} · % = empresa/obra × quem planeja enviados ou validados (sem o que é feito fora do app).</p>`;
+  if(S.pzaFech){el.innerHTML=cab+info;return}
+  if(!S.ind){el.innerHTML=cab+info+`<p class="muted" id="pza-msg">${S.pzaErro?esc(S.pzaErro):"Calculando…"}</p>`;return}
+  const G=new Map();S.ind.UA.forEach(u=>{const a=u.area;if(!G.has(a))G.set(a,{a,n:0,c:{}});const g=G.get(a);g.n++;g.c[u.st]=(g.c[u.st]||0)+1});
+  const L=[...G.values()].map(g=>({...g,fim:(g.c.enviado||0)+(g.c.validado||0),t:pzaFim(g.a)})).sort((x,y)=>x.a.localeCompare(y.a,"pt-BR"));
+  const T={n:0,fim:0,c:{}};L.forEach(g=>{T.n+=g.n;T.fim+=g.fim;IND_STO.forEach(k=>T.c[k]=(T.c[k]||0)+(g.c[k]||0))});
+  const pc=(a,b)=>b?a/b*100:0;const barra=p=>`<span class="pza-bar"><i style="width:${Math.min(100,p).toFixed(1)}%"></i></span>${nf0.format(p)}%`;
+  const lin=g=>{const pr=(PRAZO.porArea||{})[g.a]&&Date.parse(PRAZO.porArea[g.a])>Date.parse(PRAZO.ate);const fe=ag>=g.t;
+    return `<tr><td>${esc(g.a)}</td><td>${esc(pzaFmt(g.t))}${pr?' <b>(prorrogado)</b>':""} <span class="${fe?"pza-x":"pza-ok"}">${fe?"encerrado":"aberto"}</span></td><td class="num">${nf0.format(g.n)}</td>${IND_STO.map(k=>`<td class="num">${nf0.format(g.c[k]||0)}</td>`).join("")}<td>${barra(pc(g.fim,g.n))}</td></tr>`};
+  el.innerHTML=cab+info+`<div class="tbl-box"><table class="list"><thead><tr><th>Quem planeja</th><th>Prazo</th><th class="num">Obras</th>${IND_STO.map(k=>`<th class="num">${esc(IND_STN[k])}</th>`).join("")}<th>% concluído</th></tr></thead><tbody>${L.map(lin).join("")}</tbody><tfoot><tr><th>Total</th><th></th><th class="num">${nf0.format(T.n)}</th>${IND_STO.map(k=>`<th class="num">${nf0.format(T.c[k]||0)}</th>`).join("")}<th>${barra(pc(T.fim,T.n))}</th></tr></tfoot></table></div>`}
+async function pzaCarregar(forcar){if(!S.owner||S.vis||S.offline)return;if(forcar){S.ind=null;S.indF=null;S.indFG=null;S.indFP=null;S.acompEm=0}S.pzaErro="";pzaDesenhar();
+  try{if(!S.ind)S.ind=await dadosIndicadores()}catch(e){S.pzaErro="Não foi possível calcular: "+(e&&e.message||e)}pzaDesenhar()}
+document.addEventListener("click",e=>{const t=e.target;if(!t||!t.id)return;if(t.id==="pza-ref"){pzaCarregar(true)}else if(t.id==="pza-tg"){S.pzaFech=!S.pzaFech;try{localStorage.setItem("pzaFech",S.pzaFech?"1":"")}catch(_){}pzaDesenhar()}});
+
 async function prazoInit(){try{S.meEmail=String(await quemSou()||"").trim().toLowerCase()}catch(e){}try{const d=await S.db.doc("regras/prazo").get();if(d.exists){const x=d.data()||{};if(x.ate)PRAZO.ate=x.ate;if(x.aviso)PRAZO.aviso=x.aviso;PRAZO.devAte=x.devolvidosAte||null;PRAZO.porArea=x.porArea||{};PRAZO.donos=(x.donos||[]).map(e=>String(e).trim().toLowerCase())}}catch(e){}
   PRAZO_FECHADO_ANT=prazoFechado(null,prazoMinhasAreas());prazoRender();prazoModal();clearInterval(prazoInit.t);prazoInit.t=setInterval(()=>{prazoTick();prazoModal()},60000);clearInterval(prazoInit.r);prazoInit.r=setInterval(prazoReler,300000)}
 /* 16/11: relê regras/prazo a cada 5 min — se a Controladoria prorrogar, quem está com a página aberta é avisado */
@@ -1264,7 +1286,7 @@ async function boot(){
   if(!S.offline)setTimeout(()=>rascRecuperarTodos().catch(()=>{}),4000);
   if(!S.offline)novMostrar().then(()=>supIniciar()).then(()=>{if(!$("#nov-modal"))supDiaria()}).catch(()=>{});
   if(S.regional){$("#tabs").hidden=false;$("#tab-reg").hidden=false;$("#tab-fill").hidden=false;if(!S.owner){$("#tab-adm").hidden=true;$("#tab-sg").hidden=true}}
-  prazoInit().catch(()=>{});
+  prazoInit().catch(()=>{}).then(()=>{if(S.owner&&!S.vis){try{S.pzaFech=localStorage.getItem("pzaFech")==="1"}catch(_){}pzaDesenhar();setTimeout(()=>pzaCarregar(false),2500)}});
   if(S.vis){$("#tab-ind").hidden=false;const sb=$("#send-box");if(sb)sb.style.display="none";const rq=$("#btn-req");if(rq)rq.style.display="none";toast("Acesso somente para visualização: "+(S.vis.regionais||[]).join(", ")+" · "+(S.vis.areas||[]).join(" e "))}
 }
 /* 13/11: Somente visualização — obras da Regional e áreas liberadas (tabela visualizadores), sem gravar. Dados vêm filtrados do banco (visualizador_painel). */
@@ -1366,11 +1388,13 @@ const regDe=o=>(S.regObra&&S.regObra[o])||"Sem regional";
 function docIniciado(st,t){return st==="enviado"||st==="validado"||YEARS.some(y=>Math.abs(+((t||{})[y])||0)>0)}
 function mestresUids(){if(S._mU&&S._mUEm===S.acompEm)return S._mU;const em=new Set((S.pessoas||[]).map(p=>(p.email||"").toLowerCase()));const m=new Set();(S.acomp||[]).forEach(r=>{const e=(r.email||"").toLowerCase();if(e&&em.size&&!em.has(e))m.add(r.uid)});S._mU=m;S._mUEm=S.acompEm;return m}
 function obraIniciada(o){if(S.owner&&S.orcIdx){const M=mestresUids();return (S.orcIdx.get(o)||[]).some(x=>!M.has(x.uid)&&docIniciado(x.status,x.t))}const v=orcVis(o);return !!(v&&docIniciado(v.status,v.totais))}
+/* 17/11 (v62): obra com orçamento DEVOLVIDO pela Controladoria (status reaberto) */
+function obraDevolvida(o){const a=S.owner&&S.orcIdx?S.orcIdx.get(o):null;if(a&&a.length)return a.some(x=>x.status==="reaberto");const v=orcVis(o);if(v&&v.status==="reaberto")return true;const m=(S.myOrc||{})[o];return !!(m&&m.status==="reaberto")}
 function sitObra(o){const a=S.owner&&S.orcIdx?S.orcIdx.get(o):null;let sts;if(a&&a.length)sts=a.map(x=>x.status||"rascunho");else{const v=orcVis(o);sts=v&&v.status?[v.status]:[]}return sts.length&&sts.every(x=>x==="enviado"||x==="validado")?"fin":"aberta"}
 function obrasFiltradas(skip){const info=S.fInfo||{};const sit=($("#f-sit")||{}).value||"";const rg=skip==="f-reg"?[]:fVals("f-reg");const emp=skip==="f-emp"?[]:fVals("f-emp"),ger=skip==="f-ger"?[]:fVals("f-ger"),cg=skip==="f-cargo"?[]:fVals("f-cargo");
   const go=ger.length&&S.fGerObras?gerUniao(ger):null;
   const ob=skip==="f-obra"?[]:fVals("f-obra");
-  return (S.selIds||[]).filter(o=>{const i=info[o]||{};if(sit==="nini"){if(obraIniciada(o))return false}else if(sit&&sitObra(o)!==sit)return false;if(rg.length&&!rg.includes(regDe(o)))return false;if(ob.length&&!ob.includes(o))return false;if(emp.length&&!emp.includes(String(i.emp)))return false;if(go&&!go.has(o))return false;
+  return (S.selIds||[]).filter(o=>{const i=info[o]||{};if(sit==="nini"){if(obraIniciada(o))return false}else if(sit==="dev"){if(!obraDevolvida(o))return false}else if(sit&&sitObra(o)!==sit)return false;if(rg.length&&!rg.includes(regDe(o)))return false;if(ob.length&&!ob.includes(o))return false;if(emp.length&&!emp.includes(String(i.emp)))return false;if(go&&!go.has(o))return false;
     if(cg.length){const deps=go?[...go.get(o)]:((S.fAO||{})[o]||[]);if(!cg.some(c=>deps.includes(c)))return false}return true})}
 function gerUniao(ems){const u=new Map();ems.forEach(em=>{const m=S.fGerObras.get(em);if(m)m.forEach((d,o)=>{const x=u.get(o)||new Set();d.forEach(v=>x.add(v));u.set(o,x)})});return u}
 function atualizarListas(){const info=S.fInfo||{};S.fOpts={};
