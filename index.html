@@ -3802,12 +3802,12 @@ function padraoAoa(rows){
   return out;
 }
 function resumoAoa(rows){
-  const out=[["Gerente","E-mail","Empresa","Nome da empresa","Obra","Descrição da obra","Base modelo","Status","Atualizado em",...YEARS.map(y=>"Total "+y),"Premissas e observações"]];
-  rows.forEach(r=>out.push([r.nomeG,r.email||"",numOr(r.info.emp||""),r.info.empNome||"",numOr(r.info.obra||r.o),r.info.nome,r.info.tipo||"",r.orc.status,r.orc.atualizadoEm?new Date(r.orc.atualizadoEm).toLocaleString("pt-BR"):"",...YEARS.map(y=>r2(r.orc.totais&&r.orc.totais[y])),r.orc.obs||""]));
+  const out=[["Regional","Gerente","E-mail","Empresa","Nome da empresa","Obra","Descrição da obra","Base modelo","Status","Atualizado em",...YEARS.map(y=>"Total "+y),"Premissas e observações"]];
+  rows.forEach(r=>out.push([regDe(r.o),r.nomeG,r.email||"",numOr(r.info.emp||""),r.info.empNome||"",numOr(r.info.obra||r.o),r.info.nome,r.info.tipo||"",r.orc.status,r.orc.atualizadoEm?new Date(r.orc.atualizadoEm).toLocaleString("pt-BR"):"",...YEARS.map(y=>r2(r.orc.totais&&r.orc.totais[y])),r.orc.obs||""]));
   return out;
 }
 async function insumosAoa(rows,progress){
-  const out=[["Responsáveis","Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição do insumo","Unid","Quem planeja","Obrigatório detalhar","Total 2025","Média 2025","Qtd. meses 2025","Total 2026 jan–set","Média 2026","Qtd. meses 2026",...YEARS.map(y=>"Meses orçados "+y),...YEARS.map(y=>"Orçado "+y),"Observação do gerente",...YEARS.flatMap(y=>["Ano anterior "+y,"Espelho "+y,"Alerta "+y])]];
+  const out=[["Regional","Responsáveis","Empresa","Obra","Descrição da obra","Produto","Serviço","Insumo","Descrição do insumo","Unid","Quem planeja","Obrigatório detalhar","Total 2025","Média 2025","Qtd. meses 2025","Total 2026 jan–set","Média 2026","Qtd. meses 2026",...YEARS.map(y=>"Meses orçados "+y),...YEARS.map(y=>"Orçado "+y),"Observação do gerente",...YEARS.flatMap(y=>["Ano anterior "+y,"Espelho "+y,"Alerta "+y])]];
   let i=0;
   for(const r of rows){i++;progress&&progress(`Lendo histórico ${i}/${rows.length}…`);
     const hs=await S.db.doc("restrito/hist/eo/"+r.o).get();const hist=hs.exists?hs.data():null;
@@ -3818,7 +3818,7 @@ async function insumosAoa(rows,progress){
       if(!sum(h)&&!sum(orc)&&!temEsp(l))return;
       const st=histStats(h);
       const mo=YEARS.map(y=>{const a=lineYearVals(doc,l,y);return a?a.filter(v=>v).length:0});
-      const rule=ruleFor(r.info.tipo,l);out.push([r.nomeG,numOr(r.info.emp||""),numOr(r.info.obra||r.o),r.info.nome,l.P||"",l.S||"",l.I||"",l.desc,l.un||"VB",rule&&rule[1]||"Sem regra",rule&&rule[0]==="Sim"?"Sim":"Não",r2(st.h25),r2(st.m25),st.n25,r2(st.h26),r2(st.m26),st.n26,...mo,...orc.map(r2),(r.orc.lobs||{})[l.key]||"",...YEARS.flatMap(y=>[r2(anteriorLinha(doc,l,y)),r2(sum((l.esp&&l.esp[y])||[])),alertasLinha(doc,l,y).map(a=>a.txt).join(" · ")])]);
+      const rule=ruleFor(r.info.tipo,l);out.push([regDe(r.o),r.nomeG,numOr(r.info.emp||""),numOr(r.info.obra||r.o),r.info.nome,l.P||"",l.S||"",l.I||"",l.desc,l.un||"VB",rule&&rule[1]||"Sem regra",rule&&rule[0]==="Sim"?"Sim":"Não",r2(st.h25),r2(st.m25),st.n25,r2(st.h26),r2(st.m26),st.n26,...mo,...orc.map(r2),(r.orc.lobs||{})[l.key]||"",...YEARS.flatMap(y=>[r2(anteriorLinha(doc,l,y)),r2(sum((l.esp&&l.esp[y])||[])),alertasLinha(doc,l,y).map(a=>a.txt).join(" · ")])]);
     });
   }
   return out;
@@ -3828,12 +3828,14 @@ async function baixarExcel(comPadrao){
   if(typeof XLSX==="undefined"){toast("O gerador de Excel não carregou. Recarregue a página e tente de novo.");return}
   if(!S.dl){toast("Download indisponível nesta visualização");return}
   const wb=XLSX.utils.book_new();
+  /* 17/11 (v63): coluna Regional no Excel resumo — garante o cadastro de regionais carregado */
+  if(!S.regObra){try{const rd=await S.db.doc("regras/regional_obra").get();S.regObra=rd.exists?(rd.data().m||null):null}catch(e){}}
   const mrg=mergeObras(rows);
   let val=null;let pa=comPadrao?padraoAoa(mrg):null;if(comPadrao&&$("#es-corrigir").checked&&!(S.estr&&!S.estr.base)){try{toast("Conferindo com a Base - Geral (estrutura do ERP)…");await estrDaBaseGeral([...new Set(mrg.map(r=>String(r.info.emp||r.o.split("-")[0])))])}catch(e){}}
   if(comPadrao&&S.estr&&$("#es-corrigir").checked){val=validarEstrutura(pa,true);pa=val.aoa}
   if(comPadrao){const ws=XLSX.utils.aoa_to_sheet(padraoRenum(pa));ws["!freeze"]={xSplit:8,ySplit:1};ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:40},{wch:12},{wch:9},{wch:9},{wch:44},{wch:5},{wch:8},{wch:9}];XLSX.utils.book_append_sheet(wb,ws,"Padrão")}
-  const wi=XLSX.utils.aoa_to_sheet(await insumosAoa(mrg,m=>toast(m)));wi["!cols"]=[{wch:24},{wch:8},{wch:8},{wch:36},{wch:8},{wch:9},{wch:9},{wch:44},{wch:5},{wch:16},{wch:10},...Array(15).fill({wch:13}),{wch:30},...Array(9).fill({wch:14})];wi["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(32)+"1"};
-  const wr=XLSX.utils.aoa_to_sheet(resumoAoa(rows));wr["!cols"]=[{wch:26},{wch:28},{wch:8},{wch:30},{wch:8},{wch:44},{wch:10},{wch:10},{wch:18},{wch:14},{wch:14},{wch:14},{wch:60}];XLSX.utils.book_append_sheet(wb,wr,"Resumo");XLSX.utils.book_append_sheet(wb,wi,"Resumo por insumo");if(val)abasValidacao(wb,val);
+  const wi=XLSX.utils.aoa_to_sheet(await insumosAoa(mrg,m=>toast(m)));wi["!cols"]=[{wch:18},{wch:24},{wch:8},{wch:8},{wch:36},{wch:8},{wch:9},{wch:9},{wch:44},{wch:5},{wch:16},{wch:10},...Array(15).fill({wch:13}),{wch:30},...Array(9).fill({wch:14})];wi["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(33)+"1"};
+  const wr=XLSX.utils.aoa_to_sheet(resumoAoa(rows));wr["!cols"]=[{wch:18},{wch:26},{wch:28},{wch:8},{wch:30},{wch:8},{wch:44},{wch:10},{wch:10},{wch:18},{wch:14},{wch:14},{wch:14},{wch:60}];XLSX.utils.book_append_sheet(wb,wr,"Resumo");XLSX.utils.book_append_sheet(wb,wi,"Resumo por insumo");if(val)abasValidacao(wb,val);
   const data=XLSX.write(wb,{type:"array",bookType:"xlsx"});
   const nome=comPadrao?"ORCAMENTO_2027_2029_PADRAO.xlsx":"ORCAMENTO_2027_2029_RESUMO.xlsx";
   try{await S.dl.save({filename:nome,data:new Uint8Array(data)})}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
