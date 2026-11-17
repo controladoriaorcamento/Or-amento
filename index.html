@@ -1607,7 +1607,7 @@ function renderStatus(){
   $("#btn-validar").hidden=!(S.owner&&st==="enviado");
   {const bl=$("#btn-lote");if(bl)bl.hidden=!!S.vis||!lotePodeUsar()||loteObras().length<2}{const bm=$("#btn-lote-m");if(bm)bm.hidden=!S.owner||!!S.offline}
   renderGuia();
-  $("#btn-add").hidden=!S.cur.editable;$("#btn-savever").hidden=!S.cur.editable;
+  $("#btn-add").hidden=!S.cur.editable||!S.owner;$("#btn-savever").hidden=!S.cur.editable;
 }
 
 /* ---------- grade ---------- */
@@ -2761,7 +2761,8 @@ function showDetail(idx){
 let ALL_LEAVES=null;
 function allLeaves(){if(ALL_LEAVES)return ALL_LEAVES;const m=new Map();Object.values(T.tipos).forEach(tp=>tp.rows.forEach(r=>{if(r[6]){const k=r[0]+"|"+r[2]+"|"+r[3];if(!m.has(k))m.set(k,{k,P:r[0],item:r[1],S:r[2],I:r[3],d:r[4],un:r[5]||"VB",pn:tp.prods[r[0]]})}}));return ALL_LEAVES=[...m.values()]}
 function syncAddBtn(){$("#btn-add").textContent=$("#add-box").hidden?"Adicionar item":"Recolher adicionar item"}
-$("#btn-add").addEventListener("click",()=>{$("#add-box").hidden=!$("#add-box").hidden;syncAddBtn();if(!$("#add-box").hidden){$("#add-q").focus();renderAdd();addErpCarregar()}});
+/* 17/11 (v65): gerente NÃO inclui insumo novo — só detalha itens (subitens) dos insumos do modelo. Incluir insumo é só da Controladoria (master). */
+$("#btn-add").addEventListener("click",()=>{if(!S.owner){$("#add-box").hidden=true;toast("Só a Controladoria inclui insumos. Para detalhar, use os itens do insumo.");return}$("#add-box").hidden=!$("#add-box").hidden;syncAddBtn();if(!$("#add-box").hidden){$("#add-q").focus();renderAdd();addErpCarregar()}});
 $("#add-q").addEventListener("input",()=>{renderAdd();clearTimeout(S._addT);S._addT=setTimeout(addErpBuscaGlobal,400)});
 /* 05/11 (Evaldo): insumo da estrutura do ERP desta obra que não está no modelo (ex.: I08253) entra só manualmente, obra a obra.
    A estrutura do ERP é restrita: só a Controladoria (master) enxerga e inclui esses itens. */
@@ -2794,7 +2795,7 @@ function renderAdd(){const q=$("#add-q").value.trim().toLowerCase();const have=n
   const fonte=allLeaves().concat(S.cur._erp||[],S.cur._erpG||[]);
   const r=fonte.filter(x=>!have.has(x.k)&&(!q||(x.d+" "+x.S+" "+x.I+" "+x.pn).toLowerCase().includes(q))).sort((a,b)=>(b.erp?1:0)-(a.erp?1:0)).slice(0,60);
   $("#add-list").innerHTML=r.length?r.map(x=>`<button data-k="${esc(x.k)}">${esc(x.d)} <span class="muted">· ${esc(x.S)} ${esc(x.I)} · ${esc(x.P)} ${esc(x.pn)}</span>${x.erp==="g"?' <small class="cp-src">estrutura do ERP de outras obras · fora do modelo</small>':x.erp?' <small class="cp-src">estrutura do ERP desta obra · fora do modelo</small>':""}</button>`).join(""):`<div class="muted" style="padding:10px">Nenhum item encontrado.</div>`}
-$("#add-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const x=allLeaves().concat(S.cur._erp||[],S.cur._erpG||[]).find(z=>z.k===b.dataset.k);if(!x)return;
+$("#add-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!S.owner)return;const x=allLeaves().concat(S.cur._erp||[],S.cur._erpG||[]).find(z=>z.k===b.dataset.k);if(!x)return;
   S.cur.doc.ext[x.k]={d:x.d,un:x.un,item:x.item};if(x.erp){const a=areaPorServico(S.cur.info.tipo,x.S);if(a)S.cur.doc.ext[x.k].area=a}if(S.q&&!(x.d+" "+x.S+" "+x.I).toLowerCase().includes(S.q)){S.q="";const qq=$("#q");if(qq)qq.value=""}S.cur.lines=buildLines(S.cur.info.tipo,S.cur.hist,extOrf(S.cur.doc.ext,S.cur.doc.v),S.cur.esp);applyRules(S.cur);
   const l=S.cur.lines.find(z=>z.key===x.k);l.desc=x.d;renderGrid();S.cur.dirty=true;changed();$("#add-box").hidden=true;syncAddBtn();toast("Item adicionado em Outros itens");
   /* 12/11 (2): item fora do padrão da base: o master decide se libera para os gerentes da obra */
