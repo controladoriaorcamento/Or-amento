@@ -3838,13 +3838,13 @@ async function baixarExcel(comPadrao){
   if(!S.regObra){try{const rd=await S.db.doc("regras/regional_obra").get();S.regObra=rd.exists?(rd.data().m||null):null}catch(e){}}
   const mrg=mergeObras(rows);
   let val=null;let pa=comPadrao?padraoAoa(mrg):null;
-  if(pa&&scInd){const nv=pa[0].length;const temV=r=>{for(let j=11;j<nv;j+=3){const v=r[j+2];if(typeof v==="object"&&v?+v.v:+v)return true}return false};pa=[pa[0],...pa.slice(1).filter(r=>{const s=cod(r[5]);return s==="-1"||s===""||temV(r)})]}
+  if(pa&&scInd){const nv=pa[0].length;const temV=r=>{for(let j=11;j<nv;j+=3){const v=r[j+2];if(typeof v==="object"&&v?+v.v:+v)return true}return false};const comV=new Set();pa.slice(1).forEach(r=>{const s=cod(r[5]);if(s&&s!=="-1"&&temV(r))comV.add(cod(r[0])+"-"+cod(r[1]))});pa=[pa[0],...pa.slice(1).filter(r=>{const s=cod(r[5]);return comV.has(cod(r[0])+"-"+cod(r[1]))&&(s==="-1"||s===""||temV(r))})]}
   try{await carregarAnalistas()}catch(e){}if(comPadrao&&$("#es-corrigir").checked&&!(S.estr&&!S.estr.base)){try{toast("Conferindo com a Base - Geral (estrutura do ERP)…");await estrDaBaseGeral([...new Set(mrg.map(r=>String(r.info.emp||r.o.split("-")[0])))])}catch(e){}}
   if(comPadrao&&S.estr&&$("#es-corrigir").checked){val=validarEstrutura(pa,true);pa=val.aoa}
   if(comPadrao){const ws=XLSX.utils.aoa_to_sheet(padraoRenum(pa));ws["!freeze"]={xSplit:8,ySplit:1};ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:40},{wch:12},{wch:9},{wch:9},{wch:44},{wch:5},{wch:8},{wch:9}];XLSX.utils.book_append_sheet(wb,ws,"Padrão")}
   const wi=scInd?null:XLSX.utils.aoa_to_sheet(await insumosAoa(mrg,m=>toast(m)));if(wi){wi["!cols"]=[{wch:18},{wch:24},{wch:8},{wch:8},{wch:36},{wch:8},{wch:9},{wch:9},{wch:44},{wch:5},{wch:16},{wch:10},...Array(15).fill({wch:13}),{wch:30},...Array(9).fill({wch:14})];wi["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(33)+"1"}}
   const wr=XLSX.utils.aoa_to_sheet(resumoAoa(rows));wr["!cols"]=[{wch:18},{wch:26},{wch:28},{wch:8},{wch:30},{wch:8},{wch:44},{wch:10},{wch:10},{wch:18},{wch:14},{wch:14},{wch:14},{wch:60}];XLSX.utils.book_append_sheet(wb,wr,"Resumo");if(wi)XLSX.utils.book_append_sheet(wb,wi,"Resumo por insumo");if(val)abasValidacao(wb,val);
-  const data=XLSX.write(wb,{type:"array",bookType:"xlsx"});
+  const data=XLSX.write(wb,{type:"array",bookType:"xlsx",compression:true});
   const nome=(comPadrao?"ORCAMENTO_2027_2029_PADRAO":"ORCAMENTO_2027_2029_RESUMO")+(scInd?"_INDICADORES":"")+".xlsx";
   try{await S.dl.save({filename:nome,data:new Uint8Array(data)})}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
 }
