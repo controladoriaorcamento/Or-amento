@@ -693,7 +693,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
           <div class="row">
             <input id="acomp-q" type="search" placeholder="Gerente, empresa ou obra" aria-label="Buscar no acompanhamento" style="padding:7px 9px;border:1px solid var(--line-strong);border-radius:6px;min-width:200px"><div class="slicer est-dd" id="est-dd"><button type="button" class="sl-btn" style="width:230px"><span class="sl-txt">Todos os estágios</span><span aria-hidden="true">▾</span></button><div class="sl-pop" hidden><div class="sl-acts"><button type="button" data-esta="todos">Todos</button><button type="button" data-esta="limpar">Limpar</button></div><div class="sl-list" id="est-list"></div></div></div><select id="acomp-ver" hidden><option value="ativas"></option></select>
             <button class="btn" id="btn-refresh">Atualizar</button>
-            <select id="exp-scope" aria-label="Obras exportadas" title="Usado quando nenhuma obra está marcada na lista"><option value="enviado">Exportar: enviadas e validadas</option><option value="todas">Exportar: todas</option></select>
+            <select id="exp-scope" aria-label="Obras exportadas" title="Usado quando nenhuma obra está marcada na lista"><option value="enviado">Exportar: enviadas e validadas</option><option value="todas">Exportar: todas</option><option value="ind">Exportar: todas dos Indicadores (só linhas com valor)</option></select>
             <button class="btn" id="btn-exp-res">Excel resumo</button>
             <button class="btn primary" id="btn-exp-mod">Excel no layout do modelo</button>
           </div>
@@ -3827,20 +3827,25 @@ async function insumosAoa(rows,progress){
   return out;
 }
 async function baixarExcel(comPadrao){
-  const rows=scopeRows();if(!rows.length){toast("Nenhuma obra para exportar com esse filtro");return}
+  /* 18/11 (v66): escopo "todas dos Indicadores" — todas as empresas/obras contadas no Indicadores (validadas, em validação, devolvidas, em preenchimento); no layout do modelo só saem as linhas com valor */
+  const scInd=$("#exp-scope").value==="ind"&&!(S.acSel&&S.acSel.size);
+  if(scInd&&!S.ind){toast("Carregando as obras do Indicadores…");try{S.ind=await dadosIndicadores()}catch(e){}}
+  const rows=scInd?(()=>{const ob=new Set(((S.ind&&S.ind.UA)||[]).map(u=>u.o));return (S.acomp||[]).filter(r=>r.orc&&ob.has(r.o))})():scopeRows();if(!rows.length){toast("Nenhuma obra para exportar com esse filtro");return}
   if(typeof XLSX==="undefined"){toast("O gerador de Excel não carregou. Recarregue a página e tente de novo.");return}
   if(!S.dl){toast("Download indisponível nesta visualização");return}
   const wb=XLSX.utils.book_new();
   /* 17/11 (v63): coluna Regional no Excel resumo — garante o cadastro de regionais carregado */
   if(!S.regObra){try{const rd=await S.db.doc("regras/regional_obra").get();S.regObra=rd.exists?(rd.data().m||null):null}catch(e){}}
   const mrg=mergeObras(rows);
-  let val=null;let pa=comPadrao?padraoAoa(mrg):null;if(comPadrao&&$("#es-corrigir").checked&&!(S.estr&&!S.estr.base)){try{toast("Conferindo com a Base - Geral (estrutura do ERP)…");await estrDaBaseGeral([...new Set(mrg.map(r=>String(r.info.emp||r.o.split("-")[0])))])}catch(e){}}
+  let val=null;let pa=comPadrao?padraoAoa(mrg):null;
+  if(pa&&scInd){const nv=pa[0].length;const temV=r=>{for(let j=11;j<nv;j+=3){const v=r[j+2];if(typeof v==="object"&&v?+v.v:+v)return true}return false};pa=[pa[0],...pa.slice(1).filter(r=>{const s=cod(r[5]);return s==="-1"||s===""||temV(r)})]}
+  try{await carregarAnalistas()}catch(e){}if(comPadrao&&$("#es-corrigir").checked&&!(S.estr&&!S.estr.base)){try{toast("Conferindo com a Base - Geral (estrutura do ERP)…");await estrDaBaseGeral([...new Set(mrg.map(r=>String(r.info.emp||r.o.split("-")[0])))])}catch(e){}}
   if(comPadrao&&S.estr&&$("#es-corrigir").checked){val=validarEstrutura(pa,true);pa=val.aoa}
   if(comPadrao){const ws=XLSX.utils.aoa_to_sheet(padraoRenum(pa));ws["!freeze"]={xSplit:8,ySplit:1};ws["!cols"]=[{wch:8},{wch:8},{wch:34},{wch:40},{wch:12},{wch:9},{wch:9},{wch:44},{wch:5},{wch:8},{wch:9}];XLSX.utils.book_append_sheet(wb,ws,"Padrão")}
-  const wi=XLSX.utils.aoa_to_sheet(await insumosAoa(mrg,m=>toast(m)));wi["!cols"]=[{wch:18},{wch:24},{wch:8},{wch:8},{wch:36},{wch:8},{wch:9},{wch:9},{wch:44},{wch:5},{wch:16},{wch:10},...Array(15).fill({wch:13}),{wch:30},...Array(9).fill({wch:14})];wi["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(33)+"1"};
-  const wr=XLSX.utils.aoa_to_sheet(resumoAoa(rows));wr["!cols"]=[{wch:18},{wch:26},{wch:28},{wch:8},{wch:30},{wch:8},{wch:44},{wch:10},{wch:10},{wch:18},{wch:14},{wch:14},{wch:14},{wch:60}];XLSX.utils.book_append_sheet(wb,wr,"Resumo");XLSX.utils.book_append_sheet(wb,wi,"Resumo por insumo");if(val)abasValidacao(wb,val);
+  const wi=scInd?null:XLSX.utils.aoa_to_sheet(await insumosAoa(mrg,m=>toast(m)));if(wi){wi["!cols"]=[{wch:18},{wch:24},{wch:8},{wch:8},{wch:36},{wch:8},{wch:9},{wch:9},{wch:44},{wch:5},{wch:16},{wch:10},...Array(15).fill({wch:13}),{wch:30},...Array(9).fill({wch:14})];wi["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(33)+"1"}}
+  const wr=XLSX.utils.aoa_to_sheet(resumoAoa(rows));wr["!cols"]=[{wch:18},{wch:26},{wch:28},{wch:8},{wch:30},{wch:8},{wch:44},{wch:10},{wch:10},{wch:18},{wch:14},{wch:14},{wch:14},{wch:60}];XLSX.utils.book_append_sheet(wb,wr,"Resumo");if(wi)XLSX.utils.book_append_sheet(wb,wi,"Resumo por insumo");if(val)abasValidacao(wb,val);
   const data=XLSX.write(wb,{type:"array",bookType:"xlsx"});
-  const nome=comPadrao?"ORCAMENTO_2027_2029_PADRAO.xlsx":"ORCAMENTO_2027_2029_RESUMO.xlsx";
+  const nome=(comPadrao?"ORCAMENTO_2027_2029_PADRAO":"ORCAMENTO_2027_2029_RESUMO")+(scInd?"_INDICADORES":"")+".xlsx";
   try{await S.dl.save({filename:nome,data:new Uint8Array(data)})}catch(e){if(e&&e.code!=="cancelled")toast("O download não foi concluído.")}
 }
 
@@ -3861,6 +3866,8 @@ onCarga("#es-file",async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
       let o=E.eo.get(eo);if(!o){o={nome:r[c.dO]||"",P:new Map()};E.eo.set(eo,o)}
       const P=cod(r[c.P]);let p=o.P.get(P);if(!p){p={d:r[c.dP]||"",S:new Map()};o.P.set(P,p)}
       const S_=cod(r[c.S]);let sv=p.S.get(S_);if(!sv){sv={d:r[c.dS]||"",I:new Map()};p.S.set(S_,sv)}
+      /* 18/11 (v66): títulos (serviço -1) para refazer os grupos na exportação corrigida */
+      if(!o.H)o.H=new Map();if(S_==="-1"){const hk=P+"|"+cod(r[c.It]);if(!o.H.has(hk))o.H.set(hk,{d:r[c.dS]||"",C:cod(r[c.C])});return}
       const inat=[c.a1,c.a2,c.a3].map(k=>k>=0&&cod(r[k])==="1");
       sv.I.set(cod(r[c.I]),{d:r[c.dI]||"",C:cod(r[c.C]),It:cod(r[c.It]),inat:inat[0]?"serviço/item inativo":inat[1]?"produto inativo":inat[2]?"insumo inativo":""})});
     S.estr=E;$("#es-validar").disabled=false;
@@ -3887,8 +3894,7 @@ function validarEstrutura(aoa,corrigir){
       const altPI=isHead||!I?[]:[...o.P.entries()].filter(([k,pp])=>k!==P&&pp.S.has(S_)&&pp.S.get(S_).I.has(I)&&!pp.S.get(S_).I.get(I).inat);
       if((!p||!p.S.has(S_)||(I&&!p.S.get(S_).I.has(I)))&&altPI.length){const [nP,pp]=altPI[0];const ii=pp.S.get(S_).I.get(I);st="CORRIGIDO";mot=`produto ${P} → ${nP}${pp.d?" "+pp.d:""} (este serviço/insumo só existe nesse produto na estrutura)`;
         if(corrigir){row[2]=nP+(pp.d?" "+pp.d:"");if(ii.C)row[3]=+ii.C||ii.C;if(ii.It)row[4]=ii.It}}
-      else if((!p||!p.S.has(S_)||(I&&!p.S.get(S_).I.has(I)))&&!isHead&&I&&(()=>{let a=null;o.P.forEach((pp,k)=>pp.S.forEach((ss,sk)=>{const ii=ss.I.get(I);if(!a&&ii&&!ii.inat&&sk!=="-1")a=[k,pp,sk,ii]}));altSI=a;return !!a})()){const [nP,pp,nS,ii]=altSI;st="CORRIGIDO";mot=`serviço ${S_} → ${nS}${nP!==P?`, produto ${P} → ${nP}`:""} (na estrutura da obra o insumo está nesse serviço)`;
-        if(corrigir){row[2]=nP+(pp.d?" "+pp.d:"");row[5]=nS;if(ii.C)row[3]=+ii.C||ii.C;if(ii.It)row[4]=ii.It}}
+      else if((!p||!p.S.has(S_)||(I&&!p.S.get(S_).I.has(I)))&&!isHead&&I&&(()=>{let a=null;o.P.forEach((pp,k)=>pp.S.forEach((ss,sk)=>{const ii=ss.I.get(I);if(!a&&ii&&!ii.inat&&sk!=="-1")a=[k,pp,sk,ii]}));altSI=a;return !!a})()){const [nP,pp,nS,ii]=altSI;st="ERRO";mot="Serviço errado";sug=`Na estrutura da obra o insumo está no serviço ${nS}${nP!==P?` do produto ${nP}${pp.d?" "+pp.d:""}`:""}`}
       else if(!p){st="ERRO";mot="Produto não existe nesta obra";const alt=[...o.P.entries()].filter(([,pp])=>!isHead&&pp.S.has(S_)&&pp.S.get(S_).I.has(I)).map(([k,pp])=>k+" "+pp.d);sug=alt.length?"Produto(s) da obra com esse serviço/insumo: "+alt.slice(0,3).join("; "):"Produtos da obra: "+[...o.P.keys()].slice(0,8).join(", ")}
       else if(!isHead){const sv=p.S.get(S_);
         if(!sv){st="ERRO";mot="Serviço não existe neste produto";const alt=[...o.P.entries()].filter(([,pp])=>pp.S.has(S_)).map(([k])=>k);sug=alt.length?"Serviço existe nos produtos: "+alt.join(", "):""}
@@ -3926,8 +3932,17 @@ function estrRefazGrupos(fin,E,nv){const head=fin[0];const cmpIt=(a,b)=>{const x
 function abasValidacao(wb,v){
   const r=[["Empresa-obra","Linhas OK","Corrigidas (contrato/item)","Com erro (com valor)","Valor com erro","Sem valor e fora da estrutura (removidas)"],...v.res.map(x=>[x.eo,x.ok,x.corr,x.err,x.vErr,x.rem])];
   const w1=XLSX.utils.aoa_to_sheet(r);w1["!cols"]=[{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:18}];XLSX.utils.book_append_sheet(wb,w1,"Validação - resumo");
-  const p=[["Situação","Empresa","Obra","Descrição da obra (estrutura)","Produto","Contrato","Item","Serviço","Insumo","Descrição","Valor 2027–2029","Motivo","Sugestão"],...v.prob.sort((a,b)=>({ERRO:0,REMOVER:1,CORRIGIDO:2}[a[0]]-{ERRO:0,REMOVER:1,CORRIGIDO:2}[b[0]])||(b[10]-a[10]))];
-  const w2=XLSX.utils.aoa_to_sheet(p);w2["!cols"]=[{wch:11},{wch:8},{wch:8},{wch:28},{wch:30},{wch:10},{wch:10},{wch:9},{wch:9},{wch:36},{wch:14},{wch:40},{wch:50}];w2["!autofilter"]={ref:"A1:M1"};XLSX.utils.book_append_sheet(wb,w2,"Validação - linhas");
+  /* 18/11 (v66): aba de erros só com o que é erro de verdade (serviço errado ou não existe na estrutura); ajustes automáticos (produto/contrato/item) em aba separada. Com Regional, status da obra e master responsável */
+  const AN=S.anR||{};const R=(S.regras&&S.regras.r)||{};const pares=new Map();((S.ind&&S.ind.UA)||[]).forEach(u=>{if(!pares.has(u.o))pares.set(u.o,[]);pares.get(u.o).push(u.st)});
+  const stObra=o=>{const L=pares.get(o);if(!L)return "";if(L.every(s=>s==="validado"))return "Validado";if(L.some(s=>s==="reaberto"))return "Devolvido";if(L.every(s=>s==="enviado"||s==="validado"))return "Enviado (em validação)";if(L.every(s=>s==="vazio"))return "Não iniciado";return "Em preenchimento"};
+  const ext=x=>{const o=cod(x[1])+"-"+cod(x[2]);const c=S.catMap&&S.catMap.get(o);const tipo=c?c[3]:"";const reg=S.regObra?regDe(o):"";const rr=R[tipo+"|"+cod(String(x[4]).split(" ")[0])+"|"+cod(x[7])+"|"+cod(x[8])];const area=rr&&rr[1]||"";
+    const mst=(AN.obra||{})[o]||(area&&(AN.area||{})[area])||(AN.emp||{})[cod(x[1])]||(AN.reg||{})[reg]||"";return [reg,stObra(o),mst||"(sem master)",area]};
+  const cab=["Regional","Status da obra","Master responsável","Quem planeja","Empresa","Obra","Descrição da obra (estrutura)","Produto","Contrato","Item","Serviço","Insumo","Descrição","Valor 2027–2029","Erro","Sugestão"];
+  const lin=x=>[...ext(x),x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],x[10],x[11],x[12]];
+  const er=v.prob.filter(x=>x[0]==="ERRO").sort((a,b)=>b[10]-a[10]).map(lin);
+  const w2=XLSX.utils.aoa_to_sheet([cab,...er]);w2["!cols"]=[18,20,16,20,8,8,28,30,10,10,9,9,36,14,30,60].map(w=>({wch:w}));w2["!autofilter"]={ref:"A1:P"+(er.length+1)};XLSX.utils.book_append_sheet(wb,w2,"Erros (serviço ou não existe)");
+  const aj=v.prob.filter(x=>x[0]==="CORRIGIDO"||x[0]==="MESCLADO").map(x=>[...lin(x).slice(0,14),x[0]==="MESCLADO"?"Linhas juntadas":"Ajustado automaticamente",x[11]]);
+  const w3=XLSX.utils.aoa_to_sheet([[...cab.slice(0,14),"Situação","O que foi ajustado"],...aj]);w3["!cols"]=[18,20,16,20,8,8,28,30,10,10,9,9,36,14,22,60].map(w=>({wch:w}));w3["!autofilter"]={ref:"A1:P"+(aj.length+1)};XLSX.utils.book_append_sheet(wb,w3,"Ajustes automáticos");
 }
 $("#es-validar").addEventListener("click",async()=>{
   if(!S.estr){toast("Carregue a estrutura primeiro");return}
