@@ -695,7 +695,7 @@ tr.cp-row-ab td{background:var(--accent-soft)}tr.cp-det>td{padding:6px 0 10px!im
             <button class="btn" id="btn-refresh">Atualizar</button>
             <select id="exp-scope" aria-label="Obras exportadas" title="Usado quando nenhuma obra está marcada na lista"><option value="enviado">Exportar: enviadas e validadas</option><option value="todas">Exportar: todas</option><option value="ind">Exportar: todas dos Indicadores (só linhas com valor)</option></select>
             <button class="btn" id="btn-exp-res">Excel resumo</button>
-            <button class="btn primary" id="btn-exp-mod">Excel no layout do modelo</button>
+            <button class="btn primary" id="btn-exp-mod">Excel no layout do modelo</button><button class="btn" id="btn-exp-fluxo" title="Relatório com a estrutura ativa no app, níveis de fluxo, observações e comparação com a Base dados V3 — escolha o arquivo Base dados.xlsx">Relatório App x V3 (Fluxo)</button><input type="file" id="fx-v3" accept=".xlsx,.xlsm" hidden>
           </div>
         </div>
         <div class="an-bar"><label class="lbl" for="an-filtro" style="margin:0">Analista da Controladoria</label><select id="an-filtro"><option value="">Todos</option></select><label class="row" style="gap:6px"><input type="checkbox" id="an-agrupar"> Agrupar por analista</label><label class="lbl" for="ac-val" style="margin:0">Valor</label><select id="ac-val" title="Orçamentos enviados à Controladoria com ou sem valor em 2027, 2028 e 2029"><option value="">Todos</option><option value="branco">Em branco (sem valor nos 3 anos)</option><option value="valor">Com valor</option></select><label class="lbl" for="ac-area" style="margin:0">Quem planeja</label><select id="ac-area"><option value="">Todos</option></select><label class="lbl" for="ac-app" style="margin:0" title="Dentro do app = obra ativa e não marcada como fora do app para a área de quem planeja">No app</label><select id="ac-app"><option value="">Todos</option><option value="app">Só dentro do app</option><option value="fora">Só fora do app</option></select><button class="btn sm" id="an-cfg" title="Definir quem da Controladoria analisa cada Regional, empresa ou obra">Analistas da Controladoria…</button></div>
@@ -1083,6 +1083,106 @@ function pzaDesenhar(){const el=$("#pz-areas");if(!el)return;if(!S.owner||S.vis|
   const lin=g=>{const pr=(PRAZO.porArea||{})[g.a]&&Date.parse(PRAZO.porArea[g.a])>Date.parse(PRAZO.ate);const fe=ag>=g.t;
     return `<tr><td>${esc(g.a)}</td><td>${esc(pzaFmt(g.t))}${pr?' <b>(prorrogado)</b>':""} <span class="${fe?"pza-x":"pza-ok"}">${fe?"encerrado":"aberto"}</span></td><td class="num">${nf0.format(g.n)}</td>${IND_STO.map(k=>`<td class="num">${nf0.format(g.c[k]||0)}</td>`).join("")}<td>${barra(pc(g.fim,g.n))}</td></tr>`};
   el.innerHTML=cab+info+`<div class="tbl-box"><table class="list"><thead><tr><th>Quem planeja</th><th>Prazo</th><th class="num">Obras</th>${IND_STO.map(k=>`<th class="num">${esc(IND_STN[k])}</th>`).join("")}<th>% concluído</th></tr></thead><tbody>${L.map(lin).join("")}</tbody><tfoot><tr><th>Total</th><th></th><th class="num">${nf0.format(T.n)}</th>${IND_STO.map(k=>`<th class="num">${nf0.format(T.c[k]||0)}</th>`).join("")}<th>${barra(pc(T.fim,T.n))}</th></tr></tfoot></table></div>`}
+/* 25/11 (v75): "Relatório App x V3 (Fluxo)" — base bruta com níveis de fluxo (chave empresa-obra-produto ERP-serviço-insumo da coluna G da V3), cidade, obs do gerente (observação + detalhamento), obs da Controladoria (apontamentos + motivo da devolução) e comparação com a V3 */
+async function fluxoRelatorio(file){const msg=t=>toast(t);
+ try{msg("Lendo a Base dados (V3)…");await new Promise(r=>setTimeout(r,30));
+  const MESN=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  const V={},FSI={},FS={},cidE={};
+  if(file){const wb=XLSX.read(await file.arrayBuffer(),{type:"array",dense:true,sheets:["BASE_DADOS V3"]});const ws=wb.Sheets["BASE_DADOS V3"];if(!ws){toast("Não encontrei a aba BASE_DADOS V3 no arquivo.");return}
+   const R=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});let hi=-1;for(let i=0;i<Math.min(30,R.length);i++){if((R[i]||[]).some(x=>String(x||"").trim()==="Chave")){hi=i;break}}if(hi<0){toast("Não encontrei a coluna Chave na V3.");return}
+   const H=R[hi].map(x=>String(x==null?"":x).trim().toLowerCase());const ix=n=>H.indexOf(n.toLowerCase());
+   const cC=ix("Chave"),cT=ix("Fluxo_Tipo"),cCo=ix("Fluxo_Conta"),cSu=ix("Fluxo_SubConta"),cDe=ix("Fluxo_Descricao"),cCid=ix("CidadeEmpresa"),cEmp=ix("CodEmpresa");
+   const a27=MESN.map(m=>ix("atual "+m+"27")),p27=MESN.map(m=>ix(m+" 2027")),m28=MESN.map(m=>ix(m+" 2028"));
+   const nv=x=>{const v=+x;return isFinite(v)?Math.abs(v):0};
+   for(let i=hi+1;i<R.length;i++){const r=R[i];if(!r)continue;const ch=String(r[cC]==null?"":r[cC]).trim();if(cEmp>=0&&cCid>=0&&r[cEmp]!=null&&r[cCid])cidE[String(r[cEmp]).trim()]=String(r[cCid]);if((ch.match(/-/g)||[]).length<4)continue;
+    const fl=[r[cT]||"",r[cCo]||"",r[cSu]||"",r[cDe]||""].map(x=>String(x));const p=ch.split("-");const si=p[p.length-2]+"|"+p[p.length-1];
+    (FSI[si]=FSI[si]||{})[fl.join("\u0001")]=((FSI[si]||{})[fl.join("\u0001")]||0)+1;(FS[p[p.length-2]]=FS[p[p.length-2]]||{})[fl.join("\u0001")]=((FS[p[p.length-2]]||{})[fl.join("\u0001")]||0)+1;
+    V[ch]={fl,a27:a27.map((c,m)=>c>=0&&r[c]!=null&&r[c]!==""&&isFinite(+r[c])?nv(r[c]):(p27[m]>=0?nv(r[p27[m]]):0)),p27:p27.map(c=>c>=0?nv(r[c]):0),m28:m28.map(c=>c>=0?nv(r[c]):0)}}}
+  const top=o=>{if(!o)return null;let b=null,n=-1;for(const k in o)if(o[k]>n){n=o[k];b=k}return b?b.split("\u0001"):null};
+  const fluxo=(ch,S_,I)=>V[ch]?[V[ch].fl,"Chave na V3"]:top(FSI[S_+"|"+I])?[top(FSI[S_+"|"+I]),"Serviço+insumo na V3"]:top(FS[S_])?[top(FS[S_]),"Serviço na V3"]:[["","","",""],file?"Sem correspondência":"Sem V3"];
+  msg("Carregando orçamentos e Indicadores…");if(!S.acomp||!S.acomp.length){try{await loadAdm()}catch(e){}}if(!S.ind){S.ind=await dadosIndicadores()}
+  if(S.foraApp===undefined){try{const fd=await S.db.doc("regras/fora_app").get();S.foraApp=fd.exists?(fd.data().m||{}):{}}catch(e){S.foraApp={}}}
+  let CID={};try{const cd=await S.db.doc("restrito/cidades").get();CID=cd.exists?(cd.data().m||{}):{}}catch(e){}
+  const UAset=new Set(S.ind.UA.map(u=>u.o+"|"+u.area));const obras=[...new Set(S.ind.UA.map(u=>u.o))];const catBy=S.ind.catBy;const byO=new Map();(S.acomp||[]).forEach(r=>{if(!byO.has(r.o))byO.set(r.o,[]);byO.get(r.o).push(r)});
+  const oc=(S.regras&&S.regras.ocSet)||new Set();const STN={rascunho:"Em preenchimento",reaberto:"Devolvido",enviado:"Enviado",validado:"Validado"};const rk={validado:4,enviado:3,reaberto:2,rascunho:1};
+  const r2=x=>Math.round((+x||0)*100)/100;const sm=a=>a.reduce((p,q)=>p+q,0);const fm=v=>(+v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const ERP={};const prodErp=async(emp,ob,P,S_,I)=>{if(!(emp in ERP)){const d=await estEmpresa(emp);ERP[emp]=d&&d.o?d.o:null}const L=ERP[emp]&&ERP[emp][ob];if(!L)return[P,"Obra não existe na Base Geral"];
+   if(L.some(x=>x[0]===P&&x[3]===S_&&x[4]===I))return[P,"Igual ao ERP"];const o=L.find(x=>x[3]===S_&&x[4]===I);if(o)return[o[0],"Produto ajustado ao ERP ("+P+"→"+o[0]+")"];return[P,"Serviço/insumo não existe no ERP da obra"]};
+  const out=[],dup=[];
+  for(let i=0;i<obras.length;i++){const o=obras[i];if(i%25===0){msg(`Montando a base: obra ${i+1}/${obras.length}…`);await new Promise(r=>setTimeout(r,0))}
+   const c=catBy.get(o);if(!c)continue;const tipo=c[3];const tp=T.tipos[tipo];if(!tp)continue;const all=byO.get(o)||[];const rs=all.filter(r=>r.orc);const inf=(all[0]&&all[0].info)||{};
+   const emp=String(inf.emp||o.split("-")[0]),ob=String(inf.obra||o.split("-")[1]);const empN=inf.empNome||"",obN=c[2]||inf.nome||"",reg=regDe(o),cid=CID[o]||cidE[emp]||"";
+   const vM={},eM={};rs.forEach(r=>{Object.assign(eM,r.orc.ext||{});Object.entries(r.orc.v||{}).forEach(([k,a])=>{if(!vM[k])vM[k]=a})});
+   const lines=buildLines(tipo,null,extOrf(eM,vM));const SD={};lines.forEach(l=>{if(l.kind==="grp"&&l.S&&!l.I&&!SD[l.S])SD[l.S]=l.desc});
+   let bf=null,pv=null;try{bf=baseFixa(o,(S.baseOrig&&S.baseOrig.get(o))||tipo)}catch(e){}try{pv=produtosDaObra0(null,[],o,tipo)}catch(e){}const ocP=new Set((bf&&bf.ocultar)||[]);
+   const vistos=new Set();
+   for(const l of lines){if(l.kind!=="leaf")continue;const ru=ruleFor(tipo,l,o);const a=(ru&&ru[1])||"";let ativo=1,mot="";
+    if(oc.has(tipo+"|"+l.key)){ativo=0;mot="Oculto no modelo"}else if(ocP.has(l.P)){ativo=0;mot="Produto oculto na obra"}else if(pv&&!pv.has(l.P)&&!l.extra){ativo=0;mot="Produto não é da obra"}
+    else if(!a){ativo=0;mot="Sem quem planeja"}else if(foraIns(tipo,l,o)){ativo=0;mot="Insumo fora do app"}else if(!insAppObra(o,l)&&foraDe(o,a)){ativo=0;mot="Área fora do app na obra"}else if(!UAset.has(o+"|"+a)){ativo=0;mot="Área não conta nos Indicadores"}
+    const comA=rs.filter(x=>(x.info.areas||[]).includes(a));const temK=x=>Object.keys(x.orc.v||{}).some(k=>k===l.key||k.startsWith(l.key+"#"));
+    const comK=rs.filter(temK);const dono=comA.find(temK)||comK[0]||comA.slice().sort((p,q)=>(rk[q.orc.status]||0)-(rk[p.orc.status]||0))[0]||null;
+    comK.filter(x=>x!==dono).forEach(x=>{const t=YEARS.reduce((p,y)=>p+sm(((x.orc.v||{})[l.key]||{})[y]||[]),0);if(t)dup.push([o,l.key,x.nomeG,STN[x.orc.status]||"",dono?dono.nomeG:"",r2(t)])});
+    const st=dono?(STN[dono.orc.status]||"Em preenchimento"):"Não iniciado";const ger=[...new Set(all.filter(x=>(x.info.areas||[]).includes(a)).map(x=>x.nomeG))].join(" / ");
+    const dv=dono?(dono.orc.v||{}):{};const vals=[];YEARS.forEach(y=>{const ar=lineYearVals({v:dv,pr:(dono&&dono.orc.pr)||{}},l,y)||[];for(let m=0;m<12;m++)vals.push(r2(ar[m]))});
+    if(!ativo&&!sm(vals))continue;vistos.add(l.key);
+    const subs=dono?(((dono.orc.sub||{})[l.key])||[]):[];const subT=sb=>YEARS.reduce((p,y)=>p+sm(((dv[l.key+"#"+sb.id]||{})[y])||[]),0);
+    const lob=dono?((dono.orc.lobs||{})[l.key]||""):"";const det=subs.filter(sb=>subT(sb)||!/^Detalhe \d+$/.test(sb.n||"")).map(sb=>(sb.n||"")+": R$ "+fm(subT(sb))).join("; ");
+    const obsG=[lob,det?"Detalhamento: "+det:""].filter(Boolean).join(" | ");
+    const rv=dono&&dono.orc.rev&&dono.orc.rev[l.key];const devo=dono&&dono.orc.status==="reaberto"&&dono.orc.devolucao&&dono.orc.devolucao.motivo;
+    const obsC=[rv&&rv.t?"Apontamento: "+rv.t:"",devo?"Devolução: "+dono.orc.devolucao.motivo:""].filter(Boolean).join(" | ");
+    const [pe,sit]=await prodErp(emp,ob,l.P||"",l.S||"",l.I||"");const ch=[emp,ob,pe,l.S||"",l.I||""].join("-");const [fl,orig]=fluxo(ch,l.S||"",l.I||"");
+    out.push({reg,cid,emp,empN,ob,obN,tipo,P:l.P||"",Pd:(tp.prods||{})[l.P]||"",pe,S:l.S||"",Sd:SD[l.S]||"",I:l.I||"",Id:l.desc||"",tl:"Insumo",sub:"",area:a||"(sem quem planeja)",ativo:ativo?"Sim":"Não",mot,extra:l.extra?"Sim":"Não",st,ger,obsG,obsC,ch,sit,fl,orig,vals});
+    subs.forEach(sb=>{const sv=[];YEARS.forEach(y=>{const ar=(dv[l.key+"#"+sb.id]||{})[y]||[];for(let m=0;m<12;m++)sv.push(r2(ar[m]))});if(!sm(sv)&&/^Detalhe \d+$/.test(sb.n||""))return;
+     out.push({...out[out.length-1],tl:"Subitem",sub:sb.n||"",vals:sv,obsG:"",obsC:""})})}
+   /* valores gravados em chaves que não existem mais no modelo da obra */
+   rs.forEach(r=>Object.entries(r.orc.v||{}).forEach(([k,v])=>{if(k.includes("#")||vistos.has(k))return;const vals=[];YEARS.forEach(y=>{const ar=(v||{})[y]||[];for(let m=0;m<12;m++)vals.push(r2(ar[m]))});if(!sm(vals))return;vistos.add(k);
+     const [P,S_,I]=k.split("|");const ex=(r.orc.ext||{})[k]||{};out.push({reg,cid,emp,empN,ob,obN,tipo,P,Pd:"",pe:P,S:S_,Sd:"",I,Id:ex.d||"",tl:"Insumo",sub:"",area:(r.info.areas||[]).join("+"),ativo:"Não",mot:"Chave fora do modelo atual da obra",extra:"Sim",st:STN[r.orc.status]||"Em preenchimento",ger:r.nomeG,obsG:(r.orc.lobs||{})[k]||"",obsC:"",ch:[emp,ob,P,S_,I].join("-"),sit:"",fl:fluxo([emp,ob,P,S_,I].join("-"),S_,I)[0],orig:"",vals})}))}
+  msg("Comparando com a V3…");await new Promise(r=>setTimeout(r,0));
+  const ins=out.filter(x=>x.tl==="Insumo");const k4=ch=>{const p=ch.split("-");return [p[0],p[1],p[3],p[4]].join("-")};const OBs=new Set(obras.map(String));
+  const aSI={};ins.forEach(x=>{if(x.area&&x.area[0]!=="("){const k=x.S+"|"+x.I;(aSI[k]=aSI[k]||{})[x.area]=((aSI[k]||{})[x.area]||0)+1}});
+  const C=new Map();const z=()=>Array(12).fill(0);
+  ins.forEach(x=>{const k=k4(x.ch);let c=C.get(k);if(!c){c={k,reg:x.reg,cid:x.cid,emp:x.emp,empN:x.empN,ob:x.ob,obN:x.obN,S:x.S,Sd:x.Sd,I:x.I,Id:x.Id,area:x.area,st:x.st,ger:x.ger,obsG:[],obsC:[],pa:new Set(),pv:new Set(),a:Array(36).fill(0),v27:z(),p27:z(),v28:z(),fl:x.fl};C.set(k,c)}
+   c.pa.add(x.pe);x.vals.forEach((v,i)=>c.a[i]+=v);if(x.obsG)c.obsG.push(x.obsG);if(x.obsC)c.obsC.push(x.obsC)});
+  const obInfo={};ins.forEach(x=>{obInfo[x.emp+"-"+x.ob]=x});
+  Object.entries(V).forEach(([ch,v])=>{const p=ch.split("-");const eo=p[0]+"-"+p[1];if(!OBs.has(eo))return;const k=k4(ch);let c=C.get(k);
+   if(!c){const b=obInfo[eo]||{};const t=top(aSI[p[3]+"|"+p[4]]);const ar=aSI[p[3]+"|"+p[4]]?Object.entries(aSI[p[3]+"|"+p[4]]).sort((a,b)=>b[1]-a[1])[0][0]:null;
+    c={k,reg:b.reg||regDe(eo),cid:b.cid||CID[eo]||cidE[p[0]]||"",emp:p[0],empN:b.empN||"",ob:p[1],obN:b.obN||"",S:p[3],Sd:"",I:p[4],Id:"",area:ar?ar+" (pelo modelo)":"Fora do app",st:"Só na V3",ger:"",obsG:[],obsC:[],pa:new Set(),pv:new Set(),a:Array(36).fill(0),v27:z(),p27:z(),v28:z(),fl:v.fl};C.set(k,c)}
+   c.pv.add(p[2]);for(let m=0;m<12;m++){c.v27[m]+=v.a27[m];c.p27[m]+=v.p27[m];c.v28[m]+=v.m28[m]}if(V[ch])c.fl=v.fl});
+  const situ=(a,v)=>v<0.005&&a>=0.005?"Novo no app (não estava na V3)":a<0.005&&v>=0.005?"Só na V3 (sem valor no app)":Math.abs(a-v)<1?"Igual":a>v?"Aumentou":"Diminuiu";
+  const comp=[...C.values()].map(c=>{const A27=sm(c.a.slice(0,12)),A28=sm(c.a.slice(12,24)),A29=sm(c.a.slice(24)),V27=sm(c.v27),P27=sm(c.p27),V28=sm(c.v28);
+   return {...c,A27,A28,A29,V27,P27,V28,esc:c.area==="Fora do app"?"Fora do app":"Planejado no app",corr:[...c.pa].some(x=>c.pv.has(x))?"Mesma chave":c.pa.size&&c.pv.size?"Produto diferente (casado por empresa-obra-serviço-insumo)":c.pa.size?"Só no app":"Só na V3"}}).filter(c=>c.A27+c.A28+c.A29+c.V27+c.V28>0.004);
+  msg("Gerando o Excel…");await new Promise(r=>setTimeout(r,0));
+  const num=x=>/^\d+$/.test(String(x))?+x:x;const MS=[];[2027,2028,2029].forEach(y=>MESN.forEach(m=>MS.push(m+"/"+y)));
+  const cab=["Regional","Cidade","Empresa","Nome da empresa","Obra","Descrição da obra","Modelo","Produto (app)","Descrição produto (app)","Produto ERP","Serviço","Descrição do serviço","Insumo","Descrição do insumo","Tipo de linha","Subitem","Quem planeja","Gerente(s)","Status","Obs do gerente (observação + detalhamento)","Obs da Controladoria (apontamento + devolução)","Ativo no app","Motivo (se não ativo)","Incluído fora do modelo","Chave (emp-obra-produto-serviço-insumo)","Situação x ERP","Fluxo_Tipo","Fluxo_Conta","Fluxo_SubConta","Fluxo_Descricao","Origem do nível de fluxo","Considerar no total","Total 2027","Total 2028","Total 2029","Total 2027–2029",...MS];
+  const B=[cab];out.sort((a,b)=>String(a.reg).localeCompare(String(b.reg))||(+a.emp-+b.emp)||String(a.ob).localeCompare(String(b.ob))||a.S.localeCompare(b.S)||a.I.localeCompare(b.I)||(a.tl==="Insumo"?-1:1)).forEach(x=>{const t27=r2(sm(x.vals.slice(0,12))),t28=r2(sm(x.vals.slice(12,24))),t29=r2(sm(x.vals.slice(24)));
+   B.push([x.reg,x.cid,num(x.emp),x.empN,num(x.ob),x.obN,x.tipo,x.P,x.Pd,x.pe,x.S,x.Sd,x.I,x.Id,x.tl,x.sub,x.area,x.ger,x.st,x.obsG,x.obsC,x.ativo,x.mot,x.extra,x.ch,x.sit,...x.fl,x.orig,x.tl==="Insumo"?"Sim":"Não (detalhe do insumo)",t27,t28,t29,r2(t27+t28+t29),...x.vals])});
+  const cabC=["Regional","Cidade","Empresa","Nome da empresa","Obra","Descrição da obra","Serviço","Descrição do serviço","Insumo","Descrição do insumo","Quem planeja","Status","Gerente(s)","Obs do gerente","Obs da Controladoria","Produto(s) no app","Produto(s) na V3","Correspondência","Fluxo_Tipo","Fluxo_Conta","Fluxo_SubConta","Fluxo_Descricao","App 2027","V3 2027 (atual)","Variação 2027 (R$)","Variação 2027 (%)","Situação 2027","V3 2027 (previsto)","App 2028","V3 2028","Variação 2028 (R$)","Variação 2028 (%)","Situação 2028","App 2029","Escopo","Chave empresa-obra-serviço-insumo"];
+  const Cm=[cabC];comp.sort((a,b)=>String(a.reg).localeCompare(String(b.reg))||(+a.emp-+b.emp)||String(a.ob).localeCompare(String(b.ob))||a.S.localeCompare(b.S)||a.I.localeCompare(b.I)).forEach(c=>{const pc=(a,v)=>v?r2((a-v)/v*10000)/10000:"";
+   Cm.push([c.reg,c.cid,num(c.emp),c.empN,num(c.ob),c.obN,c.S,c.Sd,c.I,c.Id,c.area,c.st,c.ger,c.obsG.join(" || "),c.obsC.join(" || "),[...c.pa].join(", "),[...c.pv].join(", "),c.corr,...c.fl.map(f=>f||"(sem nível)"),r2(c.A27),r2(c.V27),r2(c.A27-c.V27),pc(c.A27,c.V27),situ(c.A27,c.V27),r2(c.P27),r2(c.A28),r2(c.V28),r2(c.A28-c.V28),pc(c.A28,c.V28),situ(c.A28,c.V28),r2(c.A29),c.esc,c.k])});
+  const cA=comp.filter(c=>c.esc!=="Fora do app");const fora27=sm(comp.filter(c=>c.esc==="Fora do app").map(c=>c.V27)),fora28=sm(comp.filter(c=>c.esc==="Fora do app").map(c=>c.V28));
+  const RS=[["Orçamento 2027–2029 — App x Base V3 (Fluxo de Caixa)"],["Gerado no app em "+new Date().toLocaleString("pt-BR")+(file?" · V3: "+file.name:" · sem arquivo V3")],["Fora do escopo do app (não entra nas tabelas): V3 2027 R$ "+fm(fora28*0+fora27)+" · V3 2028 R$ "+fm(fora28)],[]];
+  const tab=(tit,dim,kf,ordem)=>{const G=new Map();const g=k=>{if(!G.has(k))G.set(k,{ob:new Set(),lin:0,linv:0,a27:0,a28:0,a29:0,v27:0,v28:0});return G.get(k)};
+   ins.forEach(x=>{const q=g(kf(x));q.ob.add(x.emp+"-"+x.ob);if(x.ativo==="Sim")q.lin++;if(sm(x.vals))q.linv++});cA.forEach(c=>{const q=g(kf(c));q.a27+=c.A27;q.a28+=c.A28;q.a29+=c.A29;q.v27+=c.V27;q.v28+=c.V28});
+   let ks=[...G.keys()];ks=ordem?ordem.filter(k=>G.has(k)).concat(ks.filter(k=>!ordem.includes(k))):ks.sort((a,b)=>(G.get(b).a27+G.get(b).v27)-(G.get(a).a27+G.get(a).v27));
+   RS.push([tit]);RS.push([dim,"Obras","Linhas ativas no app","Linhas com valor","App 2027","V3 2027 (atual)","Variação 2027","Var. 2027 %","App 2028","V3 2028","Variação 2028","Var. 2028 %","App 2029","App 2027–2029"]);const T0={a27:0,v27:0,a28:0,v28:0,a29:0};
+   ks.forEach(k=>{const q=G.get(k);["a27","v27","a28","v28","a29"].forEach(f=>T0[f]+=q[f]);RS.push([k,q.ob.size,q.lin,q.linv,r2(q.a27),r2(q.v27),r2(q.a27-q.v27),q.v27?r2((q.a27-q.v27)/q.v27*10000)/10000:"",r2(q.a28),r2(q.v28),r2(q.a28-q.v28),q.v28?r2((q.a28-q.v28)/q.v28*10000)/10000:"",r2(q.a29),r2(q.a27+q.a28+q.a29)])});
+   RS.push(["Total","","","",r2(T0.a27),r2(T0.v27),r2(T0.a27-T0.v27),T0.v27?r2((T0.a27-T0.v27)/T0.v27*10000)/10000:"",r2(T0.a28),r2(T0.v28),r2(T0.a28-T0.v28),T0.v28?r2((T0.a28-T0.v28)/T0.v28*10000)/10000:"",r2(T0.a29),r2(T0.a27+T0.a28+T0.a29)]);RS.push([])};
+  tab("Por Quem planeja","Quem planeja",x=>x.area);tab("Por Regional","Regional",x=>x.reg||"(sem regional)");tab("Por Status","Status",x=>x.st,["Validado","Enviado","Devolvido","Em preenchimento","Não iniciado","Só na V3"]);tab("Por Fluxo_Conta","Fluxo_Conta",x=>(x.fl&&x.fl[1])||"(sem nível)");
+  tab("Por Regional e Quem planeja","Regional | Quem planeja",x=>(x.reg||"(sem regional)")+" | "+x.area,[...new Set(ins.map(x=>(x.reg||"(sem regional)")+" | "+x.area).concat(cA.map(c=>(c.reg||"(sem regional)")+" | "+c.area)))].sort());
+  tab("Por Status e Quem planeja","Status | Quem planeja",x=>x.st+" | "+x.area,[...new Set(ins.map(x=>x.st+" | "+x.area).concat(cA.map(c=>c.st+" | "+c.area)))].sort());
+  const LM=[["Relatório — Estrutura ativa no app x Fluxo de Caixa (Base dados V3)"],[""],["Abas: Resumo (visões por Quem planeja, Regional, Status, Fluxo_Conta e cruzamentos) · Base bruta (uma linha por insumo ativo no app + subitens com valor ou nome próprio, 36 meses) · Comparação V3 (nível empresa-obra-serviço-insumo) · Preenchido em dobro."],
+   ["Chave = empresa-obra-produto ERP-serviço-insumo; o produto do app é trocado pelo produto do ERP da obra (Base Geral carregada no app) quando o serviço/insumo está em outro produto."],["Níveis de fluxo vêm da coluna Chave (G) da V3; sem a chave, usa serviço+insumo e depois só o serviço (coluna Origem do nível de fluxo)."],
+   ["Obs do gerente = observação da linha + detalhamento (subitens com valor). Obs da Controladoria = apontamento do item + motivo da devolução (orçamentos devolvidos)."],["Subitens: o valor do insumo já inclui os subitens — na Base bruta eles estão com Considerar no total = Não."],
+   ["V3 2027 = colunas \"atual\" (sem valor, usa a prevista); V3 2028 = mensal de 2028; V3 em módulo. Comparação só nas empresas/obras do app; Escopo Fora do app = despesas da V3 não planejadas no app."]];
+  const wb2=XLSX.utils.book_new();const add=(nm,aoa,cols,af)=>{const ws=XLSX.utils.aoa_to_sheet(aoa);if(cols)ws["!cols"]=cols.map(w=>({wch:w}));if(af&&aoa.length>1)ws["!autofilter"]={ref:"A1:"+XLSX.utils.encode_col(aoa[0].length-1)+aoa.length};XLSX.utils.book_append_sheet(wb2,ws,nm)};
+  add("Leia-me",LM,[150]);add("Resumo",RS,[44,8,11,11,15,15,15,9,15,15,15,9,15,16]);add("Base bruta",B,[18,16,7,28,7,30,7,8,22,8,8,24,8,30,9,16,18,22,14,40,40,7,18,8,26,22,14,26,28,28,16,10,14,14,14,15],true);
+  add("Comparação V3",Cm,[18,16,7,28,7,30,8,24,8,30,20,15,22,40,40,10,10,24,14,26,28,28,14,14,14,10,22,14,14,14,14,10,22,14,16,22],true);
+  add("Preenchido em dobro",[["Empresa-Obra","Chave (produto|serviço|insumo)","Gerente do 2º preenchimento","Status","Gerente considerado","Valor (R$, 2027–2029)"],...dup],[12,26,30,14,30,18],true);
+  const data=XLSX.write(wb2,{type:"array",bookType:"xlsx",compression:true});
+  await S.dl.save({filename:`Relatorio_App_x_V3_Fluxo_${new Date().toISOString().slice(0,10)}.xlsx`,data:new Uint8Array(data)});toast(`Relatório gerado: ${nf0.format(B.length-1)} linhas na base bruta · ${nf0.format(Cm.length-1)} na comparação`)}
+ catch(e){console.error(e);toast("Não foi possível gerar o relatório: "+(e&&e.message||e))}}
+document.addEventListener("click",e=>{const t=e.target;if(t&&t.id==="btn-exp-fluxo"){const f=$("#fx-v3");if(f){f.value="";f.click()}}});
+document.addEventListener("change",e=>{const t=e.target;if(t&&t.id==="fx-v3"){const f=t.files&&t.files[0];if(f)fluxoRelatorio(f)}});
 /* 24/11 (v74): corrige formatação do valor nos questionamentos */
 /* 24/11 (v73): questionamentos da Controladoria para o gerente (ex.: linhas da planilha que não puderam ser carregadas) — gerentes/<uid>/questionamentos; índice para os masters em restrito/questionamentos */
 async function qstCarregar(){const box=$("#qst-box");if(!box||S.offline||S.vis)return;
