@@ -1083,6 +1083,7 @@ function pzaDesenhar(){const el=$("#pz-areas");if(!el)return;if(!S.owner||S.vis|
   const lin=g=>{const pr=(PRAZO.porArea||{})[g.a]&&Date.parse(PRAZO.porArea[g.a])>Date.parse(PRAZO.ate);const fe=ag>=g.t;
     return `<tr><td>${esc(g.a)}</td><td>${esc(pzaFmt(g.t))}${pr?' <b>(prorrogado)</b>':""} <span class="${fe?"pza-x":"pza-ok"}">${fe?"encerrado":"aberto"}</span></td><td class="num">${nf0.format(g.n)}</td>${IND_STO.map(k=>`<td class="num">${nf0.format(g.c[k]||0)}</td>`).join("")}<td>${barra(pc(g.fim,g.n))}</td></tr>`};
   el.innerHTML=cab+info+`<div class="tbl-box"><table class="list"><thead><tr><th>Quem planeja</th><th>Prazo</th><th class="num">Obras</th>${IND_STO.map(k=>`<th class="num">${esc(IND_STN[k])}</th>`).join("")}<th>% concluído</th></tr></thead><tbody>${L.map(lin).join("")}</tbody><tfoot><tr><th>Total</th><th></th><th class="num">${nf0.format(T.n)}</th>${IND_STO.map(k=>`<th class="num">${nf0.format(T.c[k]||0)}</th>`).join("")}<th>${barra(pc(T.fim,T.n))}</th></tr></tfoot></table></div>`}
+/* 27/11 (v76): insumo incluído fora do modelo sem subitem obrigatório */
 /* 25/11 (v75): "Relatório App x V3 (Fluxo)" — base bruta com níveis de fluxo (chave empresa-obra-produto ERP-serviço-insumo da coluna G da V3), cidade, obs do gerente (observação + detalhamento), obs da Controladoria (apontamentos + motivo da devolução) e comparação com a V3 */
 async function fluxoRelatorio(file){const msg=t=>toast(t);
  try{msg("Lendo a Base dados (V3)…");await new Promise(r=>setTimeout(r,30));
@@ -1356,6 +1357,8 @@ function applyRules(cur){
     if(l.orf){l.mine=true;l.canEdit=cur.editable;l.lockMsg=""}
     {const fo=insAppObra(cur.o,l)?null:foraDe(cur.o,l.area);l.fora=!!fo;if(fo){l.canEdit=false;l.lockMsg="Planejado fora do aplicativo"+(fo.motivo?": "+fo.motivo:"")}}
     {const fi=foraIns(cur.info.tipo,l,cur.o);l.foraIns=fi;if(fi&&!l.orf){l.fora=true;l.canEdit=false;l.lockMsg=(fi.t==="inativo"?"Saiu do modelo":"Planejado fora do aplicativo")+(fi.area?" · "+fi.area:"")+". O valor já digitado foi mantido; a Controladoria decide onde ele fica."}}
+    /* 27/11 (v76): insumo incluído fora do modelo (Adicionar item ou liberado na obra) é preenchido direto no insumo, sem subitem obrigatório. Subitens vazios criados automaticamente antes são retirados ao abrir (os que têm valor ficam). */
+    if(l.extra&&!l.orf){l.obrig=false;const ss=subsOf(l);if(l.canEdit&&ss.length&&ss.every(x=>{const v=cur.doc.v&&cur.doc.v[l.key+"#"+x.id];return !v||Object.values(v).every(arr=>!Array.isArray(arr)||arr.every(z=>!+z))})){ss.forEach(x=>{if(cur.doc.v)delete cur.doc.v[l.key+"#"+x.id]});delete cur.doc.sub[l.key]}}
     if(l.canEdit&&l.obrig&&!isQty(l)&&!subsOf(l).length){{const cs=(S.subR&&S.subR.c&&S.subR.c[`${cur.info.tipo}|${l.P}|${l.S}|${l.I}`])||[];cur.doc.sub[l.key]=presetsFor(l,cur.info.tipo).map((n,i)=>cs[i]?{id:"p"+i,n,c:cs[i]}:{id:"p"+i,n});
       /* valor já digitado direto no insumo (antes do detalhamento): vai para o 1º subitem, nada se perde */
       if(cur.doc.v&&cur.doc.sub[l.key].length){const lv=cur.doc.v[l.key];const k0=l.key+"#"+cur.doc.sub[l.key][0].id;if(lv&&!cur.doc.v[k0]){const c={};Object.entries(lv).forEach(([y,a])=>{if(Array.isArray(a)&&a.some(v=>+v))c[y]=a.slice()});if(Object.keys(c).length)cur.doc.v[k0]=c}}}}
